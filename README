@@ -1,0 +1,5 @@
+### A work in progress 
+
+
+The purpose of this repo is to create bindings around capstone that allows for rust style tagged unions covering all assembly instructions. 
+This enables writing programs that need to match over all valid x86/arm/etc instructions/instruction encodings. 
