@@ -4,6 +4,7 @@ use itertools::Itertools;
 use crate::memory_operand::MemoryOperandOrRegister8;
 use crate::registers::{OperandSize, Register8};
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum TestInstruction {
     Rm8Imm8{
         rm8: MemoryOperandOrRegister8,

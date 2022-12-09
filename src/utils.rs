@@ -24,11 +24,6 @@ macro_rules! function_end_guard {
 };
 }
 
-// #[inline(always)]
-// pub fn function_end_guard<T>() {
-//
-// }
-
 pub fn get_function_bytes(raw_function_ptr: *const c_void) -> &'static [u8] {
     const LEN_MAX: usize = 100_000;
     let raw_function_ptr = raw_function_ptr as *const u8;
@@ -38,4 +33,31 @@ pub fn get_function_bytes(raw_function_ptr: *const c_void) -> &'static [u8] {
     let function_end = find_subsequence(function_bytes, b"THIS GUARDS END").unwrap();
     let function_bytes = &function_bytes[..function_end];
     function_bytes
+}
+
+pub fn imm_i8(imm: i64) -> i8 {
+    if imm < 0 {
+        imm.try_into().expect("Unexpectedly large constant from capstone")
+    } else {
+        let unsigned: u8 = imm.try_into().expect("Unexpectedly large constant from capstone");
+        unsigned as i8
+    }
+}
+
+pub fn imm_i16(imm: i64) -> i16 {
+    if imm < 0 {
+        imm.try_into().expect("Unexpectedly large constant from capstone")
+    } else {
+        let unsigned: u16 = imm.try_into().expect("Unexpectedly large constant from capstone");
+        unsigned as i16
+    }
+}
+
+pub fn imm_i32(imm: i64) -> i32 {
+    if imm < 0 {
+        imm.try_into().expect("Unexpectedly large constant from capstone")
+    } else {
+        let unsigned: u32 = imm.try_into().expect("Unexpectedly large constant from capstone");
+        unsigned as i32
+    }
 }

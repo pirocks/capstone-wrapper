@@ -4,6 +4,7 @@ use itertools::Itertools;
 use crate::memory_operand::MemoryOperandOrRegister8;
 use crate::registers::Register8;
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct SetBInstruction {
     target: MemoryOperandOrRegister8
 }

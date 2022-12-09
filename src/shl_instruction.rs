@@ -6,6 +6,7 @@ use crate::memory_operand::{MemoryOperandOrRegister16, MemoryOperandOrRegister32
 use crate::registers::{OperandSize, Register16};
 
 //https://www.felixcloutier.com/x86/sal:sar:shl:shr
+#[derive(Debug, Eq, PartialEq)]
 pub enum ShlInstruction {
     Rm8_1 {
         target: MemoryOperandOrRegister8
