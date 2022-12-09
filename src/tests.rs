@@ -1,9 +1,8 @@
 use std::arch::asm;
 use std::ffi::c_void;
 
-use crate::disassemble;
-use util::get_function_bytes;
-use util::function_end_guard;
+use crate::{disassemble, function_end_guard};
+use crate::utils::get_function_bytes;
 
 #[no_mangle]
 fn sample_assembly() {
