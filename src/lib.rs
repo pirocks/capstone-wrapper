@@ -107,6 +107,7 @@ pub mod setb_instruction;
 pub mod test_instruction;
 pub mod jcc_instruction;
 pub mod ret_instruction;
+pub mod utils;
 
 pub enum X86Instruction {
     Push(PushInstruction),
