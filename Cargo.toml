@@ -1,0 +1,11 @@
+[package]
+name = "capstone-wrapper"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+util = { path = "../util" }
+capstone = "0.11"
+thiserror = "1"
+itertools = "0.10"
