@@ -8,6 +8,7 @@ use crate::registers::{OperandSize, Register16, Register32, Register64, Register
 //https://www.felixcloutier.com/x86/mov
 //https://www.felixcloutier.com/x86/mov-1
 //https://www.felixcloutier.com/x86/mov-2
+#[derive(Debug, Eq, PartialEq)]
 pub enum MovInstruction {
     Rm8R8 {
         src: Register8,

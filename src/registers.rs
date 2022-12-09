@@ -1,7 +1,7 @@
 use capstone::arch::x86::X86Reg::*;
 use capstone::RegId;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SegmentRegister {
     CS,
     SS,
@@ -11,7 +11,7 @@ pub enum SegmentRegister {
     GS,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Register8 {
     AL,
     BL,
@@ -62,7 +62,7 @@ impl Register8 {
 }
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Register16 {
     AX,
     BX,
@@ -129,7 +129,7 @@ impl Register16 {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Register32 {
     EAX,
     EBX,
@@ -196,7 +196,7 @@ impl Register32 {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Register64 {
     RAX,
     RBX,
@@ -242,7 +242,7 @@ impl Register64 {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum OperandSize {
     QuadWord,
     DoubleWord,
@@ -264,7 +264,7 @@ impl OperandSize {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GeneralRegister {
     Register64(Register64),
     Register32(Register32),
@@ -291,6 +291,7 @@ impl GeneralRegister {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum GeneralRegisterWordAndBigger {
     Register64(Register64),
     Register32(Register32),

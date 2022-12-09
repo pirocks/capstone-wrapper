@@ -2,6 +2,7 @@ use capstone::arch::x86::{X86InsnDetail, X86OperandType};
 use capstone::prelude::DetailsArchInsn;
 use itertools::Itertools;
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct RetInstruction{
     to_pop: Option<i16>
 }

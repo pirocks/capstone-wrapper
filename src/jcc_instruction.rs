@@ -5,6 +5,7 @@ use itertools::Itertools;
 use crate::condition_code_flag::JumpConditionCode;
 use crate::registers::OperandSize;
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct  JCCInstruction{
     absolute_target: u64,
     condition_code: JumpConditionCode

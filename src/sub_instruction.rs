@@ -5,7 +5,7 @@ use itertools::Itertools;
 use crate::memory_operand::{MemoryOperandOrRegister16, MemoryOperandOrRegister64};
 use crate::registers::{OperandSize, Register16, Register64};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum SubInstruction {
     R64Rm64 {
         target: MemoryOperandOrRegister64,

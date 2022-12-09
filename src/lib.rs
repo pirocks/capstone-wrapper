@@ -22,7 +22,7 @@ pub enum DisassembleError {
     FailedToConfigureCapstone,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ImmediateOperand {
     Imm8(i8),
     Imm16(i16),
@@ -36,7 +36,7 @@ impl ImmediateOperand {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum X86Scale {
     One,
     Two,
@@ -62,6 +62,7 @@ pub mod memory_operand;
 pub mod registers;
 
 pub mod condition_code_flag {
+    #[derive(Debug, Eq, PartialEq)]
     pub enum JumpConditionCode {
         A,
         AE,
@@ -109,6 +110,7 @@ pub mod jcc_instruction;
 pub mod ret_instruction;
 pub mod utils;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum X86Instruction {
     Push(PushInstruction),
     Mov(MovInstruction),

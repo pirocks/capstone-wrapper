@@ -6,6 +6,7 @@ use crate::memory_operand::MemoryOperand;
 use crate::registers::{GeneralRegisterWordAndBigger, OperandSize, SegmentRegister};
 
 //https://www.felixcloutier.com/x86/push
+#[derive(Debug, Eq, PartialEq)]
 pub enum PushInstruction {
     MemoryOperand {
         memory_operand: MemoryOperand
