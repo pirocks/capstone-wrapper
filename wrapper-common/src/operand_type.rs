@@ -65,27 +65,27 @@ fn single_set<T: Eq + PartialEq + Hash + Debug>(t: T) -> HashSet<T> {
 impl OperandType {
     pub fn from_reg(val: impl AsRef<str>) -> Result<OperandType, OperandFromStr> {
         Ok(OperandType::Reg(match val.as_ref() {
-            "RAX" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RAX)),
-            "RBX" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RBX)),
-            "RCX" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RCX)),
-            "RDX" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RDX)),
-            "RSP" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RSP)),
-            "RSI" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RSI)),
-            "RDI" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RDI)),
-            "RBP" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RBP)),
-            "RIP" => RegisterType::SomeGP64(single_set(Reg64WithRIP::RIP)),
-            "R11" => RegisterType::SomeGP64(single_set(Reg64WithRIP::R11)),
-            "EAX" => RegisterType::SomeGP32(single_set(Reg32WithRIP::EAX)),
-            "EBX" => RegisterType::SomeGP32(single_set(Reg32WithRIP::EBX)),
-            "ECX" => RegisterType::SomeGP32(single_set(Reg32WithRIP::ECX)),
-            "EDX" => RegisterType::SomeGP32(single_set(Reg32WithRIP::EDX)),
-            "SP" => RegisterType::SomeGP16(single_set(Reg16WithRIP::SP)),
-            "AX" => RegisterType::SomeGP16(single_set(Reg16WithRIP::AX)),
-            "DX" => RegisterType::SomeGP16(single_set(Reg16WithRIP::DX)),
-            "AL" => RegisterType::SomeGP8(single_set(Reg8::AL)),
-            "CL" => RegisterType::SomeGP8(single_set(Reg8::CL)),
-            "AH" => RegisterType::SomeGP8(single_set(Reg8::AH)),
-            "BP" => RegisterType::SomeGP16(single_set(Reg16WithRIP::BP)),
+            "RAX" => RegisterType::SingleGP64(Reg64WithRIP::RAX),
+            "RBX" => RegisterType::SingleGP64(Reg64WithRIP::RBX),
+            "RCX" => RegisterType::SingleGP64(Reg64WithRIP::RCX),
+            "RDX" => RegisterType::SingleGP64(Reg64WithRIP::RDX),
+            "RSP" => RegisterType::SingleGP64(Reg64WithRIP::RSP),
+            "RSI" => RegisterType::SingleGP64(Reg64WithRIP::RSI),
+            "RDI" => RegisterType::SingleGP64(Reg64WithRIP::RDI),
+            "RBP" => RegisterType::SingleGP64(Reg64WithRIP::RBP),
+            "RIP" => RegisterType::SingleGP64(Reg64WithRIP::RIP),
+            "R11" => RegisterType::SingleGP64(Reg64WithRIP::R11),
+            "EAX" => RegisterType::SingleGP32(Reg32WithRIP::EAX),
+            "EBX" => RegisterType::SingleGP32(Reg32WithRIP::EBX),
+            "ECX" => RegisterType::SingleGP32(Reg32WithRIP::ECX),
+            "EDX" => RegisterType::SingleGP32(Reg32WithRIP::EDX),
+            "SP" => RegisterType::SingleGP16(Reg16WithRIP::SP),
+            "AX" => RegisterType::SingleGP16(Reg16WithRIP::AX),
+            "DX" => RegisterType::SingleGP16(Reg16WithRIP::DX),
+            "BP" => RegisterType::SingleGP16(Reg16WithRIP::BP),
+            "AL" => RegisterType::SingleGP8(Reg8::AL),
+            "CL" => RegisterType::SingleGP8(Reg8::CL),
+            "AH" => RegisterType::SingleGP8(Reg8::AH),
             "FS" => RegisterType::SingleSegment(RegSegment::FS),
             "FSBASE" => RegisterType::SingleSegmentBase(RegSegmentBase::FSBase),
             "GS" => RegisterType::SingleSegment(RegSegment::GS),
@@ -157,7 +157,6 @@ impl OperandType {
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
     ) -> Result<OperandType, OperandFromStr> {
-
         Ok(OperandType::Mem(match (xtype.as_ref().map(|s| s.as_ref()), memory_prefix.as_ref().map(|s| s.as_ref()), width.as_ref().map(|s| s.as_ref())) {
             (Some("struct"), _, Some("80")) => MemoryOperandType::Mem80,
             (Some("struct"), _, Some("64")) => MemoryOperandType::Mem64,
@@ -218,14 +217,14 @@ impl OperandType {
             }
             "imm" => {
                 Ok(match val.as_ref().map(|s| s.as_ref()) {
-                    None => OperandType::Imm(match width.as_ref().map(|s|s.as_ref()) {
+                    None => OperandType::Imm(match width.as_ref().map(|s| s.as_ref()) {
                         Some("8") => Imm::Imm8,
                         Some("16") => Imm::Imm16,
                         Some("32") => Imm::Imm32,
                         Some("64") => Imm::Imm64,
                         _ => {
                             todo!()
-                        },
+                        }
                     }),
                     Some("0") => OperandType::ImmSpecific(0),
                     Some("1") => OperandType::ImmSpecific(1),
@@ -283,78 +282,12 @@ impl OperandType {
                     RegisterType::SomeGP16(_) => "R16".to_string(),
                     RegisterType::AllGP8 => "R8".to_string(),
                     RegisterType::SomeGP8(some) => {
-                        if some.len() == 1 {
-                            let reg8 = some.iter().next().unwrap();
-                            match reg8 {
-                                Reg8::AL => {
-                                    "AL".to_string()
-                                }
-                                Reg8::AH => {
-                                    "AH".to_string()
-                                }
-                                Reg8::BL => {
-                                    "BL".to_string()
-                                }
-                                Reg8::BH => {
-                                    "BH".to_string()
-                                }
-                                Reg8::CL => {
-                                    "CL".to_string()
-                                }
-                                Reg8::CH => {
-                                    "CH".to_string()
-                                }
-                                Reg8::DL => {
-                                    "DL".to_string()
-                                }
-                                Reg8::DH => {
-                                    "DH".to_string()
-                                }
-                                Reg8::SIL => {
-                                    "SIL".to_string()
-                                }
-                                Reg8::DIL => {
-                                    "DIL".to_string()
-                                }
-                                Reg8::BPL => {
-                                    "BPL".to_string()
-                                }
-                                Reg8::SPL => {
-                                    "SPL".to_string()
-                                }
-                                Reg8::R8B => {
-                                    "R8B".to_string()
-                                }
-                                Reg8::R9B => {
-                                    "R9B".to_string()
-                                }
-                                Reg8::R10B => {
-                                    "R10B".to_string()
-                                }
-                                Reg8::R11B => {
-                                    "R11B".to_string()
-                                }
-                                Reg8::R12B => {
-                                    "R12B".to_string()
-                                }
-                                Reg8::R13B => {
-                                    "R13B".to_string()
-                                }
-                                Reg8::R14B => {
-                                    "R14B".to_string()
-                                }
-                                Reg8::R15B => {
-                                    "R15B".to_string()
-                                }
-                            }
+                        if some == &HashSet::from_iter(vec![Reg8::AL, Reg8::BL, Reg8::CL, Reg8::DL].into_iter()) {
+                            format!("R8L")
+                        } else if some == &HashSet::from_iter(vec![Reg8::AH, Reg8::BH, Reg8::CH, Reg8::DH].into_iter()) {
+                            format!("R8H")
                         } else {
-                            if some == &HashSet::from_iter(vec![Reg8::AL, Reg8::BL, Reg8::CL, Reg8::DL].into_iter()){
-                                format!("R8L")
-                            }else if some == &HashSet::from_iter(vec![Reg8::AH, Reg8::BH, Reg8::CH, Reg8::DH].into_iter()){
-                                format!("R8H")
-                            }else {
-                                format!("R8Some{}", some.len())
-                            }
+                            format!("R8Some{}", some.len())
                         }
                     }
                     RegisterType::AllFloat => "ST".to_string(),
@@ -397,6 +330,97 @@ impl OperandType {
                             }
                             RegSegment::GS => {
                                 "GS".to_string()
+                            }
+                        }
+                    }
+                    RegisterType::SingleGP64(_) => {
+                        todo!()
+                    }
+                    RegisterType::SingleGP32(_) => {
+                        todo!()
+                    }
+                    RegisterType::SingleGP16(reg16) => {
+                        match reg16 {
+                            Reg16WithRIP::AX => "AX".to_string(),
+                            Reg16WithRIP::BX => "BX".to_string(),
+                            Reg16WithRIP::CX => "CX".to_string(),
+                            Reg16WithRIP::DX => "DX".to_string(),
+                            Reg16WithRIP::SI => "SI".to_string(),
+                            Reg16WithRIP::DI => "DI".to_string(),
+                            Reg16WithRIP::BP => "BP".to_string(),
+                            Reg16WithRIP::SP => "SP".to_string(),
+                            Reg16WithRIP::R8W => "R8W".to_string(),
+                            Reg16WithRIP::R9W => "R9W".to_string(),
+                            Reg16WithRIP::R10W => "R10W".to_string(),
+                            Reg16WithRIP::R11W => "R11W".to_string(),
+                            Reg16WithRIP::R12W => "R12W".to_string(),
+                            Reg16WithRIP::R13W => "R13W".to_string(),
+                            Reg16WithRIP::R14W => "R14W".to_string(),
+                            Reg16WithRIP::R15W => "R15W".to_string(),
+                            Reg16WithRIP::IP => "IP".to_string(),
+                        }
+                    }
+                    RegisterType::SingleGP8(reg8) => {
+                        match reg8 {
+                            Reg8::AL => {
+                                "AL".to_string()
+                            }
+                            Reg8::AH => {
+                                "AH".to_string()
+                            }
+                            Reg8::BL => {
+                                "BL".to_string()
+                            }
+                            Reg8::BH => {
+                                "BH".to_string()
+                            }
+                            Reg8::CL => {
+                                "CL".to_string()
+                            }
+                            Reg8::CH => {
+                                "CH".to_string()
+                            }
+                            Reg8::DL => {
+                                "DL".to_string()
+                            }
+                            Reg8::DH => {
+                                "DH".to_string()
+                            }
+                            Reg8::SIL => {
+                                "SIL".to_string()
+                            }
+                            Reg8::DIL => {
+                                "DIL".to_string()
+                            }
+                            Reg8::BPL => {
+                                "BPL".to_string()
+                            }
+                            Reg8::SPL => {
+                                "SPL".to_string()
+                            }
+                            Reg8::R8B => {
+                                "R8B".to_string()
+                            }
+                            Reg8::R9B => {
+                                "R9B".to_string()
+                            }
+                            Reg8::R10B => {
+                                "R10B".to_string()
+                            }
+                            Reg8::R11B => {
+                                "R11B".to_string()
+                            }
+                            Reg8::R12B => {
+                                "R12B".to_string()
+                            }
+                            Reg8::R13B => {
+                                "R13B".to_string()
+                            }
+                            Reg8::R14B => {
+                                "R14B".to_string()
+                            }
+                            Reg8::R15B => {
+                                "R15B".to_string()
                             }
                         }
                     }
@@ -490,5 +514,5 @@ pub enum Imm {
     Imm8,
     Imm16,
     Imm32,
-    Imm64
+    Imm64,
 }

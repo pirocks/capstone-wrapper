@@ -20,7 +20,7 @@ pub fn make_enum(_item: TokenStream) -> TokenStream {
         enum_.push_str(" { ");
         enum_.push_str(instruct.encodings.iter().map(|encoding| {
             let mut operand_types = vec![];
-            let InstructionEncoding { zeroing, bcast, iform, mode_prefix_string, operands } = encoding;
+            let InstructionEncoding { zeroing, bcast, iform:_, mode_prefix_string, operands } = encoding;
             let prefix = "".to_string() /*+ dbg!(iform.as_str())*/ + mode_prefix_string.as_str() + if *zeroing{
                 "Zeroing"
             }else {
