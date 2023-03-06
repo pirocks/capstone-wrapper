@@ -40,7 +40,7 @@ pub fn make_enum(_item: TokenStream) -> TokenStream {
                     let operand = OperandIndex(NonZeroU8::new((i + 1) as u8).unwrap());
                     operand_types.push(operands.get(&operand).unwrap());
                 }
-                dbg!(operand_types.iter().map(|operand_type| operand_type.to_identifier_string()).join("_"))
+                operand_types.iter().map(|operand_type| operand_type.to_identifier_string()).join("_")
             }.as_str()
         }).join(",\n ").as_str());
         enum_.push_str(" } ");

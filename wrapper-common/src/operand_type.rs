@@ -101,15 +101,15 @@ impl OperandType {
             "MSRS" => RegisterType::SomeSpecial(single_set(RegSpecial::MSRS)),
             "TSC" => RegisterType::SomeSpecial(single_set(RegSpecial::TSC)),
             "TSCAUX" => RegisterType::SomeSpecial(single_set(RegSpecial::TSCAUX)),
-            "X87CONTROL" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87CONTROL)),
-            "X87STATUS" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87STATUS)),
-            "X87TAG" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87TAG)),
-            "X87POP" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87POP)),
-            "X87PUSH" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87PUSH)),
-            "X87POP2" => RegisterType::SomeFloatControl(single_set(RegFloatControl::X87POP2)),
+            "X87CONTROL" => RegisterType::SingleFloatControl(RegFloatControl::X87CONTROL),
+            "X87STATUS" => RegisterType::SingleFloatControl(RegFloatControl::X87STATUS),
+            "X87TAG" => RegisterType::SingleFloatControl(RegFloatControl::X87TAG),
+            "X87POP" => RegisterType::SingleFloatControl(RegFloatControl::X87POP),
+            "X87PUSH" => RegisterType::SingleFloatControl(RegFloatControl::X87PUSH),
+            "X87POP2" => RegisterType::SingleFloatControl(RegFloatControl::X87POP2),
             "SSP" => RegisterType::SomeSpecial(single_set(RegSpecial::SSP)),
-            "ST(0)" => RegisterType::SomeFloat(single_set(RegFloat::ST0)),
-            "ST(1)" => RegisterType::SomeFloat(single_set(RegFloat::ST1)),
+            "ST(0)" => RegisterType::SingleFloat(RegFloat::ST0),
+            "ST(1)" => RegisterType::SingleFloat(RegFloat::ST1),
             "XMM0" => RegisterType::SomeXmm(single_set(RegXMM::XMM0)),
             "XMM1" => RegisterType::SomeXmm(single_set(RegXMM::XMM1)),
             "XMM2" => RegisterType::SomeXmm(single_set(RegXMM::XMM2)),
@@ -156,41 +156,53 @@ impl OperandType {
         xtype: Option<impl AsRef<str>>,
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
+        vsib: Option<impl AsRef<str>>
     ) -> Result<OperandType, OperandFromStr> {
-        Ok(OperandType::Mem(match (xtype.as_ref().map(|s| s.as_ref()), memory_prefix.as_ref().map(|s| s.as_ref()), width.as_ref().map(|s| s.as_ref())) {
-            (Some("struct"), _, Some("80")) => MemoryOperandType::Mem80,
-            (Some("struct"), _, Some("64")) => MemoryOperandType::Mem64,
-            (Some("struct"), _, Some("48")) => MemoryOperandType::Mem48,
-            (Some("struct"), _, Some("32")) => MemoryOperandType::Mem32,
-            (Some("struct"), None, _) => MemoryOperandType::MemStruct,
-            (Some("struct"), Some("zmmword ptr"), _) => MemoryOperandType::MemStruct,
-            (_, Some("zmmword ptr"), _) => MemoryOperandType::Mem512,
-            (_, Some("ymmword ptr"), _) => MemoryOperandType::Mem256,
-            (_, Some("xmmword ptr"), _) => MemoryOperandType::Mem128,
-            (_, Some("tbyte ptr"), _) => MemoryOperandType::Mem80,
-            (_, Some("qword ptr"), _) => MemoryOperandType::Mem64,
-            (_, Some("dword ptr"), _) => MemoryOperandType::Mem32,
-            (_, Some("word ptr"), _) => MemoryOperandType::Mem16,
-            (_, Some("byte ptr"), _) => MemoryOperandType::Mem8,
-            (_, _, Some("512")) => MemoryOperandType::Mem512,
-            (_, _, Some("384")) => MemoryOperandType::Mem384,
-            (_, _, Some("320")) => MemoryOperandType::Mem320,
-            (_, _, Some("256")) => MemoryOperandType::Mem256,
-            (_, _, Some("192")) => MemoryOperandType::Mem192,
-            (_, _, Some("160")) => MemoryOperandType::Mem160,
-            (_, _, Some("128")) => MemoryOperandType::Mem128,
-            (_, _, Some("80")) => MemoryOperandType::Mem80,
-            (_, _, Some("64")) => MemoryOperandType::Mem64,
-            (_, _, Some("32")) => MemoryOperandType::Mem32,
-            (_, _, Some("16")) => MemoryOperandType::Mem16,
-            (_, _, Some("8")) => MemoryOperandType::Mem8,
+        let memory_operand_kind = match (xtype.as_ref().map(|s| s.as_ref()), memory_prefix.as_ref().map(|s| s.as_ref()), width.as_ref().map(|s| s.as_ref())) {
+            (Some("struct"), _, Some("80")) => MemoryOperandTypeKind::Mem80,
+            (Some("struct"), _, Some("64")) => MemoryOperandTypeKind::Mem64,
+            (Some("struct"), _, Some("48")) => MemoryOperandTypeKind::Mem48,
+            (Some("struct"), _, Some("32")) => MemoryOperandTypeKind::Mem32,
+            (Some("struct"), None, _) => MemoryOperandTypeKind::MemStruct,
+            (Some("struct"), Some("zmmword ptr"), _) => MemoryOperandTypeKind::MemStruct,
+            (_, Some("zmmword ptr"), _) => MemoryOperandTypeKind::Mem512,
+            (_, Some("ymmword ptr"), _) => MemoryOperandTypeKind::Mem256,
+            (_, Some("xmmword ptr"), _) => MemoryOperandTypeKind::Mem128,
+            (_, Some("tbyte ptr"), _) => MemoryOperandTypeKind::Mem80,
+            (_, Some("qword ptr"), _) => MemoryOperandTypeKind::Mem64,
+            (_, Some("dword ptr"), _) => MemoryOperandTypeKind::Mem32,
+            (_, Some("word ptr"), _) => MemoryOperandTypeKind::Mem16,
+            (_, Some("byte ptr"), _) => MemoryOperandTypeKind::Mem8,
+            (_, _, Some("512")) => MemoryOperandTypeKind::Mem512,
+            (_, _, Some("384")) => MemoryOperandTypeKind::Mem384,
+            (_, _, Some("320")) => MemoryOperandTypeKind::Mem320,
+            (_, _, Some("256")) => MemoryOperandTypeKind::Mem256,
+            (_, _, Some("192")) => MemoryOperandTypeKind::Mem192,
+            (_, _, Some("160")) => MemoryOperandTypeKind::Mem160,
+            (_, _, Some("128")) => MemoryOperandTypeKind::Mem128,
+            (_, _, Some("80")) => MemoryOperandTypeKind::Mem80,
+            (_, _, Some("64")) => MemoryOperandTypeKind::Mem64,
+            (_, _, Some("32")) => MemoryOperandTypeKind::Mem32,
+            (_, _, Some("16")) => MemoryOperandTypeKind::Mem16,
+            (_, _, Some("8")) => MemoryOperandTypeKind::Mem8,
             _ => {
                 if xtype.as_ref().map(|s| s.as_ref()) == Some("u32") {
-                    MemoryOperandType::MemTile
+                    MemoryOperandTypeKind::MemTile
                 } else {
                     return Err(OperandFromStr::UnknownMemoryOperand);
                 }
             }
+        };
+
+        Ok(OperandType::Mem(MemoryOperandType{
+            vsib: match vsib.as_ref().map(|s|s.as_ref()) {
+                None => None,
+                Some("XMM") => Some(VectorRegisterKind::XMM),
+                Some("YMM") => Some(VectorRegisterKind::YMM),
+                Some("ZMM") => Some(VectorRegisterKind::ZMM),
+                a => todo!("{a:?}")
+            },
+            kind: memory_operand_kind,
         }))
     }
 
@@ -200,10 +212,11 @@ impl OperandType {
         val: Option<impl AsRef<str>>,
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
+        vsib: Option<impl AsRef<str>>
     ) -> Result<OperandType, OperandFromStr> {
         match r#type.as_str() {
             "mem" => {
-                Self::from_mem(xtype, memory_prefix, width)
+                Self::from_mem(xtype, memory_prefix, width, vsib)
             }
             "reg" => {
                 match val {
@@ -291,7 +304,18 @@ impl OperandType {
                         }
                     }
                     RegisterType::AllFloat => "ST".to_string(),
-                    RegisterType::SomeFloat(_) => "ST".to_string(),
+                    RegisterType::SingleFloat(float_reg) => {
+                        match float_reg {
+                            RegFloat::ST0 => "ST0".to_string(),
+                            RegFloat::ST1 => "ST1".to_string(),
+                            RegFloat::ST2 => "ST2".to_string(),
+                            RegFloat::ST3 => "ST3".to_string(),
+                            RegFloat::ST4 => "ST4".to_string(),
+                            RegFloat::ST5 => "ST5".to_string(),
+                            RegFloat::ST6 => "ST6".to_string(),
+                            RegFloat::ST7 => "ST7".to_string(),
+                        }
+                    },
                     RegisterType::AllBnd => "BND".to_string(),
                     RegisterType::SomeBnd(_) => "BND".to_string(),
                     RegisterType::AllSegment => "SEG".to_string(),
@@ -310,7 +334,14 @@ impl OperandType {
                         }
                     },
                     RegisterType::SomeSpecial(_) => "SPECIAL".to_string(),
-                    RegisterType::SomeFloatControl(_) => "FPCONTROL".to_string(),
+                    RegisterType::SingleFloatControl(reg) => match reg {
+                        RegFloatControl::X87CONTROL => "X87CONTROL".to_string(),
+                        RegFloatControl::X87STATUS => "X87STATUS".to_string(),
+                        RegFloatControl::X87TAG => "X87TAG".to_string(),
+                        RegFloatControl::X87POP => "X87POP".to_string(),
+                        RegFloatControl::X87PUSH => "X87PUSH".to_string(),
+                        RegFloatControl::X87POP2 => "X87POP2".to_string(),
+                    },
                     RegisterType::SingleSegment(segment) => {
                         match segment {
                             RegSegment::CS => {
@@ -333,11 +364,47 @@ impl OperandType {
                             }
                         }
                     }
-                    RegisterType::SingleGP64(_) => {
-                        todo!()
+                    RegisterType::SingleGP64(reg64) => {
+                        match reg64 {
+                            Reg64WithRIP::RAX => "RAX".to_string(),
+                            Reg64WithRIP::RBX => "RBX".to_string(),
+                            Reg64WithRIP::RCX => "RCX".to_string(),
+                            Reg64WithRIP::RDX => "RDX".to_string(),
+                            Reg64WithRIP::RSI => "RSI".to_string(),
+                            Reg64WithRIP::RDI => "RDI".to_string(),
+                            Reg64WithRIP::RBP => "RBP".to_string(),
+                            Reg64WithRIP::RSP => "RSP".to_string(),
+                            Reg64WithRIP::R8 => "R8".to_string(),
+                            Reg64WithRIP::R9 => "R9".to_string(),
+                            Reg64WithRIP::R10 => "R10".to_string(),
+                            Reg64WithRIP::R11 => "R11".to_string(),
+                            Reg64WithRIP::R12 => "R12".to_string(),
+                            Reg64WithRIP::R13 => "R13".to_string(),
+                            Reg64WithRIP::R14 => "R14".to_string(),
+                            Reg64WithRIP::R15 => "R15".to_string(),
+                            Reg64WithRIP::RIP => "RIP".to_string(),
+                        }
                     }
-                    RegisterType::SingleGP32(_) => {
-                        todo!()
+                    RegisterType::SingleGP32(reg32) => {
+                        match reg32 {
+                            Reg32WithRIP::EAX => "EAX".to_string(),
+                            Reg32WithRIP::EBX => "EBX".to_string(),
+                            Reg32WithRIP::ECX => "ECX".to_string(),
+                            Reg32WithRIP::EDX => "EDX".to_string(),
+                            Reg32WithRIP::ESI => "ESI".to_string(),
+                            Reg32WithRIP::EDI => "EDI".to_string(),
+                            Reg32WithRIP::EBP => "EBP".to_string(),
+                            Reg32WithRIP::ESP => "ESP".to_string(),
+                            Reg32WithRIP::R8D => "R8D".to_string(),
+                            Reg32WithRIP::R9D => "R9D".to_string(),
+                            Reg32WithRIP::R10D => "R10D".to_string(),
+                            Reg32WithRIP::R11D => "R11D".to_string(),
+                            Reg32WithRIP::R12D => "R12D".to_string(),
+                            Reg32WithRIP::R13D => "R13D".to_string(),
+                            Reg32WithRIP::R14D => "R14D".to_string(),
+                            Reg32WithRIP::R15D => "R15D".to_string(),
+                            Reg32WithRIP::EIP => "EIP".to_string(),
+                        }
                     }
                     RegisterType::SingleGP16(reg16) => {
                         match reg16 {
@@ -427,23 +494,28 @@ impl OperandType {
                 }
             }
             OperandType::Mem(mem) => {
-                match mem {
-                    MemoryOperandType::MemTile => "MemTile".to_string(),
-                    MemoryOperandType::MemStruct => "MemStruct".to_string(),
-                    MemoryOperandType::Mem512 => "Mem512".to_string(),
-                    MemoryOperandType::Mem384 => "Mem384".to_string(),
-                    MemoryOperandType::Mem320 => "Mem320".to_string(),
-                    MemoryOperandType::Mem256 => "Mem256".to_string(),
-                    MemoryOperandType::Mem192 => "Mem192".to_string(),
-                    MemoryOperandType::Mem128 => "Mem128".to_string(),
-                    MemoryOperandType::Mem160 => "Mem160".to_string(),
-                    MemoryOperandType::Mem80 => "Mem80".to_string(),
-                    MemoryOperandType::Mem64 => "Mem64".to_string(),
-                    MemoryOperandType::Mem48 => "Mem48".to_string(),
-                    MemoryOperandType::Mem32 => "Mem32".to_string(),
-                    MemoryOperandType::Mem16 => "Mem16".to_string(),
-                    MemoryOperandType::Mem8 => "Mem8".to_string(),
-                }
+                (match mem.kind {
+                    MemoryOperandTypeKind::MemTile => "MemTile".to_string(),
+                    MemoryOperandTypeKind::MemStruct => "MemStruct".to_string(),
+                    MemoryOperandTypeKind::Mem512 => "Mem512".to_string(),
+                    MemoryOperandTypeKind::Mem384 => "Mem384".to_string(),
+                    MemoryOperandTypeKind::Mem320 => "Mem320".to_string(),
+                    MemoryOperandTypeKind::Mem256 => "Mem256".to_string(),
+                    MemoryOperandTypeKind::Mem192 => "Mem192".to_string(),
+                    MemoryOperandTypeKind::Mem128 => "Mem128".to_string(),
+                    MemoryOperandTypeKind::Mem160 => "Mem160".to_string(),
+                    MemoryOperandTypeKind::Mem80 => "Mem80".to_string(),
+                    MemoryOperandTypeKind::Mem64 => "Mem64".to_string(),
+                    MemoryOperandTypeKind::Mem48 => "Mem48".to_string(),
+                    MemoryOperandTypeKind::Mem32 => "Mem32".to_string(),
+                    MemoryOperandTypeKind::Mem16 => "Mem16".to_string(),
+                    MemoryOperandTypeKind::Mem8 => "Mem8".to_string(),
+                }) + (match &mem.vsib {
+                    None => "",
+                    Some(VectorRegisterKind::XMM) => "VSIBXMM",
+                    Some(VectorRegisterKind::YMM) => "VSIBYMM",
+                    Some(VectorRegisterKind::ZMM) => "VSIBZMM"
+                })
             }
             OperandType::Imm(imm) => {
                 match imm {
@@ -483,9 +555,21 @@ impl OperandType {
     }
 }
 
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+pub enum VectorRegisterKind{
+    XMM,
+    YMM,
+    ZMM
+}
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub enum MemoryOperandType {
+pub struct MemoryOperandType{
+    vsib: Option<VectorRegisterKind>,
+    kind: MemoryOperandTypeKind
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+pub enum MemoryOperandTypeKind {
     MemTile,
     MemStruct,
     Mem512,

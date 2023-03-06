@@ -11,6 +11,8 @@ pub enum InstructionElement {
         width: Option<String>,
         xtype: Option<String>,
         name: Option<String>,
+        #[serde(rename = "VSIB")]
+        vsib: Option<String>,
         #[serde(rename = "memory-prefix")]
         memory_prefix: Option<String>,
         #[serde(rename = "$value")]

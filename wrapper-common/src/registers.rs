@@ -439,7 +439,7 @@ pub enum RegisterType {
     SomeGP8(HashSet<Reg8>),
     SingleGP8(Reg8),
     AllFloat,
-    SomeFloat(HashSet<RegFloat>),
+    SingleFloat(RegFloat),
     AllBnd,
     SomeBnd(HashSet<RegBnd>),
     AllSegment,
@@ -452,7 +452,7 @@ pub enum RegisterType {
     SomeControlExtra(HashSet<RegControlExtra>),
     SingleSegmentBase(RegSegmentBase),
     SomeSpecial(HashSet<RegSpecial>),
-    SomeFloatControl(HashSet<RegFloatControl>),
+    SingleFloatControl(RegFloatControl),
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]

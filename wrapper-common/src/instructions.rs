@@ -37,10 +37,19 @@ impl InstructionEncoding {
                     xtype,
                     memory_prefix,
                     val,
+                    vsib,
                     ..
                 } = operand {
                     let operand_index = OperandIndex::from_str(idx)?;
-                    let duplicate = operands_res.insert(operand_index, OperandType::new(r#type, xtype.as_ref(), val.as_ref(), memory_prefix.as_ref(), width.as_ref())?).is_some();
+                    let duplicate = operands_res.insert(operand_index,
+                                                        OperandType::new(
+                                                            r#type,
+                                                            xtype.as_ref(),
+                                                            val.as_ref(),
+                                                            memory_prefix.as_ref(),
+                                                            width.as_ref(),
+                                                            vsib.as_ref()
+                                                        )?).is_some();
                     if duplicate {
                         return Err(FromRawError::MultipleOperandsWithSameIndex);
                     }
