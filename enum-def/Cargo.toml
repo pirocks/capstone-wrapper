@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 enum-generator = {path = "../enum-generator"}
+wrapper-common = {path = "../wrapper-common"}

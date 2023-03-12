@@ -10,9 +10,7 @@ use crate::operand_type::{FromRawError, OperandType};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstructionEncoding {
-    pub zeroing: bool,
     pub bcast: Option<NonZeroU8>,
-    pub iform: String,
     pub mode_prefix_string: String,
     pub operands: HashMap<OperandIndex, OperandType>,
 }
@@ -21,9 +19,7 @@ impl InstructionEncoding {
     pub fn new(raw: &uops_info::Instruction) -> Result<Self, FromRawError> {
         let uops_info::Instruction {
             operands,
-            zeroing,
             string,
-            iform,
             bcast,
             ..
         } = raw;
@@ -57,8 +53,6 @@ impl InstructionEncoding {
             }
         }
         Ok(Self {
-            iform: iform.to_string(),
-            zeroing: zeroing == &Some("1".to_string()),
             mode_prefix_string: string.split(" ").next().unwrap().to_string(),
             operands: operands_res,
             bcast: match bcast {

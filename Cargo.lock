@@ -204,6 +204,7 @@ name = "enum-def"
 version = "0.1.0"
 dependencies = [
  "enum-generator",
+ "wrapper-common",
 ]
 
 [[package]]

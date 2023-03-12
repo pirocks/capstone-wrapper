@@ -91,35 +91,35 @@ impl OperandType {
             "GS" => RegisterType::SingleSegment(RegSegment::GS),
             "GSBASE" => RegisterType::SingleSegmentBase(RegSegmentBase::GSBase),
             "SS" => RegisterType::SingleSegment(RegSegment::SS),
-            "TR" => RegisterType::SomeSpecial(single_set(RegSpecial::TR)),
-            "CR0" => RegisterType::SomeControl(single_set(RegControl::CR0)),
+            "TR" => RegisterType::SingleSpecial(RegSpecial::TR),
+            "CR0" => RegisterType::SingleControl(RegControl::CR0),
             "XCR0" => RegisterType::SomeControlExtra(single_set(RegControlExtra::XCR0)),
-            "GDTR" => RegisterType::SomeSpecial(single_set(RegSpecial::GDTR)),
-            "IDTR" => RegisterType::SomeSpecial(single_set(RegSpecial::IDTR)),
-            "LDTR" => RegisterType::SomeSpecial(single_set(RegSpecial::LDTR)),
+            "GDTR" => RegisterType::SingleSpecial(RegSpecial::GDTR),
+            "IDTR" => RegisterType::SingleSpecial(RegSpecial::IDTR),
+            "LDTR" => RegisterType::SingleSpecial(RegSpecial::LDTR),
             "MXCSR" => RegisterType::SomeControlExtra(single_set(RegControlExtra::MXCSR)),
-            "MSRS" => RegisterType::SomeSpecial(single_set(RegSpecial::MSRS)),
-            "TSC" => RegisterType::SomeSpecial(single_set(RegSpecial::TSC)),
-            "TSCAUX" => RegisterType::SomeSpecial(single_set(RegSpecial::TSCAUX)),
+            "MSRS" => RegisterType::SingleSpecial(RegSpecial::MSRS),
+            "TSC" => RegisterType::SingleSpecial(RegSpecial::TSC),
+            "TSCAUX" => RegisterType::SingleSpecial(RegSpecial::TSCAUX),
             "X87CONTROL" => RegisterType::SingleFloatControl(RegFloatControl::X87CONTROL),
             "X87STATUS" => RegisterType::SingleFloatControl(RegFloatControl::X87STATUS),
             "X87TAG" => RegisterType::SingleFloatControl(RegFloatControl::X87TAG),
             "X87POP" => RegisterType::SingleFloatControl(RegFloatControl::X87POP),
             "X87PUSH" => RegisterType::SingleFloatControl(RegFloatControl::X87PUSH),
             "X87POP2" => RegisterType::SingleFloatControl(RegFloatControl::X87POP2),
-            "SSP" => RegisterType::SomeSpecial(single_set(RegSpecial::SSP)),
+            "SSP" => RegisterType::SingleSpecial(RegSpecial::SSP),
             "ST(0)" => RegisterType::SingleFloat(RegFloat::ST0),
             "ST(1)" => RegisterType::SingleFloat(RegFloat::ST1),
-            "XMM0" => RegisterType::SomeXmm(single_set(RegXMM::XMM0)),
-            "XMM1" => RegisterType::SomeXmm(single_set(RegXMM::XMM1)),
-            "XMM2" => RegisterType::SomeXmm(single_set(RegXMM::XMM2)),
-            "XMM3" => RegisterType::SomeXmm(single_set(RegXMM::XMM3)),
-            "XMM4" => RegisterType::SomeXmm(single_set(RegXMM::XMM4)),
-            "XMM5" => RegisterType::SomeXmm(single_set(RegXMM::XMM5)),
-            "XMM6" => RegisterType::SomeXmm(single_set(RegXMM::XMM6)),
-            "XMM7" => RegisterType::SomeXmm(single_set(RegXMM::XMM7)),
+            "XMM0" => RegisterType::SingleXmm(RegXMM::XMM0),
+            "XMM1" => RegisterType::SingleXmm(RegXMM::XMM1),
+            "XMM2" => RegisterType::SingleXmm(RegXMM::XMM2),
+            "XMM3" => RegisterType::SingleXmm(RegXMM::XMM3),
+            "XMM4" => RegisterType::SingleXmm(RegXMM::XMM4),
+            "XMM5" => RegisterType::SingleXmm(RegXMM::XMM5),
+            "XMM6" => RegisterType::SingleXmm(RegXMM::XMM6),
+            "XMM7" => RegisterType::SingleXmm(RegXMM::XMM7),
             "BND0,BND1,BND2,BND3" => RegisterType::AllBnd,
-            "UIF" => RegisterType::SomeSpecial(HashSet::from_iter(iter::once(RegSpecial::UIF))),
+            "UIF" => RegisterType::SingleSpecial(RegSpecial::UIF),
             "EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI,R8D,R9D,R10D,R11D,R12D,R13D,R14D,R15D" => RegisterType::AllGP32WithoutRIP,
             "AX,CX,DX,BX,SP,BP,SI,DI,R8W,R9W,R10W,R11W,R12W,R13W,R14W,R15W" => RegisterType::AllGP16WithoutRIP,
             "AL,CL,DL,BL,SPL,BPL,SIL,DIL,R8B,R9B,R10B,R11B,R12B,R13B,R14B,R15B" => RegisterType::AllGP8,
@@ -271,22 +271,18 @@ impl OperandType {
             OperandType::Reg(reg) => {
                 match reg {
                     RegisterType::AllMmx => "MMX".to_string(),
-                    RegisterType::SomeMmx(_) => "MMX".to_string(),
                     RegisterType::AllXmm16 => "XMM".to_string(),
                     RegisterType::AllXmm32 => "XMM".to_string(),
                     RegisterType::SomeXmm(_) => "XMM".to_string(),
                     RegisterType::AllYmm16 => "YMM".to_string(),
                     RegisterType::AllYmm32 => "YMM".to_string(),
-                    RegisterType::SomeYmm(_) => "YMM".to_string(),
                     RegisterType::AllZmm32 => "ZMM".to_string(),
                     RegisterType::SomeZmm(_) => "ZMM".to_string(),
                     RegisterType::AllTmm => "TMM".to_string(),
-                    RegisterType::SomeTmm(_) => "TMM".to_string(),
                     RegisterType::AllMask => "K".to_string(),
                     RegisterType::SomeMask(_) => "K".to_string(),
                     RegisterType::AllGP64WithoutRIP => "R64".to_string(),
                     RegisterType::AllGP64WithRIP => "R64".to_string(),
-                    RegisterType::SomeGP64(_) => "R64".to_string(),
                     RegisterType::AllGP32WithoutRIP => "R32".to_string(),
                     RegisterType::AllGP32WithRIP => "R32".to_string(),
                     RegisterType::SomeGP32(_) => "R32".to_string(),
@@ -317,12 +313,9 @@ impl OperandType {
                         }
                     },
                     RegisterType::AllBnd => "BND".to_string(),
-                    RegisterType::SomeBnd(_) => "BND".to_string(),
                     RegisterType::AllSegment => "SEG".to_string(),
                     RegisterType::SomeSegment(_) => "SEG".to_string(),
                     RegisterType::AllDebug => "DR".to_string(),
-                    RegisterType::SomeDebug(_) => "DR".to_string(),
-                    RegisterType::AllControlRegisters => "CR".to_string(),
                     RegisterType::SomeControl(_) => "CR".to_string(),
                     RegisterType::SomeControlExtra(_) => "CR".to_string(),
                     RegisterType::SingleSegmentBase(segment) => match segment {
@@ -333,7 +326,6 @@ impl OperandType {
                             "GSBASE".to_string()
                         }
                     },
-                    RegisterType::SomeSpecial(_) => "SPECIAL".to_string(),
                     RegisterType::SingleFloatControl(reg) => match reg {
                         RegFloatControl::X87CONTROL => "X87CONTROL".to_string(),
                         RegFloatControl::X87STATUS => "X87STATUS".to_string(),
@@ -491,6 +483,76 @@ impl OperandType {
                             }
                         }
                     }
+                    RegisterType::SingleXmm(xmm) => {
+                        match xmm {
+                            RegXMM::XMM0 => "XMM0".to_string(),
+                            RegXMM::XMM1 => "XMM1".to_string(),
+                            RegXMM::XMM2 => "XMM2".to_string(),
+                            RegXMM::XMM3 => "XMM3".to_string(),
+                            RegXMM::XMM4 => "XMM4".to_string(),
+                            RegXMM::XMM5 => "XMM5".to_string(),
+                            RegXMM::XMM6 => "XMM6".to_string(),
+                            RegXMM::XMM7 => "XMM7".to_string(),
+                            RegXMM::XMM8 => "XMM8".to_string(),
+                            RegXMM::XMM9 => "XMM9".to_string(),
+                            RegXMM::XMM10 => "XMM10".to_string(),
+                            RegXMM::XMM11 => "XMM11".to_string(),
+                            RegXMM::XMM12 => "XMM12".to_string(),
+                            RegXMM::XMM13 => "XMM13".to_string(),
+                            RegXMM::XMM14 => "XMM14".to_string(),
+                            RegXMM::XMM15 => "XMM15".to_string(),
+                            RegXMM::XMM16 => "XMM16".to_string(),
+                            RegXMM::XMM17 => "XMM17".to_string(),
+                            RegXMM::XMM18 => "XMM18".to_string(),
+                            RegXMM::XMM19 => "XMM19".to_string(),
+                            RegXMM::XMM20 => "XMM20".to_string(),
+                            RegXMM::XMM21 => "XMM21".to_string(),
+                            RegXMM::XMM22 => "XMM22".to_string(),
+                            RegXMM::XMM23 => "XMM23".to_string(),
+                            RegXMM::XMM24 => "XMM24".to_string(),
+                            RegXMM::XMM25 => "XMM25".to_string(),
+                            RegXMM::XMM26 => "XMM26".to_string(),
+                            RegXMM::XMM27 => "XMM27".to_string(),
+                            RegXMM::XMM28 => "XMM28".to_string(),
+                            RegXMM::XMM29 => "XMM29".to_string(),
+                            RegXMM::XMM30 => "XMM30".to_string(),
+                            RegXMM::XMM31 => "XMM31".to_string(),
+                            RegXMM::XMM32 => "XMM32".to_string(),
+                        }
+                    }
+                    RegisterType::SingleSpecial(special) => {
+                        match special {
+                            RegSpecial::GDTR => "GDTR".to_string(),
+                            RegSpecial::LDTR => "LDTR".to_string(),
+                            RegSpecial::IDTR => "IDTR".to_string(),
+                            RegSpecial::TR => "TR".to_string(),
+                            RegSpecial::TSC => "TSC".to_string(),
+                            RegSpecial::TSCAUX => "TSCAUX".to_string(),
+                            RegSpecial::MSRS => "MSRS".to_string(),
+                            RegSpecial::UIF => "UIF".to_string(),
+                            RegSpecial::SSP => "SSP".to_string()
+                        }
+                    }
+                    RegisterType::SingleControl(control) => {
+                        match control {
+                            RegControl::CR0 => "CR0".to_string(),
+                            RegControl::CR1 => "CR1".to_string(),
+                            RegControl::CR2 => "CR2".to_string(),
+                            RegControl::CR3 => "CR3".to_string(),
+                            RegControl::CR4 => "CR4".to_string(),
+                            RegControl::CR5 => "CR5".to_string(),
+                            RegControl::CR6 => "CR6".to_string(),
+                            RegControl::CR7 => "CR7".to_string(),
+                            RegControl::CR8 => "CR8".to_string(),
+                            RegControl::CR9 => "CR9".to_string(),
+                            RegControl::CR10 => "CR10".to_string(),
+                            RegControl::CR11 => "CR11".to_string(),
+                            RegControl::CR12 => "CR12".to_string(),
+                            RegControl::CR13 => "CR13".to_string(),
+                            RegControl::CR14 => "CR14".to_string(),
+                            RegControl::CR15 => "CR15".to_string(),
+                        }
+                    }
                 }
             }
             OperandType::Mem(mem) => {
@@ -564,8 +626,8 @@ pub enum VectorRegisterKind{
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MemoryOperandType{
-    vsib: Option<VectorRegisterKind>,
-    kind: MemoryOperandTypeKind
+    pub vsib: Option<VectorRegisterKind>,
+    pub kind: MemoryOperandTypeKind
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]

@@ -1,9 +1,10 @@
 use std::num::{NonZeroU8, ParseIntError};
 use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct OperandIndex(pub NonZeroU8);
