@@ -12,3 +12,4 @@ instruction-enum-generator2 = { path = "../instruction-enum-generator2" }
 wrapper-common = { path = "../wrapper-common" }
 bincode = "1"
 itertools = "0.10"
+string-concat-utils = { path = "../string-concat-utils" }

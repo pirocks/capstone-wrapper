@@ -10,4 +10,13 @@ thiserror = "1"
 itertools = "0.10"
 
 [workspace]
-members = [".", "instruction-enum-generator", "instruction-enum-generator2" ,"enum-generator","enum-def", "wrapper-common","uops-info"]
+members = [
+    ".",
+    "instruction-enum-generator",
+    "instruction-enum-generator2",
+    "enum-generator",
+    "enum-def",
+    "wrapper-common",
+    "uops-info",
+    "string-concat-utils"
+]

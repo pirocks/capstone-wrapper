@@ -8,7 +8,7 @@ use uops_info::{Extension, InstructionElement, Root};
 use crate::operand_index::OperandIndex;
 use crate::operand_type::{FromRawError, OperandType};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InstructionEncoding {
     pub bcast: Option<NonZeroU8>,
     pub mode_prefix_string: String,
