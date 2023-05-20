@@ -203,7 +203,9 @@ dependencies = [
 name = "enum-def"
 version = "0.1.0"
 dependencies = [
+ "capstone",
  "enum-generator",
+ "itertools",
  "wrapper-common",
 ]
 

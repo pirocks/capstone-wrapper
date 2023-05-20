@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 enum-generator = {path = "../enum-generator"}
 wrapper-common = {path = "../wrapper-common"}
+capstone = "0.11"
+itertools = "0.10"
