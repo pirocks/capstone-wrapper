@@ -1,7 +1,6 @@
 extern crate proc_macro;
 
-use proc_macro::{quote, TokenStream};
-use std::arch::asm;
+use proc_macro::{TokenStream};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::num::NonZeroU8;
@@ -44,10 +43,6 @@ impl InstructionNamePretty {
     pub fn new(instruction_name: &InstructionName) -> Self {
         InstructionNamePretty(instruction_name.0.replace("{evex} ", "vex").replace("REPE ", "repe"))
     }
-}
-
-struct VariantPrettyNames {
-    inner: Vec<VariantNamePretty>,
 }
 
 struct VariantEncodingGeneratorData {
@@ -293,7 +288,7 @@ impl VariantEncodingGeneratorData {
                     }
                 }
             }
-            OperandType::Mem(mem) => {
+            OperandType::Mem(_) => {
                 "MemoryOperand"
             }
             OperandType::Imm(imm) => {
@@ -429,16 +424,35 @@ pub fn make_from_detail(_: TokenStream) -> TokenStream {
         instruction_encoding_enum.push_str(instruction_name.0.as_str());
         instruction_encoding_enum.push_str(" { ");
         instruction_encoding_enum.push_str(" pub fn from_detail(detail: &X86InsnDetail) -> Self {");
-        instruction_encoding_enum.push_str(" let operands = detail.operands().collect_vec();");
-        instruction_encoding_enum.push_str("todo!()");
-        for variant_data in variants.iter() {
+        instruction_encoding_enum.push_str(" let operands: Vec<X86Operand> = detail.operands().collect_vec(); ");
+        instruction_encoding_enum.push_str(" let operands = operands.iter().map(|operand|Operand::from_capstone(operand)).collect_vec(); ");
+        for (variant_i, variant_data) in variants.iter().enumerate() {
             let encoding = &variant_data.encoding;
-            for (index, operand_type) in encoding.operand_type_names.iter() {
-                instruction_encoding_enum.push_str(format!("let operand = operands[{}];", index.0.get()).as_str())
+            instruction_encoding_enum.push_str(format!("let is_this_variant_{variant_i} = ").as_str());
+            for (index, operand_type) in encoding.operands.iter() {
+                instruction_encoding_enum.push_str(format!("operands.len() >= {} && {}.is_of_type(&operands[{}]) && ",
+                                                           index.0.get(),
+                                                           operand_type.to_declaration_string(),
+                                                           index.0.get())
+                    .as_str());
             }
+            instruction_encoding_enum.push_str(" true;");
         }
-        instruction_encoding_enum.push_str(" ");
-        instruction_encoding_enum.push_str(" }");
+        for (variant_i, variant_data) in variants.iter().enumerate() {
+            instruction_encoding_enum.push_str(format!("if is_this_variant_{variant_i}").as_str());
+            instruction_encoding_enum.push_str("{");
+            instruction_encoding_enum.push_str(format!("return Self::{}{{", variant_data.variant_name.0.as_str()).as_str());
+            for (idx, name) in variant_data.encoding.operand_names.iter() {
+                let type_string = variant_data.encoding.operand_type_names.get(idx).unwrap();
+                let unwrap_name = type_string.to_ascii_lowercase();
+                instruction_encoding_enum.push_str(format!("{} : operands[{}].unwrap_{}()", name.as_str(), idx.0, unwrap_name).as_str());
+                instruction_encoding_enum.push_str(" , ");
+            }
+            instruction_encoding_enum.push_str("};");
+            instruction_encoding_enum.push_str("}");
+        }
+        instruction_encoding_enum.push_str("panic!()");
+        instruction_encoding_enum.push_str(" } ");
         instruction_encoding_enum.push_str(" } ");
         let token_stream: TokenStream = instruction_encoding_enum.parse().unwrap();
         res.extend(token_stream);

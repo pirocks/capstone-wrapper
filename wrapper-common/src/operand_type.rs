@@ -2,12 +2,16 @@ use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter;
+use capstone::arch::x86::{X86Operand, X86OperandType};
+use itertools::Itertools;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::operand_index::OperandIndexError;
+use crate::operands::Operand;
 use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegControl, RegControlExtra, RegFloat, RegFloatControl, RegisterType, RegMask, RegSegment, RegSegmentBase, RegSpecial, RegXMM, RegZMM};
+
 
 #[derive(Debug, Error)]
 pub enum FromRawError {
@@ -63,6 +67,184 @@ fn single_set<T: Eq + PartialEq + Hash + Debug>(t: T) -> HashSet<T> {
 
 
 impl OperandType {
+    pub fn to_declaration_string(&self) -> String{
+        match self {
+            OperandType::Reg(reg) => {
+                let reg = match reg {
+                    RegisterType::AllMmx => "RegisterType::AllMmx".to_string(),
+                    RegisterType::AllXmm16 => "RegisterType::AllXmm16".to_string(),
+                    RegisterType::AllXmm32 => "RegisterType::AllXmm32".to_string(),
+                    RegisterType::AllYmm16 => "RegisterType::AllYmm16".to_string(),
+                    RegisterType::AllYmm32 => "RegisterType::AllYmm32".to_string(),
+                    RegisterType::AllZmm32 => "RegisterType::AllZmm32".to_string(),
+                    RegisterType::AllTmm => "RegisterType::AllTmm".to_string(),
+                    RegisterType::AllMask => "RegisterType::AllMask".to_string(),
+                    RegisterType::AllGP64WithoutRIP => "RegisterType::AllGP64WithoutRIP".to_string(),
+                    RegisterType::AllGP64WithRIP => "RegisterType::AllGP64WithRIP".to_string(),
+                    RegisterType::AllGP32WithoutRIP => "RegisterType::AllGP32WithoutRIP".to_string(),
+                    RegisterType::AllGP32WithRIP => "RegisterType::AllGP32WithRIP".to_string(),
+                    RegisterType::AllGP16WithoutRIP => "RegisterType::AllGP16WithoutRIP".to_string(),
+                    RegisterType::AllGP16WithRIP => "RegisterType::AllGP16WithRIP".to_string(),
+                    RegisterType::AllGP8 => "RegisterType::AllGP8".to_string(),
+                    RegisterType::AllFloat => "RegisterType::AllFloat".to_string(),
+                    RegisterType::AllBnd => "RegisterType::AllBnd".to_string(),
+                    RegisterType::AllSegment => "RegisterType::AllSegment".to_string(),
+                    RegisterType::AllDebug => "RegisterType::AllDebug".to_string(),
+                    RegisterType::SingleXmm(inner) => format!("RegisterType::SingleXmm({})", inner.to_declaration_string()),
+                    RegisterType::SingleGP8(inner) => format!("RegisterType::SingleGP8({})", inner.to_declaration_string()),
+                    RegisterType::SingleGP16(inner) => format!("RegisterType::SingleGP16({})", inner.to_declaration_string()),
+                    RegisterType::SingleGP32(single) => format!("RegisterType::SingleGP32({})", single.to_declaration_string()),
+                    RegisterType::SingleGP64(inner) => format!("RegisterType::SingleGP64({})", inner.to_declaration_string()),
+                    RegisterType::SingleSegment(inner) => format!("RegisterType::SingleSegment({})", inner.to_declaration_string()),
+                    RegisterType::SingleSegmentBase(inner) => format!("RegisterType::SingleSegmentBase({})", inner.to_declaration_string()),
+                    RegisterType::SingleFloat(float) => {
+                        let float = match float {
+                            RegFloat::ST0 => "RegFloat::ST0".to_string(),
+                            RegFloat::ST1 => "RegFloat::ST1".to_string(),
+                            RegFloat::ST2 => "RegFloat::ST2".to_string(),
+                            RegFloat::ST3 => "RegFloat::ST3".to_string(),
+                            RegFloat::ST4 => "RegFloat::ST4".to_string(),
+                            RegFloat::ST5 => "RegFloat::ST5".to_string(),
+                            RegFloat::ST6 => "RegFloat::ST6".to_string(),
+                            RegFloat::ST7 => "RegFloat::ST7".to_string(),
+                        };
+                        format!("RegisterType::SingleFloat({float})")
+                    },
+                    RegisterType::SingleControl(control) => format!("RegisterType::SingleControl({})",control.to_declaration_string()),
+                    RegisterType::SingleSpecial(special) => format!("RegisterType::SingleSpecial({})",special.to_declaration_string()),
+                    RegisterType::SingleFloatControl(float_control) => format!("RegisterType::SingleFloatControl({})",float_control.to_declaration_string()),
+                    RegisterType::SomeSegment(inner) => {
+                        format!("RegisterType::SomeSegment([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeXmm(inner) => {
+                        format!("RegisterType::SomeXmm([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeZmm(inner) => {
+                        format!("RegisterType::SomeZmm([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeMask(inner) => {
+                        format!("RegisterType::SomeMask([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeGP32(inner) => {
+                        format!("RegisterType::SomeGP32([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeGP16(inner) => {
+                        format!("RegisterType::SomeGP16([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeGP8(inner) => {
+                        format!("RegisterType::SomeGP8([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeControl(inner) => {
+                        format!("RegisterType::SomeControl([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                    RegisterType::SomeControlExtra(inner) => {
+                        format!("RegisterType::SomeControlExtra([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
+                    },
+                };
+                format!("OperandType::Reg({reg})")
+            }
+            OperandType::Mem(MemoryOperandType{ vsib, kind }) => {
+                let vsib = match vsib {
+                    None => "None".to_string(),
+                    Some(vrk) => match vrk {
+                        VectorRegisterKind::XMM => "Some(VectorRegisterKind::XMM)".to_string(),
+                        VectorRegisterKind::YMM => "Some(VectorRegisterKind::YMM)".to_string(),
+                        VectorRegisterKind::ZMM => "Some(VectorRegisterKind::ZMM)".to_string(),
+                    }
+                };
+                let kind = match kind {
+                    MemoryOperandTypeKind::MemTile => "MemoryOperandTypeKind::MemTile".to_string(),
+                    MemoryOperandTypeKind::MemStruct => "MemoryOperandTypeKind::MemStruct".to_string(),
+                    MemoryOperandTypeKind::Mem512 => "MemoryOperandTypeKind::Mem512".to_string(),
+                    MemoryOperandTypeKind::Mem384 => "MemoryOperandTypeKind::Mem384".to_string(),
+                    MemoryOperandTypeKind::Mem320 => "MemoryOperandTypeKind::Mem320".to_string(),
+                    MemoryOperandTypeKind::Mem256 => "MemoryOperandTypeKind::Mem256".to_string(),
+                    MemoryOperandTypeKind::Mem192 => "MemoryOperandTypeKind::Mem192".to_string(),
+                    MemoryOperandTypeKind::Mem128 => "MemoryOperandTypeKind::Mem128".to_string(),
+                    MemoryOperandTypeKind::Mem160 => "MemoryOperandTypeKind::Mem160".to_string(),
+                    MemoryOperandTypeKind::Mem80 => "MemoryOperandTypeKind::Mem80".to_string(),
+                    MemoryOperandTypeKind::Mem64 => "MemoryOperandTypeKind::Mem64".to_string(),
+                    MemoryOperandTypeKind::Mem48 => "MemoryOperandTypeKind::Mem48".to_string(),
+                    MemoryOperandTypeKind::Mem32 => "MemoryOperandTypeKind::Mem32".to_string(),
+                    MemoryOperandTypeKind::Mem16 => "MemoryOperandTypeKind::Mem16".to_string(),
+                    MemoryOperandTypeKind::Mem8 => "MemoryOperandTypeKind::Mem8".to_string(),
+                };
+                format!("OperandType::Mem(MemoryOperandType{{ vsib:{}, kind:{} }})", vsib, kind)
+            },
+            OperandType::Imm(imm) => {
+                match imm {
+                    Imm::Imm8 => "OperandType::Imm(Imm::Imm8)".to_string(),
+                    Imm::Imm16 => "OperandType::Imm(Imm::Imm16)".to_string(),
+                    Imm::Imm32 => "OperandType::Imm(Imm::Imm32)".to_string(),
+                    Imm::Imm64 => "OperandType::Imm(Imm::Imm64)".to_string()
+                }
+            },
+            OperandType::ImmSpecific(inner) => format!("OperandType::ImmSpecific({inner})"),
+            OperandType::Flags(Flags{}) => "OperandType::Flags(Flags{})".to_string(),
+            OperandType::Agen(Agen{}) => "OperandType::Agen(Agen{})".to_string(),
+            OperandType::Rel8 => "OperandType::Rel8".to_string(),
+            OperandType::Rel16 => "OperandType::Rel16".to_string(),
+            OperandType::Rel32 => "OperandType::Rel32".to_string(),
+        }
+    }
+
+    pub fn from_capstone(operand: &X86Operand) -> Self{
+        match operand.op_type {
+            X86OperandType::Reg(reg) => {
+                Self::Reg(todo!()/*Register::from_capstone(reg, operand)*/)
+            }
+            X86OperandType::Imm(imm) => {
+                if operand.size == 64{
+                    Self::Imm(Imm::Imm64)
+                }else {
+                    todo!()
+                }
+            }
+            X86OperandType::Mem(mem) => {
+                todo!()
+            }
+            X86OperandType::Invalid => {
+                todo!()
+            }
+        }
+    }
+
+    pub fn is_of_type(&self, operand: &Operand) -> bool{
+        todo!()
+    }
+
+    pub fn compatible_with(&self, other: &Self) -> bool {
+        match self {
+            OperandType::Reg(_) => {
+                todo!()
+            }
+            OperandType::Mem(_) => {
+                todo!()
+            }
+            OperandType::Imm(_) => {
+                todo!()
+            }
+            OperandType::ImmSpecific(_) => {
+                todo!()
+            }
+            OperandType::Flags(_) => {
+                todo!()
+            }
+            OperandType::Agen(_) => {
+                todo!()
+            }
+            OperandType::Rel8 => {
+                todo!()
+            }
+            OperandType::Rel16 => {
+                todo!()
+            }
+            OperandType::Rel32 => {
+                todo!()
+            }
+        }
+    }
+
     pub fn from_reg(val: impl AsRef<str>) -> Result<OperandType, OperandFromStr> {
         Ok(OperandType::Reg(match val.as_ref() {
             "RAX" => RegisterType::SingleGP64(Reg64WithRIP::RAX),

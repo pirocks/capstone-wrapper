@@ -6,18 +6,21 @@ use capstone::arch::DetailsArchInsn;
 use itertools::Itertools;
 use wrapper_common::registers::*;
 use wrapper_common::memory_operand::MemoryOperand;
+use wrapper_common::operand_type::{MemoryOperandType, MemoryOperandTypeKind, OperandType};
+use wrapper_common::operands::Operand;
+use capstone::arch::x86::X86Operand;
+use wrapper_common::operand_type::Agen;
+use wrapper_common::operand_type::Flags;
+use wrapper_common::operand_type::Imm;
+use wrapper_common::operand_type::VectorRegisterKind;
 
 make_enums!();
 make_from_detail!();
 
 #[cfg(test)]
 pub mod test {
-    use crate::*;
+    pub fn simple_dissasembl() {
 
-    #[test]
-    #[allow(unused)]
-    pub fn foo() {
-        todo!()
     }
 
     pub mod another;

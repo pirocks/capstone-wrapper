@@ -9,3 +9,5 @@ edition = "2021"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 uops-info = { path = "../uops-info" }
+capstone = "0.11"
+itertools = "0.10"

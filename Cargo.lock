@@ -1371,6 +1371,8 @@ dependencies = [
 name = "wrapper-common"
 version = "0.1.0"
 dependencies = [
+ "capstone",
+ "itertools",
  "serde",
  "thiserror",
  "uops-info",
