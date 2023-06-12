@@ -2,16 +2,15 @@ use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter;
+
 use capstone::arch::x86::{X86Operand, X86OperandType};
 use itertools::Itertools;
-
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::operand_index::OperandIndexError;
-use crate::operands::Operand;
-use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegControl, RegControlExtra, RegFloat, RegFloatControl, RegisterType, RegMask, RegSegment, RegSegmentBase, RegSpecial, RegXMM, RegZMM};
-
+use crate::operands::{Operand, OperandImm};
+use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegControl, RegControlExtra, RegFloat, RegFloatControl, Register, RegisterType, RegMask, RegSegment, RegSegmentBase, RegSpecial, RegXMM, RegZMM};
 
 #[derive(Debug, Error)]
 pub enum FromRawError {
@@ -67,7 +66,7 @@ fn single_set<T: Eq + PartialEq + Hash + Debug>(t: T) -> HashSet<T> {
 
 
 impl OperandType {
-    pub fn to_declaration_string(&self) -> String{
+    pub fn to_declaration_string(&self) -> String {
         match self {
             OperandType::Reg(reg) => {
                 let reg = match reg {
@@ -109,41 +108,41 @@ impl OperandType {
                             RegFloat::ST7 => "RegFloat::ST7".to_string(),
                         };
                         format!("RegisterType::SingleFloat({float})")
-                    },
-                    RegisterType::SingleControl(control) => format!("RegisterType::SingleControl({})",control.to_declaration_string()),
-                    RegisterType::SingleSpecial(special) => format!("RegisterType::SingleSpecial({})",special.to_declaration_string()),
-                    RegisterType::SingleFloatControl(float_control) => format!("RegisterType::SingleFloatControl({})",float_control.to_declaration_string()),
+                    }
+                    RegisterType::SingleControl(control) => format!("RegisterType::SingleControl({})", control.to_declaration_string()),
+                    RegisterType::SingleSpecial(special) => format!("RegisterType::SingleSpecial({})", special.to_declaration_string()),
+                    RegisterType::SingleFloatControl(float_control) => format!("RegisterType::SingleFloatControl({})", float_control.to_declaration_string()),
                     RegisterType::SomeSegment(inner) => {
-                        format!("RegisterType::SomeSegment([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeSegment([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeXmm(inner) => {
-                        format!("RegisterType::SomeXmm([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeXmm([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeZmm(inner) => {
-                        format!("RegisterType::SomeZmm([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeZmm([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeMask(inner) => {
-                        format!("RegisterType::SomeMask([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeMask([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeGP32(inner) => {
-                        format!("RegisterType::SomeGP32([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeGP32([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeGP16(inner) => {
-                        format!("RegisterType::SomeGP16([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeGP16([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeGP8(inner) => {
-                        format!("RegisterType::SomeGP8([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeGP8([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeControl(inner) => {
-                        format!("RegisterType::SomeControl([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeControl([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                     RegisterType::SomeControlExtra(inner) => {
-                        format!("RegisterType::SomeControlExtra([{}].into_iter().collect())", inner.iter().map(|inner|inner.to_declaration_string()).join(","))
-                    },
+                        format!("RegisterType::SomeControlExtra([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
+                    }
                 };
                 format!("OperandType::Reg({reg})")
             }
-            OperandType::Mem(MemoryOperandType{ vsib, kind }) => {
+            OperandType::Mem(MemoryOperandType { vsib, kind }) => {
                 let vsib = match vsib {
                     None => "None".to_string(),
                     Some(vrk) => match vrk {
@@ -170,7 +169,7 @@ impl OperandType {
                     MemoryOperandTypeKind::Mem8 => "MemoryOperandTypeKind::Mem8".to_string(),
                 };
                 format!("OperandType::Mem(MemoryOperandType{{ vsib:{}, kind:{} }})", vsib, kind)
-            },
+            }
             OperandType::Imm(imm) => {
                 match imm {
                     Imm::Imm8 => "OperandType::Imm(Imm::Imm8)".to_string(),
@@ -178,25 +177,25 @@ impl OperandType {
                     Imm::Imm32 => "OperandType::Imm(Imm::Imm32)".to_string(),
                     Imm::Imm64 => "OperandType::Imm(Imm::Imm64)".to_string()
                 }
-            },
+            }
             OperandType::ImmSpecific(inner) => format!("OperandType::ImmSpecific({inner})"),
-            OperandType::Flags(Flags{}) => "OperandType::Flags(Flags{})".to_string(),
-            OperandType::Agen(Agen{}) => "OperandType::Agen(Agen{})".to_string(),
+            OperandType::Flags(Flags {}) => "OperandType::Flags(Flags{})".to_string(),
+            OperandType::Agen(Agen {}) => "OperandType::Agen(Agen{})".to_string(),
             OperandType::Rel8 => "OperandType::Rel8".to_string(),
             OperandType::Rel16 => "OperandType::Rel16".to_string(),
             OperandType::Rel32 => "OperandType::Rel32".to_string(),
         }
     }
 
-    pub fn from_capstone(operand: &X86Operand) -> Self{
+/*    pub fn from_capstone(operand: &X86Operand) -> Self {
         match operand.op_type {
             X86OperandType::Reg(reg) => {
-                Self::Reg(todo!()/*Register::from_capstone(reg, operand)*/)
+                Self::Reg(Register::from_capstone(reg, operand))
             }
             X86OperandType::Imm(imm) => {
-                if operand.size == 64{
+                if operand.size == 64 {
                     Self::Imm(Imm::Imm64)
-                }else {
+                } else {
                     todo!()
                 }
             }
@@ -208,9 +207,105 @@ impl OperandType {
             }
         }
     }
+*/
+    pub fn is_of_type(&self, operand: &Operand) -> bool {
+        match self {
+            OperandType::Reg(reg_type) => {
+                match operand {
+                    Operand::Reg(reg) => {
+                        reg_type.is_of_type(reg)
+                    }
+                    _ => false
+                }
+            }
+            OperandType::Mem(mem_type) => {
+                match operand {
+                    Operand::Reg(_) |
+                    Operand::Imm(_) => false,
 
-    pub fn is_of_type(&self, operand: &Operand) -> bool{
-        todo!()
+                }
+            }
+            OperandType::Imm(imm_type) => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(imm) => {
+                        match imm_type {
+                            Imm::Imm8 => matches!(imm,OperandImm::Imm8(_)),
+                            Imm::Imm16 => matches!(imm,OperandImm::Imm16(_)),
+                            Imm::Imm32 => matches!(imm,OperandImm::Imm32(_)),
+                            Imm::Imm64 => matches!(imm,OperandImm::Imm64(_)),
+                        }
+                    }
+                }
+            }
+            OperandType::ImmSpecific(imm_specific) => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(imm_inner) => {
+                        match imm_inner {
+                            OperandImm::Imm64(inner) => *inner as i64 == *imm_specific,
+                            OperandImm::Imm32(inner) => *inner as i64 == *imm_specific,
+                            OperandImm::Imm16(inner) => *inner as i64 == *imm_specific,
+                            OperandImm::Imm8(inner) => *inner as i64 == *imm_specific,
+                        }
+                    }
+                }
+            }
+            OperandType::Flags(_) => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(_) => {
+                        todo!()
+                    }
+                }
+            }
+            OperandType::Agen(_) => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(_) => {
+                        todo!()
+                    }
+                }
+            }
+            OperandType::Rel8 => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(_) => {
+                        todo!()
+                    }
+                }
+            }
+            OperandType::Rel16 => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(_) => {
+                        todo!()
+                    }
+                }
+            }
+            OperandType::Rel32 => {
+                match operand {
+                    Operand::Reg(_) => {
+                        false
+                    }
+                    Operand::Imm(_) => {
+                        todo!()
+                    }
+                }
+            }
+        }
     }
 
     pub fn compatible_with(&self, other: &Self) -> bool {
@@ -338,7 +433,7 @@ impl OperandType {
         xtype: Option<impl AsRef<str>>,
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
-        vsib: Option<impl AsRef<str>>
+        vsib: Option<impl AsRef<str>>,
     ) -> Result<OperandType, OperandFromStr> {
         let memory_operand_kind = match (xtype.as_ref().map(|s| s.as_ref()), memory_prefix.as_ref().map(|s| s.as_ref()), width.as_ref().map(|s| s.as_ref())) {
             (Some("struct"), _, Some("80")) => MemoryOperandTypeKind::Mem80,
@@ -376,8 +471,8 @@ impl OperandType {
             }
         };
 
-        Ok(OperandType::Mem(MemoryOperandType{
-            vsib: match vsib.as_ref().map(|s|s.as_ref()) {
+        Ok(OperandType::Mem(MemoryOperandType {
+            vsib: match vsib.as_ref().map(|s| s.as_ref()) {
                 None => None,
                 Some("XMM") => Some(VectorRegisterKind::XMM),
                 Some("YMM") => Some(VectorRegisterKind::YMM),
@@ -394,7 +489,7 @@ impl OperandType {
         val: Option<impl AsRef<str>>,
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
-        vsib: Option<impl AsRef<str>>
+        vsib: Option<impl AsRef<str>>,
     ) -> Result<OperandType, OperandFromStr> {
         match r#type.as_str() {
             "mem" => {
@@ -493,7 +588,7 @@ impl OperandType {
                             RegFloat::ST6 => "ST6".to_string(),
                             RegFloat::ST7 => "ST7".to_string(),
                         }
-                    },
+                    }
                     RegisterType::AllBnd => "BND".to_string(),
                     RegisterType::AllSegment => "SEG".to_string(),
                     RegisterType::SomeSegment(_) => "SEG".to_string(),
@@ -800,16 +895,16 @@ impl OperandType {
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub enum VectorRegisterKind{
+pub enum VectorRegisterKind {
     XMM,
     YMM,
-    ZMM
+    ZMM,
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
-pub struct MemoryOperandType{
+pub struct MemoryOperandType {
     pub vsib: Option<VectorRegisterKind>,
-    pub kind: MemoryOperandTypeKind
+    pub kind: MemoryOperandTypeKind,
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]

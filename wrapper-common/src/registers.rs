@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
 use capstone::{RegId};
+use capstone::arch::tms320c64x::Tms320c64xMemModify::No;
 use capstone::arch::x86::X86Operand;
 use serde::{Deserialize, Serialize};
+use crate::registers::Register::Segment;
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegMMX {
@@ -308,6 +310,29 @@ pub enum Reg64WithRIP {
 }
 
 impl Reg64WithRIP {
+    pub fn try_unwrap_reg64_without_rip(&self) -> Option<Reg64WithoutRIP>{
+        match self {
+            Reg64WithRIP::RAX => Some(Reg64WithoutRIP::RAX),
+            Reg64WithRIP::RBX => Some(Reg64WithoutRIP::RBX),
+            Reg64WithRIP::RCX => Some(Reg64WithoutRIP::RCX),
+            Reg64WithRIP::RDX => Some(Reg64WithoutRIP::RDX),
+            Reg64WithRIP::RSI => Some(Reg64WithoutRIP::RSI),
+            Reg64WithRIP::RDI => Some(Reg64WithoutRIP::RDI),
+            Reg64WithRIP::RBP => Some(Reg64WithoutRIP::RBP),
+            Reg64WithRIP::RSP => Some(Reg64WithoutRIP::RSP),
+            Reg64WithRIP::R8 => Some(Reg64WithoutRIP::R8),
+            Reg64WithRIP::R9 => Some(Reg64WithoutRIP::R9),
+            Reg64WithRIP::R10 => Some(Reg64WithoutRIP::R10),
+            Reg64WithRIP::R11 => Some(Reg64WithoutRIP::R11),
+            Reg64WithRIP::R12 => Some(Reg64WithoutRIP::R12),
+            Reg64WithRIP::R13 => Some(Reg64WithoutRIP::R13),
+            Reg64WithRIP::R14 => Some(Reg64WithoutRIP::R14),
+            Reg64WithRIP::R15 => Some(Reg64WithoutRIP::R15),
+            Reg64WithRIP::RIP => None,
+        }
+    }
+
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             Reg64WithRIP::RAX => "Reg64WithRIP::RAX".to_string(),
@@ -373,6 +398,28 @@ pub enum Reg32WithRIP {
 }
 
 impl Reg32WithRIP {
+    pub fn try_unwrap_reg32_without_rip(&self) -> Option<Reg32WithoutRIP>{
+        match self {
+            Reg32WithRIP::EAX => Some(Reg32WithoutRIP::EAX),
+            Reg32WithRIP::EBX => Some(Reg32WithoutRIP::EBX),
+            Reg32WithRIP::ECX => Some(Reg32WithoutRIP::ECX),
+            Reg32WithRIP::EDX => Some(Reg32WithoutRIP::EDX),
+            Reg32WithRIP::ESI => Some(Reg32WithoutRIP::ESI),
+            Reg32WithRIP::EDI => Some(Reg32WithoutRIP::EDI),
+            Reg32WithRIP::EBP => Some(Reg32WithoutRIP::EBP),
+            Reg32WithRIP::ESP => Some(Reg32WithoutRIP::ESP),
+            Reg32WithRIP::R8D => Some(Reg32WithoutRIP::R8D),
+            Reg32WithRIP::R9D => Some(Reg32WithoutRIP::R9D),
+            Reg32WithRIP::R10D => Some(Reg32WithoutRIP::R10D),
+            Reg32WithRIP::R11D => Some(Reg32WithoutRIP::R11D),
+            Reg32WithRIP::R12D => Some(Reg32WithoutRIP::R12D),
+            Reg32WithRIP::R13D => Some(Reg32WithoutRIP::R13D),
+            Reg32WithRIP::R14D => Some(Reg32WithoutRIP::R14D),
+            Reg32WithRIP::R15D => Some(Reg32WithoutRIP::R15D),
+            Reg32WithRIP::EIP => None,
+        }
+    }
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             Reg32WithRIP::EAX => "Reg32WithRIP::EAX".to_string(),
@@ -438,6 +485,29 @@ pub enum Reg16WithRIP {
 }
 
 impl Reg16WithRIP {
+    pub fn try_unwrap_reg16_without_rip(&self) -> Option<Reg16WithoutRIP>{
+        match self {
+            Reg16WithRIP::AX => Some(Reg16WithoutRIP::AX),
+            Reg16WithRIP::BX => Some(Reg16WithoutRIP::BX),
+            Reg16WithRIP::CX => Some(Reg16WithoutRIP::CX),
+            Reg16WithRIP::DX => Some(Reg16WithoutRIP::DX),
+            Reg16WithRIP::SI => Some(Reg16WithoutRIP::SI),
+            Reg16WithRIP::DI => Some(Reg16WithoutRIP::DI),
+            Reg16WithRIP::BP => Some(Reg16WithoutRIP::BP),
+            Reg16WithRIP::SP => Some(Reg16WithoutRIP::SP),
+            Reg16WithRIP::R8W => Some(Reg16WithoutRIP::R8W),
+            Reg16WithRIP::R9W => Some(Reg16WithoutRIP::R9W),
+            Reg16WithRIP::R10W => Some(Reg16WithoutRIP::R10W),
+            Reg16WithRIP::R11W => Some(Reg16WithoutRIP::R11W),
+            Reg16WithRIP::R12W => Some(Reg16WithoutRIP::R12W),
+            Reg16WithRIP::R13W => Some(Reg16WithoutRIP::R13W),
+            Reg16WithRIP::R14W => Some(Reg16WithoutRIP::R14W),
+            Reg16WithRIP::R15W => Some(Reg16WithoutRIP::R15W),
+            Reg16WithRIP::IP => None,
+        }
+    }
+
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             Reg16WithRIP::AX => "Reg16WithRIP::AX".to_string(),
@@ -774,6 +844,216 @@ pub enum RegisterType {
     SingleFloatControl(RegFloatControl),
 }
 
+impl RegisterType {
+    pub fn is_of_type(&self, reg: &Register) -> bool {
+        match self {
+            RegisterType::AllMmx => {
+                match reg {
+                    Register::Mmx(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::AllXmm16 => {
+                todo!()
+            }
+            RegisterType::AllXmm32 => {
+                match reg {
+                    Register::Xmm(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeXmm(_) => {
+                todo!()
+            }
+            RegisterType::SingleXmm(_) => {
+                todo!()
+            }
+            RegisterType::AllYmm16 => {
+                todo!()
+            }
+            RegisterType::AllYmm32 => {
+                match reg {
+                    Register::Ymm(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::AllZmm32 => {
+                match reg {
+                    Register::Zmm(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeZmm(_) => {
+                todo!()
+            }
+            RegisterType::AllTmm => {
+                match reg {
+                    Register::Tmm(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::AllMask => {
+                match reg {
+                    Register::Mask(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeMask(_) => {
+                todo!()
+            }
+            RegisterType::AllGP64WithoutRIP => {
+                match reg {
+                    Register::GP64(reg) => {
+                        if let Reg64WithRIP::RIP = reg{
+                            false
+                        }else {
+                            true
+                        }
+                    }
+                    _ => {
+                        false
+                    }
+                }
+            }
+            RegisterType::AllGP64WithRIP => {
+                todo!()
+            }
+            RegisterType::SingleGP64(single_gp64) => {
+                match reg {
+                    Register::GP64(gp64) => gp64 == single_gp64,
+                    _ => false
+                }
+            }
+            RegisterType::AllGP32WithoutRIP => {
+                match reg {
+                    Register::GP32(reg) => {
+                        if let Reg32WithRIP::EIP = reg{
+                            false
+                        }else {
+                            true
+                        }
+                    }
+                    _ => false
+                }
+            }
+            RegisterType::AllGP32WithRIP => {
+                match reg {
+                    Register::GP32(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeGP32(_) => {
+                todo!()
+            }
+            RegisterType::SingleGP32(single_gp32) => {
+                match reg {
+                    Register::GP32(gp32) => gp32 == single_gp32,
+                    _ => false
+                }
+            }
+            RegisterType::AllGP16WithRIP => {
+                todo!()
+            }
+            RegisterType::AllGP16WithoutRIP => {
+                match reg {
+                    Register::GP16(gp16) => {
+                        if let Reg16WithRIP::IP = gp16{
+                            false
+                        }else {
+                            true
+                        }
+                    }
+                    _ => false
+                }
+            }
+            RegisterType::SomeGP16(_) => {
+                todo!()
+            }
+            RegisterType::SingleGP16(single_reg16) => {
+                match reg {
+                    Register::GP16(gp16) => gp16 == single_reg16,
+                    _ => false
+                }
+            }
+            RegisterType::AllGP8 => {
+                match reg {
+                    Register::GP8(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeGP8(regs) => {
+                match reg {
+                    Register::GP8(gp8) => regs.contains(&gp8),
+                    _ => false
+                }
+            }
+            RegisterType::SingleGP8(single_gp8) => {
+                match reg {
+                    Register::GP8(gp8) => gp8 == single_gp8,
+                    _ => false
+                }
+            }
+            RegisterType::AllFloat => {
+                match reg {
+                    Register::Float(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SingleFloat(_) => {
+                todo!()
+            }
+            RegisterType::AllBnd => {
+                match reg {
+                    Register::Bnd(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::AllSegment => {
+                match reg {
+                    Register::Segment(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SingleSegment(seg) => {
+                match reg {
+                    Register::Segment(_) => todo!(),
+                    _ => false
+                }
+            }
+            RegisterType::SomeSegment(some_segs) => {
+                match reg {
+                    Register::Segment(_) => todo!(),
+                    _ => false
+                }
+            }
+            RegisterType::AllDebug => {
+                match reg {
+                    Register::Debug(_) => true,
+                    _ => false
+                }
+            }
+            RegisterType::SomeControl(_) => {
+                todo!()
+            }
+            RegisterType::SingleControl(_) => {
+                todo!()
+            }
+            RegisterType::SomeControlExtra(_) => {
+                todo!()
+            }
+            RegisterType::SingleSegmentBase(_) => {
+                todo!()
+            }
+            RegisterType::SingleSpecial(_) => {
+                todo!()
+            }
+            RegisterType::SingleFloatControl(_) => {
+                todo!()
+            }
+        }
+    }
+}
+
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Register {
@@ -791,7 +1071,8 @@ pub enum Register {
     Bnd(RegBnd),
     Special(RegSpecial),
     Debug(RegDebug),
-    Control(RegControl)
+    Control(RegControl),
+    Segment(())
 }
 
 
@@ -849,15 +1130,26 @@ impl Register {
     }
 
     pub fn unwrap_reg64withoutrip(&self) -> Reg64WithoutRIP {
-        todo!()
+        match self {
+            Register::GP64(reg64) => {
+                reg64.try_unwrap_reg64_without_rip().unwrap()
+            }
+            _ => panic!()
+        }
     }
 
     pub fn unwrap_reg32withoutrip(&self) -> Reg32WithoutRIP {
-        todo!()
+        match self {
+            Register::GP32(gp32) => gp32.try_unwrap_reg32_without_rip().unwrap(),
+            _ => panic!()
+        }
     }
 
     pub fn unwrap_reg16withoutrip(&self) -> Reg16WithoutRIP {
-        todo!()
+        match self {
+            Register::GP16(gp16) => gp16.try_unwrap_reg16_without_rip().unwrap(),
+            _ => panic!()
+        }
     }
 
     pub fn unwrap_regbnd(&self) -> RegBnd {
@@ -937,22 +1229,22 @@ impl Register {
                 Self::GP16(Reg16WithRIP::DX)
             }
             X86_REG_EAX => {
-                todo!()
+                Self::GP32(Reg32WithRIP::EAX)
             }
             X86_REG_EBP => {
-                todo!()
+                Self::GP32(Reg32WithRIP::EBP)
             }
             X86_REG_EBX => {
-                todo!()
+                Self::GP32(Reg32WithRIP::EBX)
             }
             X86_REG_ECX => {
-                todo!()
+                Self::GP32(Reg32WithRIP::ECX)
             }
             X86_REG_EDI => {
-                todo!()
+                Self::GP32(Reg32WithRIP::EDI)
             }
             X86_REG_EDX => {
-                todo!()
+                Self::GP32(Reg32WithRIP::EDX)
             }
             X86_REG_EFLAGS => {
                 todo!()
@@ -985,34 +1277,34 @@ impl Register {
                 todo!()
             }
             X86_REG_RAX => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RAX)
             }
             X86_REG_RBP => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RBP)
             }
             X86_REG_RBX => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RBX)
             }
             X86_REG_RCX => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RCX)
             }
             X86_REG_RDI => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RDI)
             }
             X86_REG_RDX => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RDX)
             }
             X86_REG_RIP => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RIP)
             }
             X86_REG_RIZ => {
                 todo!()
             }
             X86_REG_RSI => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RSI)
             }
             X86_REG_RSP => {
-                todo!()
+                Self::GP64(Reg64WithRIP::RSP)
             }
             X86_REG_SI => {
                 todo!()
@@ -1582,28 +1874,28 @@ impl Register {
                 todo!()
             }
             X86_REG_R8W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R8W)
             }
             X86_REG_R9W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R9W)
             }
             X86_REG_R10W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R10W)
             }
             X86_REG_R11W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R11W)
             }
             X86_REG_R12W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R12W)
             }
             X86_REG_R13W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R13W)
             }
             X86_REG_R14W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R14W)
             }
             X86_REG_R15W => {
-                todo!()
+                Self::GP16(Reg16WithRIP::R15W)
             }
             X86_REG_BND0 => {
                 todo!()

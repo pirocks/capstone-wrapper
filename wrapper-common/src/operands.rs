@@ -4,8 +4,17 @@ use serde::{Deserialize, Serialize};
 use crate::memory_operand::MemoryOperand;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum OperandImm{
+    Imm64(i64),
+    Imm32(i32),
+    Imm16(i16),
+    Imm8(i8),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Operand {
     Reg(Register),
+    Imm(OperandImm),
 }
 
 impl Operand{
@@ -14,10 +23,22 @@ impl Operand{
             X86OperandType::Reg(reg) => {
                 Self::Reg(Register::from_capstone(reg, operand))
             }
-            X86OperandType::Imm(_) => {
-                todo!()
+            X86OperandType::Imm(imm) => {
+                if operand.size == 8{
+                    Self::Imm(OperandImm::Imm64(imm))
+                } else if operand.size == 4{
+                    Self::Imm(OperandImm::Imm32(imm as i32))
+                } else if operand.size == 2{
+                    Self::Imm(OperandImm::Imm16(imm as i16))
+                }else if operand.size == 1{
+                    Self::Imm(OperandImm::Imm8(imm as i8))
+                }
+                else {
+                    dbg!(operand.size);
+                    todo!()
+                }
             }
-            X86OperandType::Mem(_) => {
+            X86OperandType::Mem(mem) => {
                 todo!()
             }
             X86OperandType::Invalid => {
@@ -32,7 +53,8 @@ impl Operand{
 
     pub fn unwrap_reg(&self) -> &Register{
         match self {
-            Operand::Reg(reg) => reg
+            Operand::Reg(reg) => reg,
+            _ => panic!()
         }
     }
 

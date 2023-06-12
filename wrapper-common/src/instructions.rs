@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::mem::transmute;
 use std::num::NonZeroU8;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+
 use uops_info::{Extension, InstructionElement, Root};
 
 use crate::operand_index::OperandIndex;
@@ -34,17 +36,22 @@ impl InstructionEncoding {
                     memory_prefix,
                     val,
                     vsib,
+                    suppressed,
                     ..
                 } = operand {
-                    let operand_index = OperandIndex::from_str(idx)?;
-                    let duplicate = operands_res.insert(operand_index,
+                    let supressed = suppressed == &Some("1".to_string());
+                    if supressed {
+                        continue;
+                    }
+                    // let operand_index = OperandIndex::from_str(idx)?;
+                    let duplicate = operands_res.insert(OperandIndex(NonZeroU8::new((operands_res.len() + 1) as u8).unwrap()),
                                                         OperandType::new(
                                                             r#type,
                                                             xtype.as_ref(),
                                                             val.as_ref(),
                                                             memory_prefix.as_ref(),
                                                             width.as_ref(),
-                                                            vsib.as_ref()
+                                                            vsib.as_ref(),
                                                         )?).is_some();
                     if duplicate {
                         return Err(FromRawError::MultipleOperandsWithSameIndex);
@@ -63,7 +70,7 @@ impl InstructionEncoding {
                         None => None,
                     }
                 }
-            }
+            },
         })
     }
 }
@@ -95,7 +102,7 @@ impl Instructions {
             let Extension { name: _, instructions } = extension;
             if let Some(instructions) = instructions {
                 for instruction in instructions {
-                    let instruction_name = InstructionName::new(&instruction.asm);
+                    let instruction_name = InstructionName::new(&instruction.iclass);
                     instructions_res
                         .entry(instruction_name)
                         .or_insert(Instruction { encodings: vec![] })

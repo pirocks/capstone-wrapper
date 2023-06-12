@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum InstructionElement {
     #[serde(rename = "operand")]
     Operand {
+        suppressed: Option<String>,
         idx: String,
         r: Option<String>,
         w: Option<String>,
