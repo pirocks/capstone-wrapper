@@ -3,14 +3,13 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter;
 
-use capstone::arch::x86::{X86Operand, X86OperandType};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::operand_index::OperandIndexError;
 use crate::operands::{Operand, OperandImm};
-use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegControl, RegControlExtra, RegFloat, RegFloatControl, Register, RegisterType, RegMask, RegSegment, RegSegmentBase, RegSpecial, RegXMM, RegZMM};
+use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegControl, RegControlExtra, RegFloat, RegFloatControl, RegisterType, RegMask, RegSegment, RegSegmentBase, RegSpecial, RegXMM, RegZMM};
 
 #[derive(Debug, Error)]
 pub enum FromRawError {

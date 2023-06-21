@@ -18,5 +18,7 @@ members = [
     "enum-def",
     "wrapper-common",
     "uops-info",
-    "string-concat-utils"
+    "string-concat-utils",
+    "intel-pdf-parser",
+    "semantics"
 ]

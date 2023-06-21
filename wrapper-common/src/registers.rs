@@ -1,10 +1,8 @@
 use std::collections::HashSet;
 
 use capstone::{RegId};
-use capstone::arch::tms320c64x::Tms320c64xMemModify::No;
 use capstone::arch::x86::X86Operand;
 use serde::{Deserialize, Serialize};
-use crate::registers::Register::Segment;
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegMMX {

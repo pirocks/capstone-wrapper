@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::mem::transmute;
 use std::num::NonZeroU8;
 use std::str::FromStr;
 
