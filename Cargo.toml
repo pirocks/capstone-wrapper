@@ -20,5 +20,6 @@ members = [
     "uops-info",
     "string-concat-utils",
     "intel-pdf-parser",
-    "semantics"
+    "semantics",
+    "xed-table-parser"
 ]

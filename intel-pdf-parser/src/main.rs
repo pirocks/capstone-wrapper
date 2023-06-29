@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<()> {
     let mut instruction_operations = HashMap::new();
     let regex = Regex::new("(Intel C/C\\+\\+ Compiler Intrinsic Equivalent)|(Flags Affected)|(Protected Mode Exceptions)|(SIMD Floating-Point Exceptions)|(C/C\\+\\+ Compiler Intrinsic Equivalent)|(FPU Flags Affected)|(Numeric Exceptions)").unwrap();
     for (instr, instr_content) in instruction_contents {
-        if let Some((_, after_operation)) = try_split(instr_content.as_str(),"Operation"){
+        if let Some((_, after_operation)) = try_split(instr_content.as_str(),"Operation\n"){
             let operation = split_regex(after_operation, &regex).0;
             instruction_operations.insert(instr, Some(operation.to_string()));
         }else {
@@ -113,8 +113,8 @@ fn extract_instruction_contents(contents: Vec<UnExpandedInstruction>, after_cont
 }
 
 fn get_unexpanded(top_level: &str) -> (Vec<UnExpandedInstruction>, &str) {
-    let top_level = slice_after(slice_after(top_level, "Volume 2 (2A, 2B, 2C, & 2D):"), "Instruction Set Reference, A-Z");
-    let top_level = slice_after(top_level, "3.3       INSTRUCTIONS (A-L)");
+    let top_level = slice_after(slice_after(top_level, "Volume 2 (2A, 2B, 2C & 2D):"), "Instruction Set Reference, A-Z");
+    let top_level = slice_after(top_level, "3.2       INSTRUCTIONS (A-L)");
     let contents = slice_before(top_level, "APPENDIX A");
     let regex = Regex::new("\\s+(?P<instruction_name>[A-Z][0-9A-Za-z/\\[\\],]*—)").unwrap();
     (regex.find_iter(contents).map(|match_| {

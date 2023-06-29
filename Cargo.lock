@@ -1668,6 +1668,9 @@ dependencies = [
 [[package]]
 name = "semantics"
 version = "0.1.0"
+dependencies = [
+ "enum-def",
+]
 
 [[package]]
 name = "semver"
@@ -2523,6 +2526,10 @@ dependencies = [
  "bindgen",
  "target-lexicon",
 ]
+
+[[package]]
+name = "xed-table-parser"
+version = "0.1.0"
 
 [[package]]
 name = "xml-rs"
