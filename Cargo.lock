@@ -344,6 +344,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbdcdcb6d86f71c5e97409ad45898af11cbc995b4ee8112d59095a28d376c935"
 
 [[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2171,6 +2180,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-segmentation"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
+
+[[package]]
 name = "unicode-width"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2512,9 +2527,30 @@ version = "0.1.0"
 dependencies = [
  "capstone",
  "itertools",
+ "proc-macro2",
+ "quote",
  "serde",
  "thiserror",
  "uops-info",
+]
+
+[[package]]
+name = "xed-enum"
+version = "0.1.0"
+dependencies = [
+ "xed-enum-generator",
+]
+
+[[package]]
+name = "xed-enum-generator"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "quote",
+ "wrapper-common",
+ "xed-sys",
+ "xed-wrapper",
 ]
 
 [[package]]
@@ -2530,6 +2566,19 @@ dependencies = [
 [[package]]
 name = "xed-table-parser"
 version = "0.1.0"
+dependencies = [
+ "xed-sys",
+]
+
+[[package]]
+name = "xed-wrapper"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "wrapper-common",
+ "xed-sys",
+]
 
 [[package]]
 name = "xml-rs"

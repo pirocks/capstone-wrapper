@@ -38,7 +38,7 @@ impl Operand{
                     todo!()
                 }
             }
-            X86OperandType::Mem(mem) => {
+            X86OperandType::Mem(_mem) => {
                 todo!()
             }
             X86OperandType::Invalid => {

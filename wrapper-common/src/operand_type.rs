@@ -138,6 +138,12 @@ impl OperandType {
                     RegisterType::SomeControlExtra(inner) => {
                         format!("RegisterType::SomeControlExtra([{}].into_iter().collect())", inner.iter().map(|inner| inner.to_declaration_string()).join(","))
                     }
+                    RegisterType::Multiple(_) => {
+                        todo!()
+                    }
+                    RegisterType::AllControl => {
+                        todo!()
+                    }
                 };
                 format!("OperandType::Reg({reg})")
             }
@@ -217,7 +223,7 @@ impl OperandType {
                     _ => false
                 }
             }
-            OperandType::Mem(mem_type) => {
+            OperandType::Mem(_mem_type) => {
                 match operand {
                     Operand::Reg(_) |
                     Operand::Imm(_) => false,
@@ -307,7 +313,7 @@ impl OperandType {
         }
     }
 
-    pub fn compatible_with(&self, other: &Self) -> bool {
+    pub fn compatible_with(&self, _other: &Self) -> bool {
         match self {
             OperandType::Reg(_) => {
                 todo!()
@@ -828,6 +834,12 @@ impl OperandType {
                             RegControl::CR14 => "CR14".to_string(),
                             RegControl::CR15 => "CR15".to_string(),
                         }
+                    }
+                    RegisterType::Multiple(_) => {
+                        todo!()
+                    }
+                    RegisterType::AllControl => {
+                        todo!()
                     }
                 }
             }

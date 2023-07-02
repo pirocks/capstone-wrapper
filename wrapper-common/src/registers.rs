@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use capstone::{RegId};
 use capstone::arch::x86::X86Operand;
+use proc_macro2::Ident;
+use quote::format_ident;
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -835,11 +837,13 @@ pub enum RegisterType {
     SomeSegment(HashSet<RegSegment>),
     AllDebug,
     SomeControl(HashSet<RegControl>),
+    AllControl,
     SingleControl(RegControl),
     SomeControlExtra(HashSet<RegControlExtra>),
     SingleSegmentBase(RegSegmentBase),
     SingleSpecial(RegSpecial),
     SingleFloatControl(RegFloatControl),
+    Multiple(Vec<RegisterType>)
 }
 
 impl RegisterType {
@@ -1012,13 +1016,13 @@ impl RegisterType {
                     _ => false
                 }
             }
-            RegisterType::SingleSegment(seg) => {
+            RegisterType::SingleSegment(_seg) => {
                 match reg {
                     Register::Segment(_) => todo!(),
                     _ => false
                 }
             }
-            RegisterType::SomeSegment(some_segs) => {
+            RegisterType::SomeSegment(_some_segs) => {
                 match reg {
                     Register::Segment(_) => todo!(),
                     _ => false
@@ -1048,10 +1052,63 @@ impl RegisterType {
             RegisterType::SingleFloatControl(_) => {
                 todo!()
             }
+            RegisterType::Multiple(_) => {
+                todo!()
+            }
+            RegisterType::AllControl => {
+                todo!()
+            }
         }
     }
 }
 
+impl RegisterType{
+    pub fn type_to_rust_type(&self) -> Ident{
+        match self {
+            RegisterType::AllMmx => format_ident!("RegMMX"),
+            RegisterType::AllXmm16 => format_ident!("RegXMM"),
+            RegisterType::AllXmm32 => format_ident!("RegXMM"),
+            RegisterType::SomeXmm(_) => format_ident!("RegXMM"),
+            RegisterType::SingleXmm(_) => format_ident!("RegXMM"),
+            RegisterType::AllYmm16 => format_ident!("RegYMM"),
+            RegisterType::AllYmm32 => format_ident!("RegYMM"),
+            RegisterType::AllZmm32 => format_ident!("RegZMM"),
+            RegisterType::SomeZmm(_) => format_ident!("RegZMM"),
+            RegisterType::AllTmm => format_ident!("RegTMM"),
+            RegisterType::AllMask => format_ident!("RegZMM"),
+            RegisterType::SomeMask(_) => format_ident!("RegZMM"),
+            RegisterType::AllGP64WithoutRIP => format_ident!("Reg64WithoutRIP"),
+            RegisterType::AllGP64WithRIP => format_ident!("Reg64WithRIP"),
+            RegisterType::SingleGP64(_) => format_ident!("Reg64WithRIP"),
+            RegisterType::AllGP32WithoutRIP => format_ident!("Reg32WithoutRIP"),
+            RegisterType::AllGP32WithRIP => format_ident!("Reg32WithRIP"),
+            RegisterType::SomeGP32(_) => format_ident!("Reg32WithRIP"),
+            RegisterType::SingleGP32(_) => format_ident!("Reg32WithRIP"),
+            RegisterType::AllGP16WithoutRIP => format_ident!("Reg16WithoutRIP"),
+            RegisterType::AllGP16WithRIP => format_ident!("Reg16WithRIP"),
+            RegisterType::SomeGP16(_) => format_ident!("Reg16WithRIP"),
+            RegisterType::SingleGP16(_) => format_ident!("Reg16WithRIP"),
+            RegisterType::AllGP8 => format_ident!("Reg8WithRIP"),
+            RegisterType::SomeGP8(_) => format_ident!("Reg8WithRIP"),
+            RegisterType::SingleGP8(_) => format_ident!("Reg8WithRIP"),
+            RegisterType::AllFloat => format_ident!("RegFloat"),
+            RegisterType::SingleFloat(_) => format_ident!("RegFloat"),
+            RegisterType::AllBnd => format_ident!("RegBnd"),
+            RegisterType::AllSegment => format_ident!("RegSegment"),
+            RegisterType::SingleSegment(_) => format_ident!("RegSegment"),
+            RegisterType::SomeSegment(_) => format_ident!("RegSegment"),
+            RegisterType::AllDebug => format_ident!("RegDebug"),
+            RegisterType::SomeControl(_) => format_ident!("RegControl"),
+            RegisterType::AllControl => format_ident!("RegControl"),
+            RegisterType::SingleControl(_) => format_ident!("RegControl"),
+            RegisterType::SomeControlExtra(_) => todo!("SomeControlExtra"),
+            RegisterType::SingleSegmentBase(_) => todo!("SingleSegmentBase"),
+            RegisterType::SingleSpecial(_) => format_ident!("RegSpecial"),
+            RegisterType::SingleFloatControl(_) => format_ident!("RegFloatControl"),
+            RegisterType::Multiple(_) => format_ident!("Register"),
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Register {
@@ -1075,7 +1132,7 @@ pub enum Register {
 
 
 impl Register {
-    pub fn is_of_type(&self, register_type: RegisterType) {
+    pub fn is_of_type(&self, _register_type: RegisterType) {
         todo!()
     }
 
@@ -1166,7 +1223,7 @@ impl Register {
         todo!()
     }
 
-    pub fn from_capstone(reg_id: RegId, operand: &X86Operand) -> Self {
+    pub fn from_capstone(reg_id: RegId, _operand: &X86Operand) -> Self {
         use capstone::arch::x86::X86Reg::*;
         match reg_id.0 as u32 {
             X86_REG_INVALID => {

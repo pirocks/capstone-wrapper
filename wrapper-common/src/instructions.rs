@@ -28,7 +28,7 @@ impl InstructionEncoding {
         if let Some(operands) = operands {
             for operand in operands {
                 if let InstructionElement::Operand {
-                    idx,
+                    idx:_,
                     r#type,
                     width,
                     xtype,

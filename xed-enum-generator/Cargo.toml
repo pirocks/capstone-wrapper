@@ -1,0 +1,16 @@
+[package]
+name = "xed-enum-generator"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+xed-sys = "0.4"
+quote = "1.0"
+proc-macro2 = "1.0"
+convert_case = "0.6.0"
+wrapper-common = { path = "../wrapper-common" }
+xed-wrapper = { path = "../xed-wrapper" }
+[lib]
+proc-macro = true

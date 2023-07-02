@@ -48,7 +48,9 @@ pub struct XedTableData{
     instructions: HashMap<XedInstructionName, XedInstructionData>
 }
 
+fn test() {
 
+}
 
 
 #[cfg(test)]

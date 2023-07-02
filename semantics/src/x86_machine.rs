@@ -51,7 +51,8 @@ pub struct X86MachineState<'arena> {
     pub(crate) r14: QWordValue<'arena>,
     pub(crate) r15: QWordValue<'arena>,
     pub(crate) rip: QWordValue<'arena>,
-    pub(crate) memory: MemorySpace<'arena>
+    pub(crate) memory: MemorySpace<'arena>,
+    pub(crate) pending_exception: bool,
 }
 
 impl<'arena> X86MachineState<'arena> {
@@ -76,10 +77,11 @@ impl<'arena> X86MachineState<'arena> {
             r15: QWordValue::Constant(ZERO_U64_REF),
             rip: QWordValue::Constant(ZERO_U64_REF),
             memory: MemorySpace::new_all_zeroed(),
+            pending_exception: false,
         }
     }
 
     pub fn undefined_instruction_exception(&mut self) {
-        todo!()
+        self.pending_exception = true;
     }
 }

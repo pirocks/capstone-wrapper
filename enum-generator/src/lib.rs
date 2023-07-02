@@ -141,6 +141,10 @@ impl VariantEncodingGeneratorData {
                     RegisterType::SingleControl(_) => {
                         return None;
                     }
+                    RegisterType::AllControl |
+                    RegisterType::Multiple(_) => {
+                        todo!()
+                    }
                 }
             }
             OperandType::Mem(mem) => {
@@ -287,6 +291,10 @@ impl VariantEncodingGeneratorData {
                     RegisterType::SingleSpecial(_) |
                     RegisterType::SingleControl(_) => {
                         return None;
+                    }
+                    RegisterType::AllControl |
+                    RegisterType::Multiple(_) => {
+                        todo!()
                     }
                 }
             }

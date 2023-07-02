@@ -21,5 +21,8 @@ members = [
     "string-concat-utils",
     "intel-pdf-parser",
     "semantics",
-    "xed-table-parser"
+    "xed-table-parser",
+    "xed-wrapper",
+    "xed-enum-generator",
+    "xed-enum"
 ]
