@@ -1678,7 +1678,7 @@ dependencies = [
 name = "semantics"
 version = "0.1.0"
 dependencies = [
- "enum-def",
+ "xed-enum",
 ]
 
 [[package]]
@@ -2532,13 +2532,17 @@ dependencies = [
  "serde",
  "thiserror",
  "uops-info",
+ "xed-sys",
 ]
 
 [[package]]
 name = "xed-enum"
 version = "0.1.0"
 dependencies = [
+ "wrapper-common",
  "xed-enum-generator",
+ "xed-sys",
+ "xed-wrapper",
 ]
 
 [[package]]
@@ -2546,6 +2550,7 @@ name = "xed-enum-generator"
 version = "0.1.0"
 dependencies = [
  "convert_case",
+ "itertools",
  "proc-macro2",
  "quote",
  "wrapper-common",

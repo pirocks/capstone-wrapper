@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 
-use capstone::{RegId};
 use capstone::arch::x86::X86Operand;
+use capstone::RegId;
 use proc_macro2::Ident;
 use quote::format_ident;
 use serde::{Deserialize, Serialize};
+use xed_sys::*;
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegMMX {
@@ -16,6 +17,22 @@ pub enum RegMMX {
     MM5,
     MM6,
     MM7,
+}
+
+impl RegMMX {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_MMX0 => RegMMX::MM0,
+            XED_REG_MMX1 => RegMMX::MM1,
+            XED_REG_MMX2 => RegMMX::MM2,
+            XED_REG_MMX3 => RegMMX::MM3,
+            XED_REG_MMX4 => RegMMX::MM4,
+            XED_REG_MMX5 => RegMMX::MM5,
+            XED_REG_MMX6 => RegMMX::MM6,
+            XED_REG_MMX7 => RegMMX::MM7,
+            _ => return None
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -56,6 +73,44 @@ pub enum RegXMM {
 }
 
 impl RegXMM {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_XMM0 => RegXMM::XMM0,
+            XED_REG_XMM1 => RegXMM::XMM1,
+            XED_REG_XMM2 => RegXMM::XMM2,
+            XED_REG_XMM3 => RegXMM::XMM3,
+            XED_REG_XMM4 => RegXMM::XMM4,
+            XED_REG_XMM5 => RegXMM::XMM5,
+            XED_REG_XMM6 => RegXMM::XMM6,
+            XED_REG_XMM7 => RegXMM::XMM7,
+            XED_REG_XMM8 => RegXMM::XMM8,
+            XED_REG_XMM9 => RegXMM::XMM9,
+            XED_REG_XMM10 => RegXMM::XMM10,
+            XED_REG_XMM11 => RegXMM::XMM11,
+            XED_REG_XMM12 => RegXMM::XMM12,
+            XED_REG_XMM13 => RegXMM::XMM13,
+            XED_REG_XMM14 => RegXMM::XMM14,
+            XED_REG_XMM15 => RegXMM::XMM15,
+            XED_REG_XMM16 => RegXMM::XMM16,
+            XED_REG_XMM17 => RegXMM::XMM17,
+            XED_REG_XMM18 => RegXMM::XMM18,
+            XED_REG_XMM19 => RegXMM::XMM19,
+            XED_REG_XMM20 => RegXMM::XMM20,
+            XED_REG_XMM21 => RegXMM::XMM21,
+            XED_REG_XMM22 => RegXMM::XMM22,
+            XED_REG_XMM23 => RegXMM::XMM23,
+            XED_REG_XMM24 => RegXMM::XMM24,
+            XED_REG_XMM25 => RegXMM::XMM25,
+            XED_REG_XMM26 => RegXMM::XMM26,
+            XED_REG_XMM27 => RegXMM::XMM27,
+            XED_REG_XMM28 => RegXMM::XMM28,
+            XED_REG_XMM29 => RegXMM::XMM29,
+            XED_REG_XMM30 => RegXMM::XMM30,
+            XED_REG_XMM31 => RegXMM::XMM31,
+            _ => return None
+        })
+    }
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             RegXMM::XMM0 => "RegXMM::XMM0".to_string(),
@@ -133,6 +188,45 @@ pub enum RegYMM {
 }
 
 impl RegYMM {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_YMM0 => RegYMM::YMM0,
+            XED_REG_YMM1 => RegYMM::YMM1,
+            XED_REG_YMM2 => RegYMM::YMM2,
+            XED_REG_YMM3 => RegYMM::YMM3,
+            XED_REG_YMM4 => RegYMM::YMM4,
+            XED_REG_YMM5 => RegYMM::YMM5,
+            XED_REG_YMM6 => RegYMM::YMM6,
+            XED_REG_YMM7 => RegYMM::YMM7,
+            XED_REG_YMM8 => RegYMM::YMM8,
+            XED_REG_YMM9 => RegYMM::YMM9,
+            XED_REG_YMM10 => RegYMM::YMM10,
+            XED_REG_YMM11 => RegYMM::YMM11,
+            XED_REG_YMM12 => RegYMM::YMM12,
+            XED_REG_YMM13 => RegYMM::YMM13,
+            XED_REG_YMM14 => RegYMM::YMM14,
+            XED_REG_YMM15 => RegYMM::YMM15,
+            XED_REG_YMM16 => RegYMM::YMM16,
+            XED_REG_YMM17 => RegYMM::YMM17,
+            XED_REG_YMM18 => RegYMM::YMM18,
+            XED_REG_YMM19 => RegYMM::YMM19,
+            XED_REG_YMM20 => RegYMM::YMM20,
+            XED_REG_YMM21 => RegYMM::YMM21,
+            XED_REG_YMM22 => RegYMM::YMM22,
+            XED_REG_YMM23 => RegYMM::YMM23,
+            XED_REG_YMM24 => RegYMM::YMM24,
+            XED_REG_YMM25 => RegYMM::YMM25,
+            XED_REG_YMM26 => RegYMM::YMM26,
+            XED_REG_YMM27 => RegYMM::YMM27,
+            XED_REG_YMM28 => RegYMM::YMM28,
+            XED_REG_YMM29 => RegYMM::YMM29,
+            XED_REG_YMM30 => RegYMM::YMM30,
+            XED_REG_YMM31 => RegYMM::YMM31,
+            _ => return None
+        })
+    }
+
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             RegYMM::YMM0 => "RegYMM::YMM0".to_string(),
@@ -209,7 +303,45 @@ pub enum RegZMM {
     ZMM32,
 }
 
-impl RegZMM{
+impl RegZMM {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_ZMM0 => RegZMM::ZMM0,
+            XED_REG_ZMM1 => RegZMM::ZMM1,
+            XED_REG_ZMM2 => RegZMM::ZMM2,
+            XED_REG_ZMM3 => RegZMM::ZMM3,
+            XED_REG_ZMM4 => RegZMM::ZMM4,
+            XED_REG_ZMM5 => RegZMM::ZMM5,
+            XED_REG_ZMM6 => RegZMM::ZMM6,
+            XED_REG_ZMM7 => RegZMM::ZMM7,
+            XED_REG_ZMM8 => RegZMM::ZMM8,
+            XED_REG_ZMM9 => RegZMM::ZMM9,
+            XED_REG_ZMM10 => RegZMM::ZMM10,
+            XED_REG_ZMM11 => RegZMM::ZMM11,
+            XED_REG_ZMM12 => RegZMM::ZMM12,
+            XED_REG_ZMM13 => RegZMM::ZMM13,
+            XED_REG_ZMM14 => RegZMM::ZMM14,
+            XED_REG_ZMM15 => RegZMM::ZMM15,
+            XED_REG_ZMM16 => RegZMM::ZMM16,
+            XED_REG_ZMM17 => RegZMM::ZMM17,
+            XED_REG_ZMM18 => RegZMM::ZMM18,
+            XED_REG_ZMM19 => RegZMM::ZMM19,
+            XED_REG_ZMM20 => RegZMM::ZMM20,
+            XED_REG_ZMM21 => RegZMM::ZMM21,
+            XED_REG_ZMM22 => RegZMM::ZMM22,
+            XED_REG_ZMM23 => RegZMM::ZMM23,
+            XED_REG_ZMM24 => RegZMM::ZMM24,
+            XED_REG_ZMM25 => RegZMM::ZMM25,
+            XED_REG_ZMM26 => RegZMM::ZMM26,
+            XED_REG_ZMM27 => RegZMM::ZMM27,
+            XED_REG_ZMM28 => RegZMM::ZMM28,
+            XED_REG_ZMM29 => RegZMM::ZMM29,
+            XED_REG_ZMM30 => RegZMM::ZMM30,
+            XED_REG_ZMM31 => RegZMM::ZMM31,
+            _ => return None
+        })
+    }
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             RegZMM::ZMM0 => "RegZMM::ZMM0".to_string(),
@@ -261,6 +393,22 @@ pub enum RegTMM {
     TMM7,
 }
 
+impl RegTMM {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_TMM0 => RegTMM::TMM0,
+            XED_REG_TMM1 => RegTMM::TMM1,
+            XED_REG_TMM2 => RegTMM::TMM2,
+            XED_REG_TMM3 => RegTMM::TMM3,
+            XED_REG_TMM4 => RegTMM::TMM4,
+            XED_REG_TMM5 => RegTMM::TMM5,
+            XED_REG_TMM6 => RegTMM::TMM6,
+            XED_REG_TMM7 => RegTMM::TMM7,
+            _ => return None
+        })
+    }
+}
+
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegMask {
     K0,
@@ -274,6 +422,20 @@ pub enum RegMask {
 }
 
 impl RegMask {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_K0 => RegMask::K0,
+            XED_REG_K1 => RegMask::K1,
+            XED_REG_K2 => RegMask::K2,
+            XED_REG_K3 => RegMask::K3,
+            XED_REG_K4 => RegMask::K4,
+            XED_REG_K5 => RegMask::K5,
+            XED_REG_K6 => RegMask::K6,
+            XED_REG_K7 => RegMask::K7,
+            _ => return None
+        })
+    }
+
     pub fn to_declaration_string(&self) -> String {
         match self {
             RegMask::K0 => "RegMask::K0".to_string(),
@@ -310,7 +472,31 @@ pub enum Reg64WithRIP {
 }
 
 impl Reg64WithRIP {
-    pub fn try_unwrap_reg64_without_rip(&self) -> Option<Reg64WithoutRIP>{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_RAX => Self::RAX,
+            XED_REG_RBX => Self::RBX,
+            XED_REG_RCX => Self::RCX,
+            XED_REG_RDX => Self::RDX,
+            XED_REG_RSI => Self::RSI,
+            XED_REG_RDI => Self::RDI,
+            XED_REG_RBP => Self::RBP,
+            XED_REG_RSP => Self::RSP,
+            XED_REG_R8 => Self::R8,
+            XED_REG_R9 => Self::R9,
+            XED_REG_R10 => Self::R10,
+            XED_REG_R11 => Self::R11,
+            XED_REG_R12 => Self::R12,
+            XED_REG_R13 => Self::R13,
+            XED_REG_R14 => Self::R14,
+            XED_REG_R15 => Self::R15,
+            XED_REG_RIP => Self::RIP,
+            _ => return None
+        })
+    }
+
+
+    pub fn try_unwrap_reg64_without_rip(&self) -> Option<Reg64WithoutRIP> {
         match self {
             Reg64WithRIP::RAX => Some(Reg64WithoutRIP::RAX),
             Reg64WithRIP::RBX => Some(Reg64WithoutRIP::RBX),
@@ -376,6 +562,30 @@ pub enum Reg64WithoutRIP {
     R15,
 }
 
+impl Reg64WithoutRIP {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_RAX => Self::RAX,
+            XED_REG_RBX => Self::RBX,
+            XED_REG_RCX => Self::RCX,
+            XED_REG_RDX => Self::RDX,
+            XED_REG_RSI => Self::RSI,
+            XED_REG_RDI => Self::RDI,
+            XED_REG_RBP => Self::RBP,
+            XED_REG_RSP => Self::RSP,
+            XED_REG_R8 => Self::R8,
+            XED_REG_R9 => Self::R9,
+            XED_REG_R10 => Self::R10,
+            XED_REG_R11 => Self::R11,
+            XED_REG_R12 => Self::R12,
+            XED_REG_R13 => Self::R13,
+            XED_REG_R14 => Self::R14,
+            XED_REG_R15 => Self::R15,
+            _ => return None
+        })
+    }
+}
+
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Reg32WithRIP {
     EAX,
@@ -398,7 +608,31 @@ pub enum Reg32WithRIP {
 }
 
 impl Reg32WithRIP {
-    pub fn try_unwrap_reg32_without_rip(&self) -> Option<Reg32WithoutRIP>{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_EAX => Self::EAX,
+            XED_REG_EBX => Self::EBX,
+            XED_REG_ECX => Self::ECX,
+            XED_REG_EDX => Self::EDX,
+            XED_REG_ESI => Self::ESI,
+            XED_REG_EDI => Self::EDI,
+            XED_REG_EBP => Self::EBP,
+            XED_REG_ESP => Self::ESP,
+            XED_REG_R8D => Self::R8D,
+            XED_REG_R9D => Self::R9D,
+            XED_REG_R10D => Self::R10D,
+            XED_REG_R11D => Self::R11D,
+            XED_REG_R12D => Self::R12D,
+            XED_REG_R13D => Self::R13D,
+            XED_REG_R14D => Self::R14D,
+            XED_REG_R15D => Self::R15D,
+            XED_REG_EIP => Self::EIP,
+            _ => return None
+        })
+    }
+
+
+    pub fn try_unwrap_reg32_without_rip(&self) -> Option<Reg32WithoutRIP> {
         match self {
             Reg32WithRIP::EAX => Some(Reg32WithoutRIP::EAX),
             Reg32WithRIP::EBX => Some(Reg32WithoutRIP::EBX),
@@ -463,6 +697,31 @@ pub enum Reg32WithoutRIP {
     R15D,
 }
 
+impl Reg32WithoutRIP {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_EAX => Self::EAX,
+            XED_REG_EBX => Self::EBX,
+            XED_REG_ECX => Self::ECX,
+            XED_REG_EDX => Self::EDX,
+            XED_REG_ESI => Self::ESI,
+            XED_REG_EDI => Self::EDI,
+            XED_REG_EBP => Self::EBP,
+            XED_REG_ESP => Self::ESP,
+            XED_REG_R8D => Self::R8D,
+            XED_REG_R9D => Self::R9D,
+            XED_REG_R10D => Self::R10D,
+            XED_REG_R11D => Self::R11D,
+            XED_REG_R12D => Self::R12D,
+            XED_REG_R13D => Self::R13D,
+            XED_REG_R14D => Self::R14D,
+            XED_REG_R15D => Self::R15D,
+            _ => return None
+        })
+    }
+}
+
+
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Reg16WithRIP {
     AX,
@@ -485,7 +744,30 @@ pub enum Reg16WithRIP {
 }
 
 impl Reg16WithRIP {
-    pub fn try_unwrap_reg16_without_rip(&self) -> Option<Reg16WithoutRIP>{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_AX => Self::AX,
+            XED_REG_BX => Self::BX,
+            XED_REG_CX => Self::CX,
+            XED_REG_DX => Self::DX,
+            XED_REG_SI => Self::SI,
+            XED_REG_DI => Self::DI,
+            XED_REG_BP => Self::BP,
+            XED_REG_SP => Self::SP,
+            XED_REG_R8W => Self::R8W,
+            XED_REG_R9W => Self::R9W,
+            XED_REG_R10W => Self::R10W,
+            XED_REG_R11W => Self::R11W,
+            XED_REG_R12W => Self::R12W,
+            XED_REG_R13W => Self::R13W,
+            XED_REG_R14W => Self::R14W,
+            XED_REG_R15W => Self::R15W,
+            XED_REG_IP => Self::IP,
+            _ => return None
+        })
+    }
+
+    pub fn try_unwrap_reg16_without_rip(&self) -> Option<Reg16WithoutRIP> {
         match self {
             Reg16WithRIP::AX => Some(Reg16WithoutRIP::AX),
             Reg16WithRIP::BX => Some(Reg16WithoutRIP::BX),
@@ -551,6 +833,30 @@ pub enum Reg16WithoutRIP {
     R15W,
 }
 
+impl Reg16WithoutRIP {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_AX => Self::AX,
+            XED_REG_BX => Self::BX,
+            XED_REG_CX => Self::CX,
+            XED_REG_DX => Self::DX,
+            XED_REG_SI => Self::SI,
+            XED_REG_DI => Self::DI,
+            XED_REG_BP => Self::BP,
+            XED_REG_SP => Self::SP,
+            XED_REG_R8W => Self::R8W,
+            XED_REG_R9W => Self::R9W,
+            XED_REG_R10W => Self::R10W,
+            XED_REG_R11W => Self::R11W,
+            XED_REG_R12W => Self::R12W,
+            XED_REG_R13W => Self::R13W,
+            XED_REG_R14W => Self::R14W,
+            XED_REG_R15W => Self::R15W,
+            _ => return None
+        })
+    }
+}
+
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Reg8 {
@@ -577,7 +883,33 @@ pub enum Reg8 {
 }
 
 impl Reg8 {
-    pub fn to_declaration_string(&self) -> String{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_AL => Self::AL,
+            XED_REG_AH => Self::AH,
+            XED_REG_BL => Self::BL,
+            XED_REG_BH => Self::BH,
+            XED_REG_CL => Self::CL,
+            XED_REG_CH => Self::CH,
+            XED_REG_DL => Self::DL,
+            XED_REG_DH => Self::DH,
+            XED_REG_SIL => Self::SIL,
+            XED_REG_DIL => Self::DIL,
+            XED_REG_BPL => Self::BPL,
+            XED_REG_SPL => Self::SPL,
+            XED_REG_R8B => Self::R8B,
+            XED_REG_R9B => Self::R9B,
+            XED_REG_R10B => Self::R10B,
+            XED_REG_R11B => Self::R11B,
+            XED_REG_R12B => Self::R12B,
+            XED_REG_R13B => Self::R13B,
+            XED_REG_R14B => Self::R14B,
+            XED_REG_R15B => Self::R15B,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             Reg8::AL => "Reg8::AL".to_string(),
             Reg8::AH => "Reg8::AH".to_string(),
@@ -615,6 +947,22 @@ pub enum RegFloat {
     ST7,
 }
 
+impl RegFloat {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_ST0 => Self::ST0,
+            XED_REG_ST1 => Self::ST1,
+            XED_REG_ST2 => Self::ST2,
+            XED_REG_ST3 => Self::ST3,
+            XED_REG_ST4 => Self::ST4,
+            XED_REG_ST5 => Self::ST5,
+            XED_REG_ST6 => Self::ST6,
+            XED_REG_ST7 => Self::ST7,
+            _ => return None
+        })
+    }
+}
+
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegFloatControl {
     X87CONTROL,
@@ -626,7 +974,19 @@ pub enum RegFloatControl {
 }
 
 impl RegFloatControl {
-    pub fn to_declaration_string(&self) -> String{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_X87CONTROL => Self::X87CONTROL,
+            XED_REG_X87STATUS => Self::X87STATUS,
+            XED_REG_X87TAG => Self::X87TAG,
+            XED_REG_X87POP => Self::X87POP,
+            XED_REG_X87PUSH => Self::X87PUSH,
+            XED_REG_X87POP2 => Self::X87POP2,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegFloatControl::X87CONTROL => "RegFloatControl::X87CONTROL".to_string(),
             RegFloatControl::X87STATUS => "RegFloatControl::X87STATUS".to_string(),
@@ -647,13 +1007,33 @@ pub enum RegBnd {
     BND3,
 }
 
+impl RegBnd {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_BND0 => Self::BND0,
+            XED_REG_BND1 => Self::BND1,
+            XED_REG_BND2 => Self::BND2,
+            XED_REG_BND3 => Self::BND3,
+            _ => return None
+        })
+    }
+}
+
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegBndConfig {
-    BNDCFG,
-    BNDCFU,
+    BNDCFGU,
     BNDSTATUS,
 }
 
+impl RegBndConfig {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_BNDCFGU => Self::BNDCFGU,
+            XED_REG_BNDSTATUS => Self::BNDSTATUS,
+            _ => return None
+        })
+    }
+}
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegSpecial {
@@ -670,7 +1050,22 @@ pub enum RegSpecial {
 
 
 impl RegSpecial {
-    pub fn to_declaration_string(&self) -> String{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_GDTR => Self::GDTR,
+            XED_REG_LDTR => Self::LDTR,
+            XED_REG_IDTR => Self::IDTR,
+            XED_REG_TR => Self::TR,
+            XED_REG_TSC => Self::TSC,
+            XED_REG_TSCAUX => Self::TSCAUX,
+            XED_REG_MSRS => Self::MSRS,
+            XED_REG_UIF => Self::UIF,
+            XED_REG_SSP => Self::SSP,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegSpecial::GDTR => "RegSpecial::GDTR".to_string(),
             RegSpecial::LDTR => "RegSpecial::LDTR".to_string(),
@@ -707,7 +1102,29 @@ pub enum RegControl {
 }
 
 impl RegControl {
-    pub fn to_declaration_string(&self) -> String{
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_CR0 => Self::CR0,
+            XED_REG_CR1 => Self::CR1,
+            XED_REG_CR2 => Self::CR2,
+            XED_REG_CR3 => Self::CR3,
+            XED_REG_CR4 => Self::CR4,
+            XED_REG_CR5 => Self::CR5,
+            XED_REG_CR6 => Self::CR6,
+            XED_REG_CR7 => Self::CR7,
+            XED_REG_CR8 => Self::CR8,
+            XED_REG_CR9 => Self::CR9,
+            XED_REG_CR10 => Self::CR10,
+            XED_REG_CR11 => Self::CR11,
+            XED_REG_CR12 => Self::CR12,
+            XED_REG_CR13 => Self::CR13,
+            XED_REG_CR14 => Self::CR14,
+            XED_REG_CR15 => Self::CR15,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegControl::CR0 => "RegControl::CR0".to_string(),
             RegControl::CR1 => "RegControl::CR1".to_string(),
@@ -737,8 +1154,16 @@ pub enum RegControlExtra {
     MXCSR,
 }
 
-impl RegControlExtra{
-    pub fn to_declaration_string(&self) -> String{
+impl RegControlExtra {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_XCR0 => Self::XCR0,
+            XED_REG_MXCSR => Self::MXCSR,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegControlExtra::EFER => "RegControlExtra::EFER".to_string(),
             RegControlExtra::XCR0 => "RegControlExtra::XCR0".to_string(),
@@ -758,8 +1183,20 @@ pub enum RegSegment {
     GS,
 }
 
-impl RegSegment{
-    pub fn to_declaration_string(&self) -> String{
+impl RegSegment {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_CS => Self::CS,
+            XED_REG_DS => Self::DS,
+            XED_REG_SS => Self::SS,
+            XED_REG_ES => Self::ES,
+            XED_REG_FS => Self::FS,
+            XED_REG_GS => Self::GS,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegSegment::CS => "RegSegment::CS".to_string(),
             RegSegment::DS => "RegSegment::DS".to_string(),
@@ -777,8 +1214,16 @@ pub enum RegSegmentBase {
     GSBase,
 }
 
-impl RegSegmentBase{
-    pub fn to_declaration_string(&self) -> String{
+impl RegSegmentBase {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_FSBASE => Self::FSBase,
+            XED_REG_GSBASE => Self::GSBase,
+            _ => return None
+        })
+    }
+
+    pub fn to_declaration_string(&self) -> String {
         match self {
             RegSegmentBase::FSBase => "RegSegmentBase::FSBase".to_string(),
             RegSegmentBase::GSBase => "RegSegmentBase::GSBase".to_string()
@@ -798,6 +1243,22 @@ pub enum RegDebug {
     DR5,
     DR6,
     DR7,
+}
+
+impl RegDebug {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        Some(match reg {
+            XED_REG_DR0 => Self::DR0,
+            XED_REG_DR1 => Self::DR1,
+            XED_REG_DR2 => Self::DR2,
+            XED_REG_DR3 => Self::DR3,
+            XED_REG_DR4 => Self::DR4,
+            XED_REG_DR5 => Self::DR5,
+            XED_REG_DR6 => Self::DR6,
+            XED_REG_DR7 => Self::DR7,
+            _ => return None,
+        })
+    }
 }
 
 
@@ -843,7 +1304,7 @@ pub enum RegisterType {
     SingleSegmentBase(RegSegmentBase),
     SingleSpecial(RegSpecial),
     SingleFloatControl(RegFloatControl),
-    Multiple(Vec<RegisterType>)
+    Multiple(Vec<RegisterType>),
 }
 
 impl RegisterType {
@@ -906,9 +1367,9 @@ impl RegisterType {
             RegisterType::AllGP64WithoutRIP => {
                 match reg {
                     Register::GP64(reg) => {
-                        if let Reg64WithRIP::RIP = reg{
+                        if let Reg64WithRIP::RIP = reg {
                             false
-                        }else {
+                        } else {
                             true
                         }
                     }
@@ -929,9 +1390,9 @@ impl RegisterType {
             RegisterType::AllGP32WithoutRIP => {
                 match reg {
                     Register::GP32(reg) => {
-                        if let Reg32WithRIP::EIP = reg{
+                        if let Reg32WithRIP::EIP = reg {
                             false
-                        }else {
+                        } else {
                             true
                         }
                     }
@@ -959,9 +1420,9 @@ impl RegisterType {
             RegisterType::AllGP16WithoutRIP => {
                 match reg {
                     Register::GP16(gp16) => {
-                        if let Reg16WithRIP::IP = gp16{
+                        if let Reg16WithRIP::IP = gp16 {
                             false
-                        }else {
+                        } else {
                             true
                         }
                     }
@@ -1062,8 +1523,8 @@ impl RegisterType {
     }
 }
 
-impl RegisterType{
-    pub fn type_to_rust_type(&self) -> Ident{
+impl RegisterType {
+    pub fn type_to_rust_type(&self) -> Ident {
         match self {
             RegisterType::AllMmx => format_ident!("RegMMX"),
             RegisterType::AllXmm16 => format_ident!("RegXMM"),
@@ -1075,7 +1536,7 @@ impl RegisterType{
             RegisterType::AllZmm32 => format_ident!("RegZMM"),
             RegisterType::SomeZmm(_) => format_ident!("RegZMM"),
             RegisterType::AllTmm => format_ident!("RegTMM"),
-            RegisterType::AllMask => format_ident!("RegZMM"),
+            RegisterType::AllMask => format_ident!("RegMask"),
             RegisterType::SomeMask(_) => format_ident!("RegZMM"),
             RegisterType::AllGP64WithoutRIP => format_ident!("Reg64WithoutRIP"),
             RegisterType::AllGP64WithRIP => format_ident!("Reg64WithRIP"),
@@ -1088,9 +1549,9 @@ impl RegisterType{
             RegisterType::AllGP16WithRIP => format_ident!("Reg16WithRIP"),
             RegisterType::SomeGP16(_) => format_ident!("Reg16WithRIP"),
             RegisterType::SingleGP16(_) => format_ident!("Reg16WithRIP"),
-            RegisterType::AllGP8 => format_ident!("Reg8WithRIP"),
-            RegisterType::SomeGP8(_) => format_ident!("Reg8WithRIP"),
-            RegisterType::SingleGP8(_) => format_ident!("Reg8WithRIP"),
+            RegisterType::AllGP8 => format_ident!("Reg8"),
+            RegisterType::SomeGP8(_) => format_ident!("Reg8"),
+            RegisterType::SingleGP8(_) => format_ident!("Reg8"),
             RegisterType::AllFloat => format_ident!("RegFloat"),
             RegisterType::SingleFloat(_) => format_ident!("RegFloat"),
             RegisterType::AllBnd => format_ident!("RegBnd"),
@@ -1123,15 +1584,52 @@ pub enum Register {
     GP16(Reg16WithRIP),
     GP8(Reg8),
     Float(RegFloat),
+    FloatControl(RegFloatControl),
     Bnd(RegBnd),
+    BndConfig(RegBndConfig),
     Special(RegSpecial),
     Debug(RegDebug),
     Control(RegControl),
-    Segment(())
+    ControlExtra(RegControlExtra),
+    Segment(()),
 }
 
 
 impl Register {
+    pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
+        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(reg) };
+        Some(match class {
+            XED_REG_CLASS_BNDCFG => Register::BndConfig(RegBndConfig::try_new(reg)?),
+            XED_REG_CLASS_BNDSTAT => Register::BndConfig(RegBndConfig::try_new(reg)?),
+            XED_REG_CLASS_BOUND => Register::Bnd(RegBnd::try_new(reg)?),
+            XED_REG_CLASS_CR => Register::Control(RegControl::try_new(reg)?),
+            XED_REG_CLASS_DR => Register::Debug(RegDebug::try_new(reg)?),
+            XED_REG_CLASS_FLAGS => todo!(),
+            XED_REG_CLASS_GPR => Register::GP64(Reg64WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR16 => Register::GP16(Reg16WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR32 => Register::GP32(Reg32WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR64 => Register::GP64(Reg64WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR8 => Register::GP8(Reg8::try_new(reg)?),
+            XED_REG_CLASS_IP => todo!(),
+            XED_REG_CLASS_MASK => Register::Mask(RegMask::try_new(reg)?),
+            XED_REG_CLASS_MMX => Register::Mmx(RegMMX::try_new(reg)?),
+            XED_REG_CLASS_MSR => Register::Special(RegSpecial::try_new(reg)?),
+            XED_REG_CLASS_MXCSR => Register::Special(RegSpecial::try_new(reg)?),
+            XED_REG_CLASS_PSEUDO => todo!(),
+            XED_REG_CLASS_PSEUDOX87 => todo!(),
+            XED_REG_CLASS_SR => todo!(),
+            XED_REG_CLASS_TMP => todo!(),
+            XED_REG_CLASS_TREG => Register::Tmm(RegTMM::try_new(reg)?),
+            XED_REG_CLASS_UIF => todo!(),
+            XED_REG_CLASS_X87 => Register::Float(RegFloat::try_new(reg)?),
+            XED_REG_CLASS_XCR => Register::ControlExtra(RegControlExtra::try_new(reg)?),
+            XED_REG_CLASS_XMM => Register::Xmm(RegXMM::try_new(reg)?),
+            XED_REG_CLASS_YMM => Register::Ymm(RegYMM::try_new(reg)?),
+            XED_REG_CLASS_ZMM => Register::Zmm(RegZMM::try_new(reg)?),
+            _ => return None
+        })
+    }
+
     pub fn is_of_type(&self, _register_type: RegisterType) {
         todo!()
     }

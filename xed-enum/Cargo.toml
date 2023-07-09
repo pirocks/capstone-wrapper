@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 xed-enum-generator = { path = "../xed-enum-generator" }
+wrapper-common = { path = "../wrapper-common" }
+xed-wrapper = { path = "../xed-wrapper" }
+xed-sys = "0.4"

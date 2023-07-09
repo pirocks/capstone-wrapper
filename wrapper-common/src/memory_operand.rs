@@ -1,3 +1,4 @@
+use xed_sys::xed_reg_enum_t;
 use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -36,7 +37,7 @@ impl ImmediateOperand {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum X86Scale {
     One,
     Two,
@@ -45,7 +46,7 @@ pub enum X86Scale {
 }
 
 impl X86Scale {
-    pub fn from_capstone_scale(capstone_scale: i32) -> X86Scale {
+    pub fn from_raw_scale(capstone_scale: i32) -> X86Scale {
         match capstone_scale {
             1 => X86Scale::One,
             2 => X86Scale::Two,
@@ -58,12 +59,26 @@ impl X86Scale {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum GeneralRegister {
     Reg64(Reg64WithRIP),
     Reg32(Reg32WithRIP),
     Reg16(Reg16WithRIP),
     Reg8(Reg8),
+}
+
+impl GeneralRegister{
+    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+        use xed_sys::*;
+        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
+        Some(match class {
+            XED_REG_CLASS_GPR8 => GeneralRegister::Reg8(Reg8::try_new(xed)?),
+            XED_REG_CLASS_GPR16 => GeneralRegister::Reg16(Reg16WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR32 => GeneralRegister::Reg32(Reg32WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR64 => GeneralRegister::Reg64(Reg64WithRIP::try_new(xed)?),
+            _ => return None
+        })
+    }
 }
 
 

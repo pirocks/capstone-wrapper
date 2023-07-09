@@ -10,6 +10,7 @@ xed-sys = "0.4"
 quote = "1.0"
 proc-macro2 = "1.0"
 convert_case = "0.6.0"
+itertools = "0.10"
 wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
 [lib]

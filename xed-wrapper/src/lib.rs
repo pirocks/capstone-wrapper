@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::ffi::CStr;
+use std::ffi::{CStr};
 use std::sync::{Once, OnceLock};
+
 use proc_macro2::Ident;
 use quote::format_ident;
-
-use xed_sys::{xed_iform_enum_t2str, xed_iform_to_iclass_string_intel, xed_inst_iform_enum, xed_inst_noperands, xed_inst_operand, xed_inst_table_base, XED_MAX_INST_TABLE_NODES, xed_operand_name, xed_operand_nonterminal_name, xed_operand_operand_visibility, xed_operand_type, xed_operand_width, XED_OPVIS_EXPLICIT, xed_tables_init};
+use xed_sys::{xed_iclass_enum_t, xed_iform_enum_t, xed_iform_enum_t2str, xed_iform_to_iclass_string_intel, xed_inst_iclass, xed_inst_iform_enum, xed_inst_noperands, xed_inst_operand, xed_inst_table_base, XED_MAX_INST_TABLE_NODES, xed_operand_enum_t, xed_operand_name, xed_operand_nonterminal_name, xed_operand_operand_visibility, xed_operand_type, xed_operand_width, XED_OPVIS_EXPLICIT, xed_tables_init};
 
 use wrapper_common::registers::RegisterType;
 
@@ -18,14 +18,15 @@ pub mod operand_width;
 pub mod operand_register;
 pub mod operand_type;
 pub mod nonterminal_type;
+pub mod operands;
 
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct TopLevelInstructionName(pub String);
 
-impl TopLevelInstructionName{
-    pub fn new(input: impl AsRef<str>) -> Self{
-        Self(input.as_ref().replace(" ","_").to_uppercase())
+impl TopLevelInstructionName {
+    pub fn new(input: impl AsRef<str>) -> Self {
+        Self(input.as_ref().replace(" ", "_").to_uppercase())
     }
 
     pub fn proc_macro_safe_name(&self) -> Ident {
@@ -37,8 +38,8 @@ impl TopLevelInstructionName{
 pub struct VariantName(pub String);
 
 impl VariantName {
-    pub fn new(input: impl AsRef<str>) -> Self{
-        Self(input.as_ref().replace(" ","_").to_uppercase())
+    pub fn new(input: impl AsRef<str>) -> Self {
+        Self(input.as_ref().replace(" ", "_").to_uppercase())
     }
 
     pub fn proc_macro_safe_name(&self) -> Ident {
@@ -56,13 +57,28 @@ pub enum FieldType {
     AGen,
 }
 
+pub struct Field {
+    pub field_type: FieldType,
+    pub field_name: xed_operand_enum_t,
+}
+
+pub struct Variant{
+    pub operands: HashMap<usize, Field>,
+    pub iform: xed_iform_enum_t
+}
+
+pub struct TopLevelInstruction{
+    pub iclass: xed_iclass_enum_t,
+    pub variants: HashMap<VariantName, Variant>
+}
+
 static START: Once = Once::new();
 
-static DATA: OnceLock<HashMap<TopLevelInstructionName, HashMap<VariantName, HashMap<usize, FieldType>>>> = OnceLock::new();
+static DATA: OnceLock<HashMap<TopLevelInstructionName, TopLevelInstruction>> = OnceLock::new();
 
-pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, HashMap<VariantName, HashMap<usize, FieldType>>> {
-    DATA.get_or_init(||{
-        let mut res: HashMap<TopLevelInstructionName, HashMap<VariantName, HashMap<usize, FieldType>>> = HashMap::new();
+pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstruction> {
+    DATA.get_or_init(|| {
+        let mut res: HashMap<TopLevelInstructionName, TopLevelInstruction> = HashMap::new();
         unsafe {
             START.call_once(|| {
                 xed_tables_init();
@@ -72,7 +88,12 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, HashMap<VariantNa
                 let iform_i = xed_inst_iform_enum(instruction_table_elem);
                 let variant_name = VariantName::new(CStr::from_ptr(xed_iform_enum_t2str(iform_i)).to_str().unwrap().to_string());
                 let instruction_name = TopLevelInstructionName::new(CStr::from_ptr(xed_iform_to_iclass_string_intel(iform_i)).to_str().unwrap().to_string());
-                let variant_fields: &mut HashMap<usize, FieldType> = res.entry(instruction_name).or_default().entry(variant_name).or_default();
+                let variant_fields: &mut HashMap<usize, Field> = &mut res.entry(instruction_name)
+                    .or_insert_with(||TopLevelInstruction{ iclass: xed_inst_iclass(instruction_table_elem), variants: Default::default() })
+                    .variants
+                    .entry(variant_name)
+                    .or_insert_with(||Variant{ operands: Default::default(), iform: iform_i })
+                    .operands;
                 let number_of_operands = xed_inst_noperands(instruction_table_elem);
                 let mut visible_field_i = 0;
                 for operand_i in 0..number_of_operands {
@@ -126,10 +147,10 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, HashMap<VariantNa
                                             FieldType::Reg(RegisterType::AllXmm32)
                                         }
                                         NonTerminalType::YMM_B | NonTerminalType::YMM_R | NonTerminalType::YMM_N | NonTerminalType::YMM_SE | NonTerminalType::YMM_R3
-                                        | NonTerminalType::YMM_N3 | NonTerminalType::YMM_B3  => {
+                                        | NonTerminalType::YMM_N3 | NonTerminalType::YMM_B3 => {
                                             FieldType::Reg(RegisterType::AllYmm32)
                                         }
-                                        NonTerminalType::ZMM_R3 | NonTerminalType::ZMM_N3 | NonTerminalType::ZMM_B3  => {
+                                        NonTerminalType::ZMM_R3 | NonTerminalType::ZMM_N3 | NonTerminalType::ZMM_B3 => {
                                             FieldType::Reg(RegisterType::AllZmm32)
                                         }
                                         NonTerminalType::CR_R => {
@@ -171,7 +192,7 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, HashMap<VariantNa
                                 todo!("{other:?}")
                             }
                         };
-                        variant_fields.insert(visible_field_i, field_type);
+                        variant_fields.insert(visible_field_i, Field { field_type, field_name: xed_operand_name(operand) });
                         visible_field_i += 1;
                     }
                 }
@@ -200,3 +221,5 @@ mod tests {
         todo!()
     }
 }
+
+pub mod temp;
