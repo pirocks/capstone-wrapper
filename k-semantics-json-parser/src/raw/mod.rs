@@ -48,7 +48,7 @@ pub enum KProductionItems {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "node")]
 pub enum KExpression {
     KApply {

@@ -13,7 +13,7 @@ fn has_a_label_expr(expr: &KExpression, label: &str) -> bool{
                 return true
             }
             for arg in args {
-                if has_a_label_expr(arg){
+                if has_a_label_expr(arg,label){
                     return true
                 }
             }
@@ -57,7 +57,7 @@ fn has_execinstr_label(sentence: &KSentence, label: &str) -> bool{
 }
 
 
-pub fn assert_token_is_true(expr: KExpression) {
+pub fn assert_token_is_true(expr: &KExpression) {
     match expr {
         KExpression::KToken { sort, token } => {
             assert_eq!(sort.as_str(), "Bool");
@@ -70,11 +70,11 @@ pub fn assert_token_is_true(expr: KExpression) {
     }
 }
 
-pub fn extract_apply_args(expr: KExpression, expected_label: &str) -> Vec<KExpression> {
+pub fn extract_apply_args(expr: &KExpression, expected_label: &str) -> Vec<KExpression> {
     match expr{
         KExpression::KApply { label, variable:_, arity:_, args } => {
             assert_eq!(label.as_str(), expected_label);
-            args
+            args.clone()
         }
         _ => panic!()
     }
@@ -84,16 +84,16 @@ pub fn extract_expression_from_semantics(semantics: TopLevel){
     for module in semantics.term.modules {
         if module.name == "ADCB-R8-R8".to_string(){
             for local_sentence in module.localSentences{
-                if let KSentence::KRule { body, requires, ensures, att:_ } = local_sentence {
+                if let KSentence::KRule { body, requires, ensures, att:_ } = &local_sentence {
                     if has_execinstr_label(&local_sentence, "execinstr") {
                         assert_token_is_true(requires);
                         assert_token_is_true(ensures);
-                        let mut apply_args = extract_apply_args(body, "#cells")
+                        let mut apply_args = extract_apply_args(body, "#cells");
                         assert_eq!(apply_args.len(), 2);
                         let reg_state = apply_args.pop().unwrap();
                         let k = apply_args.pop().unwrap();
-                        extract_apply_args(k, "<k>");
-                        extract_apply_args(reg_state, "<regstate>")
+                        extract_apply_args(&k, "<k>");
+                        extract_apply_args(&reg_state, "<regstate>");
                     }
                 }
             }
@@ -103,7 +103,7 @@ pub fn extract_expression_from_semantics(semantics: TopLevel){
 
 #[test]
 pub fn test_semantics() -> anyhow::Result<()> {
-    let top_level : TopLevel = serde_json::from_reader(BufReader::new(File::open("/home/francis/x86-semantics-workspace/X86-64-semantics/formatted_parsed.json")?))?;
+    let top_level : TopLevel = serde_json::from_reader(BufReader::new(File::open("data/formatted_parsed.json")?))?;
     extract_expression_from_semantics(top_level);
     panic!()
 }
