@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 use std::ops::Range;
+use bumpalo::Bump;
 
 pub struct MemorySpace<'arena> {
     //todo use a proper sparse vec for whole memory space
-    specified_bytes: HashMap<Range<usize>, &'arena u8>
+    specified_bytes: HashMap<Range<usize>, &'arena u8>,
 }
 
-pub const ZERO_U8: u8  = 0;
+pub const ZERO_U8: u8 = 0;
 pub const ZERO_U8_REF: &'static u8 = &ZERO_U8;
 
-impl <'arena> MemorySpace<'arena> {
-    pub fn new_all_zeroed() -> Self{
+impl<'arena> MemorySpace<'arena> {
+    pub fn new_all_zeroed() -> Self {
         let mut specified_bytes = HashMap::new();
         specified_bytes.insert(0..usize::MAX, ZERO_U8_REF);
         Self {
@@ -22,17 +23,80 @@ impl <'arena> MemorySpace<'arena> {
 pub const ZERO_U64: u64 = 0;
 pub const ZERO_U64_REF: &'static u64 = &ZERO_U64;
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum BoolValue<'arena> {
+    True,
+    False,
+    EqWord {
+        left: &'arena WordValue<'arena>,
+        right: &'arena WordValue<'arena>
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum ByteValue<'arena>{
+    Constant(u8),
+    LowerBits(&'arena QWordValue<'arena>),
+    And {
+        left: &'arena ByteValue<'arena>,
+        right: &'arena ByteValue<'arena>,
+    },
+    Or {
+        left: &'arena ByteValue<'arena>,
+        right: &'arena ByteValue<'arena>,
+    },
+    IfElse{
+        condition: &'arena BoolValue<'arena>,
+        true_case: &'arena ByteValue<'arena>,
+        false_case: &'arena ByteValue<'arena>
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum WordValue<'arena> {
+    Constant(u16),
+    LowerBits(&'arena QWordValue<'arena>),
+    And {
+        left: &'arena WordValue<'arena>,
+        right: &'arena WordValue<'arena>,
+    },
+    Or {
+        left: &'arena WordValue<'arena>,
+        right: &'arena WordValue<'arena>,
+    },
+    IfElse{
+        condition: &'arena BoolValue<'arena>,
+        true_case: &'arena WordValue<'arena>,
+        false_case: &'arena WordValue<'arena>
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum QWordValue<'arena> {
-    Constant(&'arena u64)
+    Constant(u64),
+    And {
+        left: &'arena QWordValue<'arena>,
+        right: &'arena QWordValue<'arena>,
+    },
+    Or {
+        left: &'arena QWordValue<'arena>,
+        right: &'arena QWordValue<'arena>,
+    },
+    WriteLowerBits{
+        prev: &'arena QWordValue<'arena>,
+        lower: &'arena WordValue<'arena>
+    }
 }
 
 
-pub enum X86Mode{
+pub enum X86Mode {
     Real,
-    _64Bit
+    Protected,
+    _64Bit,
 }
 
 pub struct X86MachineState<'arena> {
+    bumpalo: &'arena mut Bump,
     pub(crate) mode: X86Mode,
     pub(crate) rax: QWordValue<'arena>,
     pub(crate) rbx: QWordValue<'arena>,
@@ -56,29 +120,34 @@ pub struct X86MachineState<'arena> {
 }
 
 impl<'arena> X86MachineState<'arena> {
-    pub fn new_all_zeroed(mode: X86Mode) -> Self{
-        Self{
+    pub fn new_all_zeroed(bump: &'arena mut Bump, mode: X86Mode) -> Self {
+        Self {
+            bumpalo: bump,
             mode,
-            rax: QWordValue::Constant(ZERO_U64_REF),
-            rbx: QWordValue::Constant(ZERO_U64_REF),
-            rcx: QWordValue::Constant(ZERO_U64_REF),
-            rdx: QWordValue::Constant(ZERO_U64_REF),
-            rsi: QWordValue::Constant(ZERO_U64_REF),
-            rdi: QWordValue::Constant(ZERO_U64_REF),
-            rbp: QWordValue::Constant(ZERO_U64_REF),
-            rsp: QWordValue::Constant(ZERO_U64_REF),
-            r8: QWordValue::Constant(ZERO_U64_REF),
-            r9: QWordValue::Constant(ZERO_U64_REF),
-            r10: QWordValue::Constant(ZERO_U64_REF),
-            r11: QWordValue::Constant(ZERO_U64_REF),
-            r12: QWordValue::Constant(ZERO_U64_REF),
-            r13: QWordValue::Constant(ZERO_U64_REF),
-            r14: QWordValue::Constant(ZERO_U64_REF),
-            r15: QWordValue::Constant(ZERO_U64_REF),
-            rip: QWordValue::Constant(ZERO_U64_REF),
+            rax: QWordValue::Constant(0),
+            rbx: QWordValue::Constant(0),
+            rcx: QWordValue::Constant(0),
+            rdx: QWordValue::Constant(0),
+            rsi: QWordValue::Constant(0),
+            rdi: QWordValue::Constant(0),
+            rbp: QWordValue::Constant(0),
+            rsp: QWordValue::Constant(0),
+            r8: QWordValue::Constant(0),
+            r9: QWordValue::Constant(0),
+            r10: QWordValue::Constant(0),
+            r11: QWordValue::Constant(0),
+            r12: QWordValue::Constant(0),
+            r13: QWordValue::Constant(0),
+            r14: QWordValue::Constant(0),
+            r15: QWordValue::Constant(0),
+            rip: QWordValue::Constant(0),
             memory: MemorySpace::new_all_zeroed(),
             pending_exception: false,
         }
+    }
+
+    pub fn a<T>(&self, to_alloc: T) -> &'arena T{
+        self.bumpalo.alloc(to_alloc)
     }
 
     pub fn undefined_instruction_exception(&mut self) {
