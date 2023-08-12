@@ -24,5 +24,8 @@ members = [
     "xed-table-parser",
     "xed-wrapper",
     "xed-enum-generator",
-    "xed-enum"
+    "xed-enum",
+    "k-semantics-parser",
+    "remill-semantics-parser",
+    "k-semantics-json-parser"
 ]
