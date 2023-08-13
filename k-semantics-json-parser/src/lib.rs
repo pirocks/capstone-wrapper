@@ -133,11 +133,9 @@ pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Optio
 }
 
 pub fn extract_operand_data_from_semantics(semantic_rule_decl: &[KExpression]) -> RuleOperandsData {
-    let no_dots = &semantic_rule_decl[0];
     let meat = &semantic_rule_decl[1];
-    let dots = &semantic_rule_decl[2];
-    assert_eq!(no_dots, &empty_kapply("#noDots"));
-    assert_eq!(dots, &empty_kapply("#dots"));
+    assert_eq!(&semantic_rule_decl[0], &empty_kapply("#noDots"));
+    assert_eq!(&semantic_rule_decl[2], &empty_kapply("#dots"));
     if let KExpression::KRewrite { lhs, rhs } = meat {
         assert_eq!(rhs.deref(), &empty_ksequence());
         if let KExpression::KApply { label, args, .. } = lhs.as_ref() {
@@ -166,8 +164,56 @@ pub fn extract_operand_data_from_semantics(semantic_rule_decl: &[KExpression]) -
 
 pub struct ExpressionDiffData {}
 
+
+
+pub struct MapEntry{
+    lhs: String,
+    expr: Expression
+}
+
+fn handle_map_entry(expr: &KExpression) -> MapEntry {
+    let args = extract_apply_args(expr,"_|->_");
+    let lhs  = &args[0];
+    let rhs = &args[1];
+
+}
+
+pub fn recursively_extract_map_entries(expr: &KExpression,entries: &mut Vec<MapEntry>) {
+    let args = extract_apply_args(expr, "_Map_");
+    if args.len() == 1{
+        todo!()
+    } else if args.len() == 2{
+        let first = &args[0];
+        let second = &args[1];
+        entries.push(handle_map_entry(second));
+        recursively_extract_map_entries(first, entries);
+    }
+}
+
 pub fn extract_diff_expression_from_semantics(semantic_rule_decl: &[KExpression], operands: &RuleOperandsData) -> ExpressionDiffData {
-    eprintln!("{}", serde_json::to_string_pretty(semantic_rule_decl).unwrap());
+    assert_eq!(&semantic_rule_decl[0], &empty_kapply("#noDots"));
+    assert_eq!(&semantic_rule_decl[2], &empty_kapply("#noDots"));
+    assert_eq!(semantic_rule_decl.len() , 3);
+    let meat = &semantic_rule_decl[1];
+    match meat {
+        KExpression::KRewrite { lhs, rhs } => {
+            //lhs maps result to map
+            let semantic_cast_to_map = KExpression::KApply {
+                label: "#SemanticCastToMap".to_string(),
+                variable: false,
+                arity: 1,
+                args: vec![KExpression::KVariable { name: "RSMap".to_string(), originalName: "RSMap".to_string() }],
+            };
+            assert_eq!(lhs.as_ref(), &semantic_cast_to_map);
+            let update_map_args = extract_apply_args(rhs.as_ref(),"updateMap");
+            assert_eq!(lhs.as_ref(), &update_map_args[0]);
+            let update_map_body = &update_map_args[1];
+            eprintln!("{}", serde_json::to_string_pretty(update_map_body).unwrap());
+            todo!();
+            //rhs calls updateMap
+        }
+        _ => panic!()
+    }
     todo!()
 }
 
