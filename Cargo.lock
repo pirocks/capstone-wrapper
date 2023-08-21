@@ -1187,6 +1187,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "k-semantics-json-minimize"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "k-semantics-json-parser",
+ "serde_json",
+]
+
+[[package]]
 name = "k-semantics-json-parser"
 version = "0.1.0"
 dependencies = [

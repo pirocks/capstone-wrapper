@@ -8,6 +8,7 @@ pub enum RegisterOrParameter64 {
     Register(Reg64WithRIP)
 }
 
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct NewFlags{
     pub(crate) flag_cf: Option<TypedExpression1>,
     pub(crate) flag_pf: Option<TypedExpression1>,
@@ -17,6 +18,7 @@ pub struct NewFlags{
     pub(crate) flag_of: Option<TypedExpression1>,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Rule {
     pub raw_name: String,
     pub parameters: Vec<OperandIdx>,
@@ -25,6 +27,7 @@ pub struct Rule {
     pub memory_values_diff: MemoryValuesDiff,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct MemoryValuesDiff {}
 
 
@@ -77,7 +80,7 @@ impl TypedExpression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression64 {
     OperandR8 {
         operand_idx: OperandIdx
@@ -88,7 +91,7 @@ pub enum TypedExpression64 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression56 {
     Extract64 {
         source: TypedExpression64,
@@ -96,7 +99,7 @@ pub enum TypedExpression56 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression9 {
     Concatenate18 {
         left: TypedExpression1,
@@ -114,7 +117,7 @@ pub enum TypedExpression9 {
     Constant(i16),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression8 {
     Extract { source: TypedExpression64, base: usize },
     Extract9 { source: TypedExpression9, base: usize },
@@ -122,7 +125,7 @@ pub enum TypedExpression8 {
     Constant(i16),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression1 {
     FlagCF,
     Constant(bool),

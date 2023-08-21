@@ -27,5 +27,6 @@ members = [
     "xed-enum",
     "k-semantics-parser",
     "remill-semantics-parser",
-    "k-semantics-json-parser"
+    "k-semantics-json-parser",
+    "k-semantics-json-minimize"
 ]

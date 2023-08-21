@@ -34,7 +34,7 @@ fn has_a_label_expr(expr: &KExpression, label: &str) -> bool {
     }
 }
 
-pub(crate) fn has_execinstr_label(sentence: &KSentence, label: &str) -> bool {
+pub fn has_execinstr_label(sentence: &KSentence, label: &str) -> bool {
     match sentence {
         KSentence::KProduction { .. } => {
             false

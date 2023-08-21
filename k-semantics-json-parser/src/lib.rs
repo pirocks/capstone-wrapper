@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::BufReader;
-
 use crate::k_expressions::{KSentence, TopLevel};
 use crate::k_to_raw::{assert_token_is_true, extract_apply_args, extract_diff_expression_from_semantics, extract_operand_data_from_semantics};
 use crate::raw_to_typed::build_rule;
@@ -37,9 +34,20 @@ pub fn extract_rule_from_semantics(semantics: TopLevel) -> Rule {
     panic!()
 }
 
-#[test]
-pub fn test_semantics() -> anyhow::Result<()> {
-    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/formatted_parsed.json")?))?;
-    let _res = extract_rule_from_semantics(top_level);
-    Ok(())
+#[cfg(test)]
+pub mod test {
+    use std::fs::File;
+    use std::io::BufReader;
+    use crate::extract_rule_from_semantics;
+    use crate::k_expressions::TopLevel;
+
+    #[test]
+    pub fn test_semantics() -> anyhow::Result<()> {
+        let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/formatted_parsed.json")?))?;
+        let full_res = extract_rule_from_semantics(top_level);
+        let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized.json")?))?;
+        let minimized_res = extract_rule_from_semantics(top_level);
+        assert_eq!(full_res, minimized_res);
+        Ok(())
+    }
 }
