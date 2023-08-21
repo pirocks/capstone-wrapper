@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+xed-enum = { path = "../xed-enum" }
+wrapper-common = { path = "../wrapper-common" }
 serde = { version = "1", features = ["serde_derive"] }
 serde_json = "1"
 anyhow = "1"

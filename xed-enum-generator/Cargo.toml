@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-xed-sys = "0.4"
+xed-sys = { git = "https://github.com/rust-xed/xed-sys.git" }
 quote = "1.0"
 proc-macro2 = "1.0"
 convert_case = "0.6.0"
