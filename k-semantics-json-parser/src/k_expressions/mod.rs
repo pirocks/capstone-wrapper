@@ -145,6 +145,57 @@ pub enum KSentence {
     },
 }
 
+pub fn has_execinstr_label_expr(expr: &KExpression) -> bool{
+    match expr {
+        KExpression::KApply { label, args, .. } => {
+            if label.as_str() == "execinstr" {
+                return true
+            }
+            for arg in args {
+                if has_execinstr_label_expr(arg){
+                    return true
+                }
+            }
+            false
+        }
+        KExpression::KVariable { .. } => {
+            false
+        }
+        KExpression::KToken { .. } => {
+            false
+        }
+        KExpression::KRewrite { lhs, rhs } => has_execinstr_label_expr(lhs) || has_execinstr_label_expr(rhs),
+        KExpression::KSequence {  items, .. } => {
+            for x in items {
+                if has_execinstr_label_expr(x){
+                    return true
+                }
+            }
+            false
+        }
+    }
+}
+
+pub fn has_execinstr_label(sentence: &KSentence) -> bool{
+    match sentence {
+        KSentence::KProduction { .. } => {
+            false
+        }
+        KSentence::KModuleComment { .. } => false,
+        KSentence::KSyntaxSort { .. } => false,
+        KSentence::KRule { body, requires, ensures, .. } => {
+            has_execinstr_label_expr(body) || has_execinstr_label_expr(requires) || has_execinstr_label_expr(ensures)
+        }
+        KSentence::KSyntaxAssociativity { .. } => false,
+        KSentence::KSyntaxPriority { .. } => false,
+        KSentence::KContext { body, requires, .. } => {
+            has_execinstr_label_expr(body) || has_execinstr_label_expr(requires)
+        }
+        KSentence::KBubble { .. } => false
+    }
+}
+
+
 #[cfg(test)]
 pub mod test;
 
