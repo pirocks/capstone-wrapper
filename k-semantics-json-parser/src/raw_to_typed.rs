@@ -1,4 +1,5 @@
-use crate::k_to_raw::{ExpressionDiffData, RawOperandType, RuleOperandsData};
+use crate::k_to_raw::{RawOperandType, RuleOperandsData};
+use crate::k_to_raw::extract_register_expression::ExpressionDiffData;
 use crate::raw::{RawExpression, RawToken, SemanticCastKind};
 use crate::typed_semantics::{MemoryValuesDiff, NewFlags, RegisterOrParameter64, Rule, TypedExpression, TypedExpression1, TypedExpression56, TypedExpression64, TypedExpression8, TypedExpression9};
 
