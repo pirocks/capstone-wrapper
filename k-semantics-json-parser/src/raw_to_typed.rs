@@ -269,6 +269,27 @@ pub fn expr_to_typed_expr(expr: &RawExpression) -> TypedExpression {
         RawExpression::Token(_) => {
             todo!()
         }
+        RawExpression::LoadFromMemory { offset, size } => {
+            todo!()
+        }
+        RawExpression::StoreFromMemory { .. } => {
+            todo!()
+        }
+        RawExpression::ProjectMInt { .. } => {
+            todo!()
+        }
+        RawExpression::MapLookup { .. } => {
+            todo!()
+        }
+        RawExpression::SubMInt { .. } => {
+            todo!()
+        }
+        RawExpression::GetRegisterValue { .. } => {
+            todo!()
+        }
+        RawExpression::DecRSPInBytes { .. } => {
+            todo!()
+        }
     }
 }
 
@@ -325,7 +346,11 @@ pub fn build_rule(operands_data: RuleOperandsData, expression_data: ExpressionDi
                         let typed_expr = expr_to_typed_expr(&entry.expr);
                         rule.new_general_register_values.insert(RegisterOrParameter64::Parameter(op_idx), typed_expr.unwrap_64());
                     }
-                    None => todo!()
+                    Some(RawOperandType::Mem) => {
+                        rule.parameters.push(op_idx);
+                        todo!()
+                    }
+                    None => todo!(),
                 }
             }
             "CF" => {

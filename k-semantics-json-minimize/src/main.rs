@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
     for module in top_level.term.modules.iter_mut() {
         module.localSentences.retain(|sentence|{
             if let KSentence::KRule {.. } = sentence{
-                k_to_raw::has_execinstr_label(&sentence, "execinstr")
+                k_to_raw::utils::has_execinstr_label(&sentence, "execinstr")
             }else {
                 false
             }

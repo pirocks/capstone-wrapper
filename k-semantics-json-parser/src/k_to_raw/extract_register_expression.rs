@@ -1,18 +1,21 @@
 use std::str::FromStr;
+
 use crate::k_expressions::KExpression;
-use crate::k_to_raw::{extract_apply_args, extract_apply_label, RuleOperandsData};
+use crate::k_to_raw::{extract_apply_args, extract_apply_label, OperandNames};
 use crate::raw::{RawExpression, RawToken, SemanticCastKind};
 
+#[derive(Debug)]
 pub struct ExpressionDiffData {
     pub reg_state_entries: Vec<MapEntry>,
 }
 
+#[derive(Debug)]
 pub struct MapEntry {
     pub(crate) lhs: String,
     pub(crate) expr: RawExpression,
 }
 
-fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExpression {
+pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExpression {
     match expr {
         KExpression::KApply { label, args, .. } => {
             if label.as_str() == "#ifMInt_#then_#else_#fi_MINT-WRAPPER-SYNTAX" {
@@ -53,6 +56,18 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
                     lookup: Box::new(extract_expression(&args[0], operands)),
                     map: Box::new(extract_expression(&args[1], operands)),
                 };
+            } else if label.as_str() == "getRegisterValue" {
+                assert_eq!(args.len(), 2);
+                return RawExpression::GetRegisterValue {
+                    lookup: Box::new(extract_expression(&args[0], operands)),
+                    map: Box::new(extract_expression(&args[1], operands)),
+                };
+            } else if label.as_str() == "Map:lookup" {
+                assert_eq!(args.len(), 2);
+                return RawExpression::MapLookup {
+                    map: Box::new(extract_expression(&args[0], operands)),
+                    lookup: Box::new(extract_expression(&args[1], operands)),
+                };
             } else if label.as_str() == "#SemanticCastToR8" {
                 assert_eq!(args.len(), 1);
                 return RawExpression::SemanticCast {
@@ -74,6 +89,16 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
             } else if label.as_str() == "notBool_" {
                 assert_eq!(args.len(), 1);
                 return RawExpression::NotBool {
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "decRSPInBytes" {
+                assert_eq!(args.len(), 1);
+                return RawExpression::DecRSPInBytes {
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "project:MInt" {
+                assert_eq!(args.len(), 1);
+                return RawExpression::ProjectMInt {
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
             } else if label.as_str() == "addMInt" {
@@ -99,13 +124,41 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
                     left: Box::new(extract_expression(&args[0], operands)),
                     right: Box::new(extract_expression(&args[1], operands)),
                 };
+            } else if label.as_str() == "subMInt" {
+                assert_eq!(args.len(), 2);
+                return RawExpression::SubMInt {
+                    left: Box::new(extract_expression(&args[0], operands)),
+                    right: Box::new(extract_expression(&args[1], operands)),
+                };
             } else if label.as_str() == "_xorBool_" {
                 assert_eq!(args.len(), 2);
                 return RawExpression::XorBool {
                     left: Box::new(extract_expression(&args[0], operands)),
                     right: Box::new(extract_expression(&args[1], operands)),
                 };
-            } else {
+            } else if label.as_str() == "loadFromMemory" {
+                assert_eq!(args.len(), 2);
+                return RawExpression::LoadFromMemory {
+                    offset: Box::new(extract_expression(&args[0], operands)),
+                    size: Box::new(extract_expression(&args[1], operands)),
+                };
+            } else if label.as_str() == "storeToMemory" {
+                assert_eq!(args.len(), 3);
+                return RawExpression::StoreFromMemory {
+                    value: Box::new(extract_expression(&args[0], operands)),
+                    address: Box::new(extract_expression(&args[1], operands)),
+                    size: Box::new(extract_expression(&args[2], operands)),
+                };
+            } else if label.as_str() == "#SemanticCastToMInt" {
+                return RawExpression::SemanticCast {
+                    kind: SemanticCastKind::MInt,
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "%rsp_X86-SYNTAX"{
+                return RawExpression::Token(RawToken::RSP)
+            }
+
+            else {
                 todo!("{}", label);
             }
         }
@@ -113,7 +166,7 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
             if name.as_str() == "RSMap" {
                 return RawExpression::RSMap;
             }
-            return RawExpression::Op(operands.raw_operand_list.iter().find(|operand| &operand.name == name).unwrap().op_idx);
+            return RawExpression::Op(operands.name_lookup(name));
         }
         KExpression::KToken { sort, token } => {
             if sort.as_str() == "Int" {
@@ -121,6 +174,7 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
             } else if sort.as_str() == "String" {
                 return RawExpression::Token(match token.as_str() {
                     "\"CF\"" => RawToken::CF,
+                    "\"RIP\"" => RawToken::RIP,
                     token => todo!("{token}")
                 });
             }
@@ -130,7 +184,7 @@ fn extract_expression(expr: &KExpression, operands: &RuleOperandsData) -> RawExp
     }
 }
 
-fn handle_map_entry(expr: &KExpression, operands: &RuleOperandsData) -> MapEntry {
+fn handle_map_entry(expr: &KExpression, operands: &OperandNames) -> MapEntry {
     let args = extract_apply_args(expr, "_|->_");
     let lhs = &args[0];
     let rhs = &args[1];
@@ -155,7 +209,12 @@ fn handle_map_entry(expr: &KExpression, operands: &RuleOperandsData) -> MapEntry
     MapEntry { lhs, expr }
 }
 
-pub fn recursively_extract_map_entries(expr: &KExpression, operands: &RuleOperandsData, entries: &mut Vec<MapEntry>) {
+pub fn recursively_extract_map_entries(expr: &KExpression, operands: &OperandNames, entries: &mut Vec<MapEntry>) {
+    let first_label = extract_apply_label(expr);
+    if first_label == "_|->_" {
+        entries.push(handle_map_entry(expr, operands));
+        return;
+    }
     let args = extract_apply_args(expr, "_Map_");
     if args.len() == 1 {
         todo!()
@@ -172,7 +231,7 @@ pub fn recursively_extract_map_entries(expr: &KExpression, operands: &RuleOperan
     }
 }
 
-pub fn extract_diff_expression_from_semantics(semantic_rule_decl: &[KExpression], operands: &RuleOperandsData) -> ExpressionDiffData {
+pub fn extract_diff_expression_from_semantics(semantic_rule_decl: &[KExpression], operands: &OperandNames) -> ExpressionDiffData {
     assert_eq!(&semantic_rule_decl[0], &empty_kapply("#noDots"));
     assert_eq!(&semantic_rule_decl[2], &empty_kapply("#noDots"));
     assert_eq!(semantic_rule_decl.len(), 3);

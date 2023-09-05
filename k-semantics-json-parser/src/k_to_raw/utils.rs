@@ -82,3 +82,9 @@ pub fn extract_apply_label(expr: &KExpression) -> &str {
         _ => panic!()
     }
 }
+
+
+pub fn single_extract<T>(arr: &[T]) -> &T{
+    assert_eq!(arr.len(), 1);
+    &arr[0]
+}
