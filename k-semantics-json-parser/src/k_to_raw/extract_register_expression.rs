@@ -1,8 +1,9 @@
 use std::str::FromStr;
+use wrapper_common::registers::Reg64WithRIP;
 
 use crate::k_expressions::KExpression;
 use crate::k_to_raw::{extract_apply_args, extract_apply_label, OperandNames};
-use crate::raw::{RawExpression, RawToken, SemanticCastKind};
+use crate::raw::{OperandIdx, RawExpression, RawToken, SemanticCastKind};
 
 #[derive(Debug)]
 pub struct ExpressionDiffData {
@@ -10,8 +11,20 @@ pub struct ExpressionDiffData {
 }
 
 #[derive(Debug)]
+
+pub enum Flag {}
+
+#[derive(Debug)]
+
+pub enum MapEntryKind {
+    Op(OperandIdx),
+    Flag(Flag),
+    Reg64(Reg64WithRIP),
+}
+
+#[derive(Debug)]
 pub struct MapEntry {
-    pub(crate) lhs: String,
+    pub(crate) kind: MapEntryKind,
     pub(crate) expr: RawExpression,
 }
 
@@ -154,11 +167,36 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                     kind: SemanticCastKind::MInt,
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
-            } else if label.as_str() == "%rsp_X86-SYNTAX"{
-                return RawExpression::Token(RawToken::RSP)
-            }
-
-            else {
+            } else if label.as_str() == "#SemanticCastToXmm" {
+                return RawExpression::SemanticCast {
+                    kind: SemanticCastKind::Xmm,
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "#SemanticCastToR64" {
+                return RawExpression::SemanticCast {
+                    kind: SemanticCastKind::R64,
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "%rsp_X86-SYNTAX" {
+                return RawExpression::Token(RawToken::RSP);
+            } else if label.as_str() == "_(_,_,_)_MINT-WRAPPER-SYNTAX" {
+                let token = match &args[0] {
+                    KExpression::KToken { sort, token } => {
+                        assert_eq!(sort.as_str(), "UIFTerOperation");
+                        token.to_string()
+                    }
+                    _ => panic!()
+                };
+                let mut res_args = vec![];
+                for arg in &args[1..] {
+                    res_args.push(extract_expression(arg, operands));
+                }
+                return RawExpression::FunctionCall {
+                    token,
+                    args: res_args,
+                };
+            } else {
+                dbg!(args);
                 todo!("{}", label);
             }
         }
@@ -184,18 +222,38 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
     }
 }
 
+fn handle_map_entry_kind(str: impl Into<String>, operands: &OperandNames) -> MapEntryKind {
+    let str = str.into();
+    match operands.try_name_lookup(&str) {
+        None => {
+            match str.as_str() {
+                "RIP" => MapEntryKind::Reg64(Reg64WithRIP::RIP),
+                "CF" => {
+                    todo!()
+                }
+                other => todo!("{other}")
+            }
+        }
+        Some(op_idx) => {
+            MapEntryKind::Op(op_idx)
+        }
+    }
+}
+
 fn handle_map_entry(expr: &KExpression, operands: &OperandNames) -> MapEntry {
     let args = extract_apply_args(expr, "_|->_");
     let lhs = &args[0];
     let rhs = &args[1];
-    let lhs = match lhs {
+    let kind = match lhs {
         KExpression::KToken { token, .. } => {
-            token.as_str().strip_prefix("\"").unwrap().strip_suffix("\"").unwrap().to_string()
+            let token_string = token.as_str().strip_prefix("\"").unwrap().strip_suffix("\"").unwrap().to_string();
+            handle_map_entry_kind(token_string, operands)
         }
         KExpression::KApply { label, args, .. } => {
             assert_eq!(label.as_str(), "convToRegKeys");
-            if let KExpression::KVariable { name, .. } = &extract_apply_args(&args[0], "#SemanticCastToR8")[0] {
-                name.to_string()
+            let label = extract_apply_label(&args[0]);
+            if let KExpression::KVariable { name, .. } = &extract_apply_args(&args[0], label)[0] {
+                handle_map_entry_kind(name, operands)
             } else {
                 panic!()
             }
@@ -206,7 +264,7 @@ fn handle_map_entry(expr: &KExpression, operands: &OperandNames) -> MapEntry {
         }
     };
     let expr = extract_expression(rhs, operands);
-    MapEntry { lhs, expr }
+    MapEntry { kind, expr }
 }
 
 pub fn recursively_extract_map_entries(expr: &KExpression, operands: &OperandNames, entries: &mut Vec<MapEntry>) {

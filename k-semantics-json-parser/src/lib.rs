@@ -1,12 +1,19 @@
 #![feature(assert_matches)]
 
 use std::cell::OnceCell;
+use itertools::Itertools;
+use wrapper_common::operand_type::OperandType;
+
+use wrapper_common::registers::{Reg64WithRIP, RegisterType};
+
 use crate::k_expressions::{KSentence, TopLevel};
-use crate::k_to_raw::extract_register_expression::{extract_diff_expression_from_semantics, extract_expression};
-use crate::k_to_raw::{extract_rule_data_from_k_rule, RuleAtom, OperandNames, RuleData};
+use crate::k_to_raw::{extract_rule_data_from_k_rule, OperandNames, RawOperandType, RuleAtom, RuleData, RuleOperandsData};
+use crate::k_to_raw::extract_register_expression::{extract_diff_expression_from_semantics, extract_expression, MapEntry, MapEntryKind};
 use crate::k_to_raw::strip_dots::remove_dots_and_nodots;
 use crate::k_to_raw::utils::{assert_token_is_true, extract_apply_args, extract_apply_label, has_execinstr_label, single_extract};
-use crate::typed_semantics::Rule;
+use crate::raw::{OperandIdx, RawExpression};
+use crate::raw_to_typed::expr_to_typed_expr;
+use crate::typed_semantics::{MemoryValuesDiff, NewFlags, RegisterOrParameter64, Rule, TypedExpression, TypedExpression64};
 
 pub mod k_expressions;
 pub mod typed_semantics;
@@ -18,13 +25,14 @@ pub fn apply_k_atoms(atoms: Vec<RuleAtom>, primary_arg_definition: &mut OnceCell
     for atom in atoms {
         match atom {
             RuleAtom::RulesDecl(decl) => {
-                let _ = primary_arg_definition.set(OperandNames::new(decl));
+                let _ = primary_arg_definition.set(OperandNames::new(decl.clone()));
+                rules_datas.push(RuleData::DefinitionOnly(decl));
             }
-            RuleAtom::MemoryLoadValueAndLoadFromMemory { mem_load_value_name, load_expression } => {
+            RuleAtom::MemoryLoadValueAndLoadFromMemory { .. } => {
                 todo!()
             }
             RuleAtom::LoadExpression { expr } => {
-                extract_expression(&expr,primary_arg_definition.get().unwrap());
+                rules_datas.push(RuleData::MemLoadAndNextDefinition { load_expression: extract_expression(&expr, primary_arg_definition.get().unwrap()) });
             }
             RuleAtom::MemLoadValue(expr) => {
                 primary_arg_definition.get_mut().unwrap().sink_new_memory_operand(expr);
@@ -41,8 +49,13 @@ pub fn apply_k_atoms(atoms: Vec<RuleAtom>, primary_arg_definition: &mut OnceCell
     }
 }
 
-pub fn extract_rule_from_semantics(semantics: TopLevel, name: impl Into<String>) -> Rule {
-    let name = name.into();
+pub struct InstructionDescriptor{
+    operands: Vec<OperandType>,
+    name: String
+}
+
+pub fn extract_rule_from_semantics(semantics: TopLevel, instruction_desc: &InstructionDescriptor) -> Rule {
+    let name = instruction_desc.name.to_string();
     let mut rules_datas = vec![];
     let mut primary_arg_definition = OnceCell::new();
     for module in semantics.term.modules {
@@ -80,32 +93,130 @@ pub fn extract_rule_from_semantics(semantics: TopLevel, name: impl Into<String>)
             }
         }
     }
-    dbg!(rules_datas);
-    panic!()
+    build_rule(name, rules_datas, instruction_desc)
+}
+
+
+pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instruction_desc: &InstructionDescriptor) -> Rule {
+    let mut rule = Rule {
+        raw_name: name.into(),
+        new_general_register_values: Default::default(),
+        new_flags_value: NewFlags {
+            flag_cf: None,
+            flag_pf: None,
+            flag_af: None,
+            flag_zf: None,
+            flag_sf: None,
+            flag_of: None,
+        },
+        memory_values_diff: MemoryValuesDiff { stores: vec![] },
+    };
+    let mut operand_types = vec![];
+    let mut pending_loads = vec![];
+    let mut pending_stores = vec![];
+    let mut pending_memory_op_idx = 0;
+    for rule_data in rule_datas {
+        match rule_data {
+            RuleData::DefinitionOnly(RuleOperandsData { raw_instruction_name: _, raw_operand_list }) => {
+                operand_types = vec![None; raw_operand_list.len()];
+                assert_eq!(raw_operand_list.len(), instruction_desc.operands.len());
+                for (i, raw_operand) in raw_operand_list.into_iter().enumerate() {
+                    operand_types[i] = raw_operand.raw_operand_type.clone();
+                }
+            }
+            RuleData::MemLoadAndNextDefinition { load_expression } => {
+                if let RawExpression::LoadFromMemory { offset, size } = load_expression {
+                    let offset = offset.as_ref();
+                    let size = size.as_ref();
+                    if let RawExpression::ConstantInt(size) = size {
+                        let load = match size {
+                            64 => TypedExpression::_64(TypedExpression64::Load(Box::new(expr_to_typed_expr(offset, &RegisterType::AllGP64WithRIP).unwrap_64()))),
+                            size => todo!("{size}")
+                        };
+                        pending_memory_op_idx += instruction_desc.operands.as_slice()[pending_memory_op_idx..].iter().find_position(|op|{
+                            if let OperandType::Mem(mem) = op{
+                                mem.load
+                            }else {
+                                false
+                            }
+                        }).unwrap().0;
+                        pending_loads.push((OperandIdx(pending_memory_op_idx as u8), load));
+                    } else {
+                        panic!()
+                    }
+                }
+            }
+            RuleData::MemStoreAndNextDefinition { store_expression } => {
+                if let RawExpression::StoreFromMemory { value, address, size } = store_expression {
+                    let value = value.as_ref();
+                    let address = address.as_ref();
+                    let size = size.as_ref();
+                    if let RawExpression::ConstantInt(size) = size {
+                        let store = match size {
+                            64 => TypedExpression::_64(TypedExpression64::Store {
+                                address: Box::new(expr_to_typed_expr(address, &RegisterType::AllGP64WithRIP).unwrap_64()),
+                                value: Box::new(expr_to_typed_expr(value, &RegisterType::AllGP64WithRIP).unwrap_64()),
+                            }),
+                            size => todo!("{size}")
+                        };
+                        pending_stores.push(store);
+                    }
+                }
+            }
+            RuleData::RegState { expression } => {
+                for MapEntry { kind, expr } in expression.reg_state_entries {
+                    match kind {
+                        MapEntryKind::Op(op_idx) => {
+                            match operand_types[op_idx.0 as usize].as_ref().unwrap() {
+                                RawOperandType::R8 => {
+                                    todo!()
+                                }
+                                RawOperandType::Mem => {
+                                    todo!()
+                                }
+                                RawOperandType::XMM => {
+                                    todo!()
+                                }
+                                RawOperandType::R64 => {
+                                    rule.new_general_register_values.insert(RegisterOrParameter64::Operand(op_idx), expr_to_typed_expr(&expr, &RegisterType::AllGP64WithRIP).unwrap_64());
+                                }
+                            }
+                        }
+                        MapEntryKind::Flag(_) => {
+                            todo!()
+                        }
+                        MapEntryKind::Reg64(reg64) => {
+                            rule.new_general_register_values.insert(RegisterOrParameter64::Register(reg64), expr_to_typed_expr(&expr, &RegisterType::AllGP64WithRIP).unwrap_64());
+                        }
+                    }
+                }
+            }
+            RuleData::SideEffectingExpression { expression } => {
+                if let RawExpression::DecRSPInBytes { inner } = expression {
+                    let inner = expr_to_typed_expr(inner.as_ref(), &RegisterType::AllGP64WithRIP);
+                    let current_rsp = match rule.new_general_register_values.get(&RegisterOrParameter64::Register(Reg64WithRIP::RSP)) {
+                        None => {
+                            TypedExpression64::R64 { reg: Reg64WithRIP::RSP }
+                        }
+                        Some(current_rsp) => {
+                            current_rsp.clone()
+                        }
+                    };
+                    rule.new_general_register_values.insert(RegisterOrParameter64::Register(Reg64WithRIP::RSP), TypedExpression64::Sub {
+                        left: Box::new(current_rsp),
+                        right: Box::new(inner.unwrap_64()),
+                    });
+                } else { todo!() }
+            }
+        }
+    }
+    for val in rule.new_general_register_values.values_mut() {
+        for (pending_load_op_idx, typed_expr) in pending_loads.iter() {
+            *val = val.operand_replace(*pending_load_op_idx,typed_expr);
+        }
+    }
+    dbg!(rule)
 }
 
 #[cfg(test)]
-pub mod test {
-    use std::fs::File;
-    use std::io::BufReader;
-
-    use crate::extract_rule_from_semantics;
-    use crate::k_expressions::TopLevel;
-
-    #[test]
-    pub fn test_minimized() -> anyhow::Result<()> {
-        let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/formatted_parsed.json")?))?;
-        let full_res = extract_rule_from_semantics(top_level, "ADCB-R8-R8");
-        let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized.json")?))?;
-        let minimized_res = extract_rule_from_semantics(top_level, "ADCB-R8-R8");
-        assert_eq!(full_res, minimized_res);
-        Ok(())
-    }
-
-    #[test]
-    pub fn test_extract_callq_m64() -> anyhow::Result<()> {
-        let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-CALLQ-M64.json")?))?;
-        let _rule = extract_rule_from_semantics(top_level, "CALLQ-M64");
-        Ok(())
-    }
-}
+pub mod test;

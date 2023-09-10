@@ -19,6 +19,7 @@ pub enum InstructionDefinition {
 
 
 pub struct OperandNames {
+    pending_mem_load_name: Option<String>,
     operands_original: HashMap<String, OperandIdx>,
     memory_operand_rename_index: usize,
     operands_renamed: HashMap<String, OperandIdx>,
@@ -32,15 +33,13 @@ impl OperandNames {
                 None => {
                     todo!("{raw_operands:?}")
                 }
-                Some(RawOperandType::R8) => {
-                    operands.insert(raw_operands.name.clone(), OperandIdx(i as u8));
-                }
-                Some(RawOperandType::Mem) => {
+                Some(RawOperandType::R8) | Some(RawOperandType::XMM) | Some(RawOperandType::Mem) | Some(RawOperandType::R64) => {
                     operands.insert(raw_operands.name.clone(), OperandIdx(i as u8));
                 }
             }
         }
         Self {
+            pending_mem_load_name: None,
             operands_original: operands,
             memory_operand_rename_index: 0,
             operands_renamed: Default::default(),
@@ -48,11 +47,15 @@ impl OperandNames {
     }
 
     pub fn name_lookup(&self, name: impl Into<String>) -> OperandIdx {
+        self.try_name_lookup(name.into()).unwrap()
+    }
+
+    pub fn try_name_lookup(&self, name: impl Into<String>) -> Option<OperandIdx> {
         let name = name.into();
         match self.operands_renamed.get(&name) {
-            Some(x) => *x,
+            Some(x) => Some(*x),
             None => {
-                *self.operands_original.get(&name).unwrap()
+                self.operands_original.get(&name).cloned()
             }
         }
     }
@@ -83,7 +86,7 @@ pub enum RuleData {
 
 #[derive(Clone, Debug)]
 pub struct RuleOperandsData {
-    pub(crate) raw_instruction_name: String,
+    pub raw_instruction_name: String,
     pub raw_operand_list: Vec<RawOperand>,
 }
 
@@ -91,13 +94,15 @@ pub struct RuleOperandsData {
 pub enum RawOperandType {
     R8,
     Mem,
+    XMM,
+    R64,
 }
 
 #[derive(Clone, Debug)]
 pub struct RawOperand {
     pub(crate) raw_operand_type: Option<RawOperandType>,
     pub(crate) name: String,
-    pub(crate) op_idx: OperandIdx,
+    pub op_idx: OperandIdx,
 }
 
 pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Option<RawOperandType>, raw_operands: &mut Vec<RawOperand>) {
@@ -119,11 +124,14 @@ pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Optio
             } else if label.as_str() == "#SemanticCastToMInt" {
                 assert_matches!(current_type, Some(RawOperandType::Mem));
                 return recursive_operand_extract(&args[0], current_type, raw_operands);
+            } else if label.as_str() == "#SemanticCastToXmm" {
+                return recursive_operand_extract(&args[0], Some(RawOperandType::XMM), raw_operands);
+            } else if label.as_str() == "#SemanticCastToR64" {
+                return recursive_operand_extract(&args[0], Some(RawOperandType::R64), raw_operands);
             } else if label.as_str() == "#SemanticCastToMemOffset" {
                 assert_eq!(args.len(), 1);
                 return recursive_operand_extract(&args[0], current_type, raw_operands);
             }
-
             dbg!(label);
             dbg!(args);
             todo!()
@@ -181,7 +189,7 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                     assert_eq!(extract_apply_label(without_semantic_cast), "memLoadValue");
                     let without_mem_load_value = &extract_apply_args(without_semantic_cast, "memLoadValue")[0];
                     let variable = &extract_apply_args(without_mem_load_value, "#SemanticCastToMInt")[0];
-                    if let KExpression::KVariable { name, originalName } = variable {
+                    if let KExpression::KVariable { name, originalName:_ } = variable {
                         assert_eq!(name.as_str(), "MemVal");
                         res.push(RuleAtom::MemLoadValue(name.to_string()));
                     } else { todo!() }
@@ -196,6 +204,8 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                 KExpression::KVariable { .. } => todo!(),
                 KExpression::KToken { .. } => todo!(),
                 KExpression::KRewrite { lhs, rhs } => {
+                    dbg!(lhs);
+                    dbg!(rhs);
                     todo!()
                 }
                 KExpression::KSequence { items, .. } => {
@@ -213,7 +223,7 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                         } else {
                             todo!("{:?}", &items[0])
                         };
-                        if let KExpression::KApply { label, args, .. } = &items[1] {
+                        if let KExpression::KApply { label, .. } = &items[1] {
                             if label.as_str() == "execinstr" {
                                 // skip rexec for now
                             } else {

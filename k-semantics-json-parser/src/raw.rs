@@ -74,6 +74,7 @@ pub enum RawExpression {
     SubMInt { left: Box<RawExpression>, right: Box<RawExpression> },
     GetRegisterValue { lookup: Box<RawExpression>, map: Box<RawExpression> },
     DecRSPInBytes { inner: Box<RawExpression> },
+    FunctionCall { token: String, args: Vec<RawExpression> },
 }
 
 #[derive(Debug)]
@@ -88,6 +89,8 @@ pub enum SemanticCastKind {
     R8,
     Map,
     MInt,
+    Xmm,
+    R64,
 }
 
 

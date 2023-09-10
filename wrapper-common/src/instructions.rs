@@ -36,6 +36,8 @@ impl InstructionEncoding {
                     val,
                     vsib,
                     suppressed,
+                    r,
+                    w,
                     ..
                 } = operand {
                     let supressed = suppressed == &Some("1".to_string());
@@ -51,6 +53,8 @@ impl InstructionEncoding {
                                                             memory_prefix.as_ref(),
                                                             width.as_ref(),
                                                             vsib.as_ref(),
+                                                            r.as_ref(),
+                                                            w.as_ref(),
                                                         )?).is_some();
                     if duplicate {
                         return Err(FromRawError::MultipleOperandsWithSameIndex);

@@ -1,0 +1,273 @@
+{
+  "version": 1,
+  "term": {
+    "mainModule": "X86-SEMANTICS",
+    "modules": [
+      {
+        "name": "MOVQ-R64-R64",
+        "imports": [
+          "MOVQ-R64-R64$SYNTAX",
+          "X86-FLAG-CHECKS",
+          "X86-CONFIGURATION"
+        ],
+        "localSentences": [
+          {
+            "node": "KRule",
+            "body": {
+              "node": "KApply",
+              "label": "#cells",
+              "variable": false,
+              "arity": 2,
+              "args": [
+                {
+                  "node": "KApply",
+                  "label": "<k>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KRewrite",
+                      "lhs": {
+                        "node": "KApply",
+                        "label": "execinstr",
+                        "variable": false,
+                        "arity": 1,
+                        "args": [
+                          {
+                            "node": "KApply",
+                            "label": "___X86-SYNTAX",
+                            "variable": false,
+                            "arity": 2,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "movq_X86-SYNTAX",
+                                "variable": false,
+                                "arity": 0,
+                                "args": []
+                              },
+                              {
+                                "node": "KApply",
+                                "label": "operandlist",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToR64",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "R1",
+                                        "originalName": "R1"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "operandlist",
+                                    "variable": false,
+                                    "arity": 2,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "#SemanticCastToR64",
+                                        "variable": false,
+                                        "arity": 1,
+                                        "args": [
+                                          {
+                                            "node": "KVariable",
+                                            "name": "R2",
+                                            "originalName": "R2"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "node": "KApply",
+                                        "label": ".List{\"operandlist\"}",
+                                        "variable": false,
+                                        "arity": 0,
+                                        "args": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "rhs": {
+                        "node": "KSequence",
+                        "arity": 0,
+                        "items": []
+                      }
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#dots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                },
+                {
+                  "node": "KApply",
+                  "label": "<regstate>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KRewrite",
+                      "lhs": {
+                        "node": "KApply",
+                        "label": "#SemanticCastToMap",
+                        "variable": false,
+                        "arity": 1,
+                        "args": [
+                          {
+                            "node": "KVariable",
+                            "name": "RSMap",
+                            "originalName": "RSMap"
+                          }
+                        ]
+                      },
+                      "rhs": {
+                        "node": "KApply",
+                        "label": "updateMap",
+                        "variable": false,
+                        "arity": 2,
+                        "args": [
+                          {
+                            "node": "KApply",
+                            "label": "#SemanticCastToMap",
+                            "variable": false,
+                            "arity": 1,
+                            "args": [
+                              {
+                                "node": "KVariable",
+                                "name": "RSMap",
+                                "originalName": "RSMap"
+                              }
+                            ]
+                          },
+                          {
+                            "node": "KApply",
+                            "label": "_|->_",
+                            "variable": false,
+                            "arity": 2,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "convToRegKeys",
+                                "variable": false,
+                                "arity": 1,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToR64",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "R2",
+                                        "originalName": "R2"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "node": "KApply",
+                                "label": "getParentValue",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToR64",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "R1",
+                                        "originalName": "R1"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToMap",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "RSMap",
+                                        "originalName": "RSMap"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "requires": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "ensures": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "att": {
+              "node": "KAtt",
+              "att": {
+                "org.kframework.attributes.Location": "Location(7,8,15,16)",
+                "org.kframework.definition.Production": "syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions) symbol()]",
+                "contentStartLine": "7",
+                "org.kframework.attributes.Source": "Source(/home/user/X86-64-semantics/semantics/registerInstructions/movq_r64_r64.k)",
+                "contentStartColumn": "8"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -147,7 +147,7 @@ impl OperandType {
                 };
                 format!("OperandType::Reg({reg})")
             }
-            OperandType::Mem(MemoryOperandType { vsib, kind }) => {
+            OperandType::Mem(MemoryOperandType { vsib, kind, load, store }) => {
                 let vsib = match vsib {
                     None => "None".to_string(),
                     Some(vrk) => match vrk {
@@ -173,7 +173,7 @@ impl OperandType {
                     MemoryOperandTypeKind::Mem16 => "MemoryOperandTypeKind::Mem16".to_string(),
                     MemoryOperandTypeKind::Mem8 => "MemoryOperandTypeKind::Mem8".to_string(),
                 };
-                format!("OperandType::Mem(MemoryOperandType{{ vsib:{}, kind:{} }})", vsib, kind)
+                format!("OperandType::Mem(MemoryOperandType{{ vsib:{}, kind:{}, load: {}, store: {} }})", vsib, kind, load, store)
             }
             OperandType::Imm(imm) => {
                 match imm {
@@ -439,6 +439,8 @@ impl OperandType {
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
         vsib: Option<impl AsRef<str>>,
+        load: bool,
+        store: bool
     ) -> Result<OperandType, OperandFromStr> {
         let memory_operand_kind = match (xtype.as_ref().map(|s| s.as_ref()), memory_prefix.as_ref().map(|s| s.as_ref()), width.as_ref().map(|s| s.as_ref())) {
             (Some("struct"), _, Some("80")) => MemoryOperandTypeKind::Mem80,
@@ -485,6 +487,8 @@ impl OperandType {
                 a => todo!("{a:?}")
             },
             kind: memory_operand_kind,
+            load,
+            store,
         }))
     }
 
@@ -495,10 +499,14 @@ impl OperandType {
         memory_prefix: Option<impl AsRef<str>>,
         width: Option<impl AsRef<str>>,
         vsib: Option<impl AsRef<str>>,
+        load: Option<impl AsRef<str>>,
+        store: Option<impl AsRef<str>>
     ) -> Result<OperandType, OperandFromStr> {
         match r#type.as_str() {
             "mem" => {
-                Self::from_mem(xtype, memory_prefix, width, vsib)
+                Self::from_mem(xtype, memory_prefix, width, vsib,
+                               load.map(|inner| inner.as_ref() == "1").unwrap_or(false),
+                               store.map(|inner| inner.as_ref() == "1").unwrap_or(false))
             }
             "reg" => {
                 match val {
@@ -916,6 +924,8 @@ pub enum VectorRegisterKind {
 pub struct MemoryOperandType {
     pub vsib: Option<VectorRegisterKind>,
     pub kind: MemoryOperandTypeKind,
+    pub load: bool,
+    pub store: bool,
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
