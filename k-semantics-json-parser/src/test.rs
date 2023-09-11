@@ -52,3 +52,14 @@ pub fn test_extract_movq_r64_r64() -> anyhow::Result<()> {
     });
     Ok(())
 }
+
+
+#[test]
+pub fn test_extract_andb_m8_rh() -> anyhow::Result<()> {
+    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-ANDB-M8-RH.json")?))?;
+    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
+        operands: vec![OperandType::Reg(RegisterType::AllGP64WithRIP), OperandType::Reg(RegisterType::AllGP64WithRIP)],
+        name: "ANDB-M8-RH".to_string(),
+    });
+    Ok(())
+}
