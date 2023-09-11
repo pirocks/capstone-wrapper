@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use wrapper_common::registers::Reg64WithRIP;
+use wrapper_common::registers::{Reg64WithRIP, RegXMM};
 
 use crate::raw::OperandIdx;
 
@@ -8,6 +6,12 @@ use crate::raw::OperandIdx;
 pub enum RegisterOrParameter64 {
     Operand(OperandIdx),
     Register(Reg64WithRIP),
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum RegisterOrParameterXMM {
+    Operand(OperandIdx),
+    Register(RegXMM),
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -21,23 +25,59 @@ pub struct NewFlags {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
+pub enum RuleElement {
+    NewGeneralRegisterValue {
+        register: RegisterOrParameter64,
+        value: TypedExpression64,
+    },
+    NewVectorRegisterValue {
+        register: RegisterOrParameterXMM,
+        value: TypedExpression256,
+    },
+    NewFlagsValue {
+        flag_cf: Option<TypedExpression1>,
+        flag_pf: Option<TypedExpression1>,
+        flag_af: Option<TypedExpression1>,
+        flag_zf: Option<TypedExpression1>,
+        flag_sf: Option<TypedExpression1>,
+        flag_of: Option<TypedExpression1>,
+    },
+    Store {
+        address: TypedExpression64,
+        value: TypedExpression,
+    },
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Rule {
     pub raw_name: String,
     // pub parameters: Vec<OperandIdx>,
-    pub new_general_register_values: HashMap<RegisterOrParameter64, TypedExpression64>,
-    pub new_flags_value: NewFlags,
-    //todo for now all stores happen after loads which may not be accurate.
-    pub memory_values_diff: MemoryValuesDiff,
+    // pub new_general_register_values: HashMap<RegisterOrParameter64, TypedExpression64>,
+    // pub new_flags_value: NewFlags,
+    // pub memory_values_diff: MemoryValuesDiff,
+    pub elements: Vec<RuleElement>,
+}
+
+impl Rule {
+    pub fn new_general_register_value(&mut self, reg: RegisterOrParameter64, value: TypedExpression64) {
+        self.elements.push(RuleElement::NewGeneralRegisterValue { register: reg, value })
+    }
+
+    pub fn new_vector_register_value(&mut self, reg: RegisterOrParameterXMM, value: TypedExpression256) {
+        self.elements.push(RuleElement::NewVectorRegisterValue { register: reg, value })
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct MemoryValuesDiff {
-    pub(crate) stores: Vec<TypedExpression64>
+    pub(crate) stores: Vec<TypedExpression64>,
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum TypedExpression {
+    _256(TypedExpression256),
+    _128(TypedExpression128),
     _64(TypedExpression64),
     _56(TypedExpression56),
     _9(TypedExpression9),
@@ -46,6 +86,32 @@ pub enum TypedExpression {
 }
 
 impl TypedExpression {
+    pub(crate) fn operand_replace(&self, op: OperandIdx, replace_with: &TypedExpression) -> TypedExpression {
+        match self {
+            TypedExpression::_64(_64) => {
+                TypedExpression::_64(_64.operand_replace(op, replace_with))
+            }
+            TypedExpression::_56(_56) => {
+                TypedExpression::_56(_56.operand_replace(op, replace_with))
+            }
+            TypedExpression::_9(_9) => {
+                todo!()
+            }
+            TypedExpression::_8(_8) => {
+                todo!()
+            }
+            TypedExpression::_1(_1) => {
+                todo!()
+            }
+            TypedExpression::_128(_) => {
+                todo!()
+            }
+            TypedExpression::_256(_) => {
+                todo!()
+            }
+        }
+    }
+
     pub fn size(&self) -> usize {
         match self {
             TypedExpression::_64(_) => 64,
@@ -53,6 +119,8 @@ impl TypedExpression {
             TypedExpression::_9(_) => 9,
             TypedExpression::_8(_) => 8,
             TypedExpression::_1(_) => 1,
+            TypedExpression::_128(_) => 128,
+            TypedExpression::_256(_) => 256,
         }
     }
 
@@ -83,6 +151,20 @@ impl TypedExpression {
             _ => panic!()
         }
     }
+
+    pub fn unwrap_128(self) -> TypedExpression128 {
+        match self {
+            TypedExpression::_128(inner) => inner,
+            _ => panic!()
+        }
+    }
+
+    pub fn unwrap_256(self) -> TypedExpression256 {
+        match self {
+            TypedExpression::_256(inner) => inner,
+            _ => panic!()
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -98,12 +180,14 @@ pub enum TypedExpression64 {
     R64 { reg: Reg64WithRIP },
     Load(Box<TypedExpression64>),
     Store {
-//todo this doesn't belong here, since it returns nothing
+        //todo this doesn't belong here, since it returns nothing
         address: Box<TypedExpression64>,
         value: Box<TypedExpression64>,
     },
     Sub { left: Box<TypedExpression64>, right: Box<TypedExpression64> },
     Constant(i128),
+    Extract128 { source: Box<TypedExpression128>, base: usize },
+    Float2MInt { inner: Box<TypedExpressionF64> },
 }
 
 impl TypedExpression64 {
@@ -149,6 +233,12 @@ impl TypedExpression64 {
             }
             TypedExpression64::Constant(con) => {
                 TypedExpression64::Constant(*con)
+            }
+            TypedExpression64::Extract128 { source, base } => {
+                TypedExpression64::Extract128 { source: Box::new(source.as_ref().operand_replace(op, replace_with)), base: *base }
+            }
+            TypedExpression64::Float2MInt { inner } => {
+                TypedExpression64::Float2MInt { inner: Box::new(inner.as_ref().operand_replace(op, replace_with)) }
             }
         }
     }
@@ -239,4 +329,110 @@ pub enum TypedExpression1 {
     Xor { left: Box<TypedExpression1>, right: Box<TypedExpression1> },
     Equals8 { left: Box<TypedExpression8>, right: Box<TypedExpression8> },
     AndBool { left: Box<TypedExpression1>, right: Box<TypedExpression1> },
+}
+
+
+impl TypedExpression1 {
+    pub(crate) fn operand_replace(&self, op: OperandIdx, replace_with: &TypedExpression) -> TypedExpression1 {
+        match self {
+            TypedExpression1::FlagCF => {
+                todo!()
+            }
+            TypedExpression1::Constant(_) => {
+                todo!()
+            }
+            TypedExpression1::Equals1 { .. } => {
+                todo!()
+            }
+            TypedExpression1::IfThenElse { .. } => {
+                todo!()
+            }
+            TypedExpression1::Extract9 { .. } => {
+                todo!()
+            }
+            TypedExpression1::Not(_) => {
+                todo!()
+            }
+            TypedExpression1::XorBool { .. } => {
+                todo!()
+            }
+            TypedExpression1::Extract64 { .. } => {
+                todo!()
+            }
+            TypedExpression1::Xor { .. } => {
+                todo!()
+            }
+            TypedExpression1::Equals8 { .. } => {
+                todo!()
+            }
+            TypedExpression1::AndBool { .. } => {
+                todo!()
+            }
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum TypedExpression128 {
+    Constant(i128),
+    OperandR128 { operand_idx: OperandIdx },
+    Concatenate6464 { left: Box<TypedExpression64>, right: Box<TypedExpression64> },
+}
+
+impl TypedExpression128 {
+    pub fn operand_replace(&self, op: OperandIdx, replace_with: &TypedExpression) -> TypedExpression128 {
+        todo!()
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum TypedExpressionF64 {
+    FloatAdd { left: Box<TypedExpressionF64>, right: Box<TypedExpressionF64> },
+    FloatMul { left: Box<TypedExpressionF64>, right: Box<TypedExpressionF64> },
+    MInt2Float { from: TypedExpression64, range_end: i32, range_start: i32 },
+}
+
+impl TypedExpressionF64 {
+    pub fn operand_replace(&self, op: OperandIdx, replace_with: &TypedExpression) -> TypedExpressionF64 {
+        match self {
+            TypedExpressionF64::FloatAdd { left, right } => {
+                TypedExpressionF64::FloatAdd {
+                    left: Box::new(left.as_ref().operand_replace(op, replace_with)),
+                    right: Box::new(right.as_ref().operand_replace(op, replace_with)),
+                }
+            }
+            TypedExpressionF64::FloatMul { left, right } => {
+                TypedExpressionF64::FloatMul {
+                    left: Box::new(left.as_ref().operand_replace(op, replace_with)),
+                    right: Box::new(right.as_ref().operand_replace(op, replace_with)),
+                }
+            }
+            TypedExpressionF64::MInt2Float { from, range_end, range_start } => {
+                TypedExpressionF64::MInt2Float {
+                    from: from.operand_replace(op, replace_with),
+                    range_end: *range_end,
+                    range_start: *range_start,
+                }
+            }
+        }
+    }
+}
+
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum TypedExpression256 {
+    Concatenate128128 { left: Box<TypedExpression128>, right: Box<TypedExpression128> },
+}
+
+impl TypedExpression256 {
+    pub fn operand_replace(&self, op: OperandIdx, replace_with: &TypedExpression) -> TypedExpression256 {
+        match self {
+            TypedExpression256::Concatenate128128 { left, right } => {
+                TypedExpression256::Concatenate128128 {
+                    left: Box::new(left.as_ref().operand_replace(op, replace_with)),
+                    right: Box::new(right.as_ref().operand_replace(op, replace_with)),
+                }
+            }
+        }
+    }
 }

@@ -19,7 +19,6 @@ pub enum InstructionDefinition {
 
 
 pub struct OperandNames {
-    pending_mem_load_name: Option<String>,
     operands_original: HashMap<String, OperandIdx>,
     memory_operand_rename_index: usize,
     operands_renamed: HashMap<String, OperandIdx>,
@@ -39,7 +38,6 @@ impl OperandNames {
             }
         }
         Self {
-            pending_mem_load_name: None,
             operands_original: operands,
             memory_operand_rename_index: 0,
             operands_renamed: Default::default(),

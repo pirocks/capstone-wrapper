@@ -1,7 +1,7 @@
 use wrapper_common::registers::{Reg64WithRIP, RegisterType};
 
 use crate::raw::{RawExpression, RawToken, SemanticCastKind};
-use crate::typed_semantics::{TypedExpression, TypedExpression1, TypedExpression56, TypedExpression64, TypedExpression8, TypedExpression9};
+use crate::typed_semantics::{TypedExpression, TypedExpression1, TypedExpression128, TypedExpression256, TypedExpression56, TypedExpression64, TypedExpression8, TypedExpression9, TypedExpressionF64};
 
 pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) -> TypedExpression {
     match expr {
@@ -74,12 +74,6 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
             let true_case = expr_to_typed_expr(true_case.as_ref(), expected_type);
             let false_case = expr_to_typed_expr(false_case.as_ref(), expected_type);
             match true_case {
-                TypedExpression::_64(_) => {
-                    todo!()
-                }
-                TypedExpression::_56(_) => {
-                    todo!()
-                }
                 TypedExpression::_9(true_case) => {
                     let false_case = false_case.unwrap_9();
                     TypedExpression::_9(TypedExpression9::IfThenElse {
@@ -87,9 +81,6 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
                         true_case: Box::new(true_case),
                         false_case: Box::new(false_case),
                     })
-                }
-                TypedExpression::_8(_) => {
-                    todo!()
                 }
                 TypedExpression::_1(true_case) => {
                     let false_case = false_case.unwrap_1();
@@ -99,16 +90,13 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
                         false_case: Box::new(false_case),
                     })
                 }
+                _ => { todo!() }
             }
         }
         RawExpression::AndBool { left, right } => {
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
-                TypedExpression::_9(_) => todo!(),
-                TypedExpression::_8(_) => todo!(),
                 TypedExpression::_1(left) => {
                     let right = right.unwrap_1();
                     TypedExpression::_1(TypedExpression1::AndBool {
@@ -116,29 +104,24 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
                         right: Box::new(right),
                     })
                 }
+                _ => todo!(),
             }
         }
         RawExpression::EqualsBool { left, right } => {
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
-                TypedExpression::_9(_) => todo!(),
-                TypedExpression::_8(_) => todo!(),
                 TypedExpression::_1(left) => {
                     let right = right.unwrap_1();
                     TypedExpression::_1(TypedExpression1::Equals1 { left: Box::new(left), right: Box::new(right) })
                 }
+                _ => todo!(),
             }
         }
         RawExpression::Equals { left, right } => {
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
-                TypedExpression::_9(_) => todo!(),
                 TypedExpression::_8(left) => {
                     let right = right.unwrap_8();
                     TypedExpression::_1(TypedExpression1::Equals8 {
@@ -153,6 +136,7 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
                         right: Box::new(right),
                     })
                 }
+                _ => todo!(),
             }
         }
         RawExpression::MI { len, val } => {
@@ -170,6 +154,9 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
             if len == 64 {
                 return TypedExpression::_64(TypedExpression64::Constant(val));
             }
+            if len == 128 {
+                return TypedExpression::_128(TypedExpression128::Constant(val));
+            }
             todo!("{len}")
         }
         RawExpression::Extract { from, range_start, range_end } => {
@@ -183,24 +170,27 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
                     TypedExpression::_64(inner) => {
                         TypedExpression::_8(TypedExpression8::Extract64 { source: inner, base: range_start as usize })
                     }
-                    TypedExpression::_56(_) => todo!(),
                     TypedExpression::_9(inner) => {
                         TypedExpression::_8(TypedExpression8::Extract9 { source: inner, base: range_start as usize })
                     }
-                    TypedExpression::_8(_) => todo!(),
-                    TypedExpression::_1(_) => todo!(),
+                    _ => todo!(),
                 }
             } else if (range_end - range_start) == 1 {
                 match from {
                     TypedExpression::_64(inner) => {
                         TypedExpression::_1(TypedExpression1::Extract64 { source: Box::new(inner), base: range_start as usize })
                     }
-                    TypedExpression::_56(_) => todo!(),
                     TypedExpression::_9(inner) => {
                         TypedExpression::_1(TypedExpression1::Extract9 { source: Box::new(inner), base: range_start as usize })
                     }
-                    TypedExpression::_8(_) => todo!(),
-                    TypedExpression::_1(_) => todo!(),
+                    _ => todo!(),
+                }
+            } else if (range_end - range_start) == 64 {
+                match from {
+                    TypedExpression::_128(inner) => {
+                        TypedExpression::_64(TypedExpression64::Extract128 { source: Box::new(inner), base: range_start as usize })
+                    }
+                    _ => todo!(),
                 }
             } else {
                 dbg!(range_end - range_start);
@@ -211,31 +201,79 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
                 TypedExpression::_56(_56) => {
                     match right {
-                        TypedExpression::_64(_) => todo!(),
-                        TypedExpression::_56(_) => todo!(),
-                        TypedExpression::_9(_) => todo!(),
                         TypedExpression::_8(_8) => {
                             TypedExpression::_64(TypedExpression64::Concatenate568 { left: Box::new(_56), right: Box::new(_8) })
                         }
-                        TypedExpression::_1(_) => todo!(),
+                        _ => todo!(),
                     }
                 }
-                TypedExpression::_9(_) => todo!(),
-                TypedExpression::_8(_) => todo!(),
                 TypedExpression::_1(_1) => {
                     match right {
-                        TypedExpression::_64(_) => todo!(),
-                        TypedExpression::_56(_) => todo!(),
-                        TypedExpression::_9(_) => todo!(),
                         TypedExpression::_8(_8) => {
                             TypedExpression::_9(TypedExpression9::Concatenate18 { left: _1, right: Box::new(_8) })
                         }
-                        TypedExpression::_1(_) => todo!(),
+                        _ => todo!(),
                     }
                 }
+                TypedExpression::_64(left) => {
+                    match right {
+                        TypedExpression::_128(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_64(right) => {
+                            TypedExpression::_128(TypedExpression128::Concatenate6464 {
+                                left: Box::new(left),
+                                right: Box::new(right),
+                            })
+                        }
+                        TypedExpression::_56(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_9(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_8(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_1(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_256(_) => {
+                            todo!()
+                        }
+                    }
+                }
+                TypedExpression::_128(left) => {
+                    match right {
+                        TypedExpression::_256(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_128(right) => {
+                            TypedExpression::_256(TypedExpression256::Concatenate128128 {
+                                left: Box::new(left),
+                                right: Box::new(right),
+                            })
+                        }
+                        TypedExpression::_64(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_56(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_9(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_8(_) => {
+                            todo!()
+                        }
+                        TypedExpression::_1(_) => {
+                            todo!()
+                        }
+                    }
+                }
+                _ => todo!("{left:?}"),
             }
         }
         RawExpression::GetParentValue { lookup, map } => {
@@ -293,64 +331,46 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
                 TypedExpression::_9(left) => {
                     match right {
-                        TypedExpression::_64(_) => todo!(),
-                        TypedExpression::_56(_) => todo!(),
                         TypedExpression::_9(right) => {
                             TypedExpression::_9(TypedExpression9::Equals { left: Box::new(left), right: Box::new(right) })
                         }
-                        TypedExpression::_8(_) => todo!(),
-                        TypedExpression::_1(_) => todo!(),
+                        _ => todo!(),
                     }
                 }
-                TypedExpression::_8(_) => todo!(),
-                TypedExpression::_1(_) => todo!(),
+                _ => todo!(),
             }
         }
         RawExpression::Xor { left, right } => {
             let left = expr_to_typed_expr(left.as_ref(), expected_type);
             let right = expr_to_typed_expr(right.as_ref(), expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
-                TypedExpression::_9(_) => todo!(),
-                TypedExpression::_8(_) => todo!(),
                 TypedExpression::_1(left) => match right {
-                    TypedExpression::_64(_) => todo!(),
-                    TypedExpression::_56(_) => todo!(),
-                    TypedExpression::_9(_) => todo!(),
-                    TypedExpression::_8(_) => todo!(),
                     TypedExpression::_1(right) => {
                         TypedExpression::_1(TypedExpression1::Xor { left: Box::new(left), right: Box::new(right) })
                     }
-                }
+                    _ => todo!(),
+                },
+                _ => todo!(),
             }
         }
         RawExpression::XorBool { left, right } => {
             let left = expr_to_typed_expr(left, expected_type);
             let right = expr_to_typed_expr(right, expected_type);
             match left {
-                TypedExpression::_64(_) => todo!(),
-                TypedExpression::_56(_) => todo!(),
-                TypedExpression::_9(_) => todo!(),
-                TypedExpression::_8(_) => todo!(),
                 TypedExpression::_1(left) => {
                     match right {
-                        TypedExpression::_64(_) => todo!(),
-                        TypedExpression::_56(_) => todo!(),
-                        TypedExpression::_9(_) => todo!(),
-                        TypedExpression::_8(_) => todo!(),
                         TypedExpression::_1(right) => {
                             TypedExpression::_1(TypedExpression1::XorBool {
                                 left: Box::new(left),
                                 right: Box::new(right),
                             })
                         }
+                        _ => todo!(),
                     }
                 }
+                _ => todo!(),
             }
         }
         RawExpression::Token(_) => {
@@ -398,8 +418,38 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: &RegisterType) ->
         RawExpression::DecRSPInBytes { .. } => {
             todo!()
         }
-        RawExpression::FunctionCall { .. } => {
-            todo!()
+        RawExpression::FunctionCall { token, args } => {
+            match token.as_str() {
+                "vfmadd213_double" => {
+                    //rule vfmadd213_double(MI1:MInt, MI2:MInt, MI3:MInt) =>
+                    //     Float2MInt((MInt2Float(MI2, 53, 11) *Float MInt2Float(MI1, 53, 11)) +Float MInt2Float(MI3, 53, 11), 64)
+                    let mi1 = expr_to_typed_expr(&args[0], &RegisterType::AllGP64WithRIP).unwrap_64();
+                    let mi2 = expr_to_typed_expr(&args[1], &RegisterType::AllGP64WithRIP).unwrap_64();
+                    let mi3 = expr_to_typed_expr(&args[2], &RegisterType::AllGP64WithRIP).unwrap_64();
+                    TypedExpression::_64(TypedExpression64::Float2MInt {
+                        inner: Box::new(TypedExpressionF64::FloatAdd {
+                            left: Box::new(TypedExpressionF64::FloatMul {
+                                left: Box::new(TypedExpressionF64::MInt2Float {
+                                    from: mi2,
+                                    range_end: 53,
+                                    range_start: 11,
+                                }),
+                                right: Box::new(TypedExpressionF64::MInt2Float {
+                                    from: mi1,
+                                    range_end: 53,
+                                    range_start: 11,
+                                }),
+                            }),
+                            right: Box::new(TypedExpressionF64::MInt2Float {
+                                from: mi3,
+                                range_end: 53,
+                                range_start: 11,
+                            }),
+                        })
+                    })
+                }
+                _ => todo!()
+            }
         }
     }
 }
@@ -434,6 +484,11 @@ fn handle_get_parent_value(lookup: &Box<RawExpression>, map: &Box<RawExpression>
                     SemanticCastKind::R64 => {
                         if let RawExpression::Op(operand_idx) = lookup_inner.as_ref() {
                             return TypedExpression::_64(TypedExpression64::OperandR64 { operand_idx: *operand_idx });
+                        }
+                    }
+                    SemanticCastKind::Xmm => {
+                        if let RawExpression::Op(operand_idx) = lookup_inner.as_ref() {
+                            return TypedExpression::_128(TypedExpression128::OperandR128 { operand_idx: *operand_idx });
                         }
                     }
                     lookup_kind => todo!("{lookup_kind:?}")
