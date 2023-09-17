@@ -11,8 +11,13 @@ pub struct ExpressionDiffData {
 }
 
 #[derive(Debug)]
-
-pub enum Flag {}
+pub enum Flag {
+    CF,
+    PF,
+    ZF,
+    SF,
+    OF,
+}
 
 #[derive(Debug)]
 
@@ -87,6 +92,12 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                     kind: SemanticCastKind::R8,
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
+            } else if label.as_str() == "#SemanticCastToRh" {
+                assert_eq!(args.len(), 1);
+                return RawExpression::SemanticCast {
+                    kind: SemanticCastKind::RH,
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
             } else if label.as_str() == "#SemanticCastToMap" {
                 assert_eq!(args.len(), 1);
                 return RawExpression::SemanticCast {
@@ -114,8 +125,18 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                 return RawExpression::ProjectMInt {
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
+            }else if label.as_str() == "negMInt" {
+                assert_eq!(args.len(), 1);
+                return RawExpression::Neg {
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
             } else if label.as_str() == "addMInt" {
                 return RawExpression::Add {
+                    left: Box::new(extract_expression(&args[0], operands)),
+                    right: Box::new(extract_expression(&args[1], operands)),
+                };
+            } else if label.as_str() == "andMInt" {
+                return RawExpression::And {
                     left: Box::new(extract_expression(&args[0], operands)),
                     right: Box::new(extract_expression(&args[1], operands)),
                 };
@@ -179,6 +200,8 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                 };
             } else if label.as_str() == "%rsp_X86-SYNTAX" {
                 return RawExpression::Token(RawToken::RSP);
+            } else if label.as_str() == "undefMInt_MINT-WRAPPER-SYNTAX" {
+                return RawExpression::Undefined;
             } else if label.as_str() == "_(_,_,_)_MINT-WRAPPER-SYNTAX" {
                 let token = match &args[0] {
                     KExpression::KToken { sort, token } => {
@@ -228,9 +251,12 @@ fn handle_map_entry_kind(str: impl Into<String>, operands: &OperandNames) -> Map
         None => {
             match str.as_str() {
                 "RIP" => MapEntryKind::Reg64(Reg64WithRIP::RIP),
-                "CF" => {
-                    todo!()
-                }
+                "CF" => MapEntryKind::Flag(Flag::CF),
+                "PF" => MapEntryKind::Flag(Flag::PF),
+                "AF" => MapEntryKind::Flag(Flag::PF),
+                "ZF" => MapEntryKind::Flag(Flag::ZF),
+                "SF" => MapEntryKind::Flag(Flag::SF),
+                "OF" => MapEntryKind::Flag(Flag::OF),
                 other => todo!("{other}")
             }
         }
@@ -314,7 +340,15 @@ pub fn extract_diff_expression_from_semantics(semantic_rule_decl: &[KExpression]
                 reg_state_entries
             }
         }
-        _ => panic!()
+        KExpression::KApply { label, args, .. } => {
+            if label.as_str() == "#SemanticCastToMap" {
+                if args.as_slice() == &[KExpression::KVariable { name: "RSMap".to_string(), originalName: "RSMap".to_string() }]{
+                    return ExpressionDiffData{ reg_state_entries: vec![] }
+                }
+            }
+            todo!()
+        }
+        other => todo!("{other:?}")
     }
 }
 

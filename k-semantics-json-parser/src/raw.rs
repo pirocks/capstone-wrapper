@@ -56,6 +56,7 @@ pub enum RawExpression {
         left: Box<RawExpression>,
         right: Box<RawExpression>,
     },
+    And { left: Box<RawExpression>, right: Box<RawExpression> },
     Xor {
         left: Box<RawExpression>,
         right: Box<RawExpression>,
@@ -67,7 +68,8 @@ pub enum RawExpression {
     Token(RawToken),
     LoadFromMemory {
         offset: Box<RawExpression>,
-        size: Box<RawExpression> },
+        size: Box<RawExpression>,
+    },
     StoreFromMemory { value: Box<RawExpression>, address: Box<RawExpression>, size: Box<RawExpression> },
     ProjectMInt { inner: Box<RawExpression> },
     MapLookup { lookup: Box<RawExpression>, map: Box<RawExpression> },
@@ -75,6 +77,8 @@ pub enum RawExpression {
     GetRegisterValue { lookup: Box<RawExpression>, map: Box<RawExpression> },
     DecRSPInBytes { inner: Box<RawExpression> },
     FunctionCall { token: String, args: Vec<RawExpression> },
+    Undefined,
+    Neg { inner: Box<RawExpression> },
 }
 
 #[derive(Debug)]
@@ -91,6 +95,7 @@ pub enum SemanticCastKind {
     MInt,
     Xmm,
     R64,
+    RH,
 }
 
 

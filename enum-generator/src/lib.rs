@@ -148,7 +148,7 @@ impl VariantEncodingGeneratorData {
                 }
             }
             OperandType::Mem(mem) => {
-                let MemoryOperandType { vsib, kind } = mem;
+                let MemoryOperandType { vsib, kind, load:_, store:_ } = mem;
                 let vsib = match vsib {
                     None => "",
                     Some(VectorRegisterKind::XMM) => "_vsib_xmm",

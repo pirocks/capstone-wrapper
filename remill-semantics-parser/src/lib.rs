@@ -29,7 +29,7 @@ mod tests {
             let e: &Entity = e;
             if e.get_kind() == EntityKind::VarDecl{
                 dbg!(e);
-                dbg!(&e.get_template_arguments());
+                // dbg!(&e.get_template_arguments());
                 dbg!(e.get_semantic_parent().unwrap().get_child(1));
             }else {
                 todo!()

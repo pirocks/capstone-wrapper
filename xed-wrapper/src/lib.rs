@@ -57,16 +57,19 @@ pub enum FieldType {
     AGen,
 }
 
+#[derive(Debug)]
 pub struct Field {
     pub field_type: FieldType,
     pub field_name: xed_operand_enum_t,
 }
 
+#[derive(Debug)]
 pub struct Variant{
     pub operands: HashMap<usize, Field>,
     pub iform: xed_iform_enum_t
 }
 
+#[derive(Debug)]
 pub struct TopLevelInstruction{
     pub iclass: xed_iclass_enum_t,
     pub variants: HashMap<VariantName, Variant>

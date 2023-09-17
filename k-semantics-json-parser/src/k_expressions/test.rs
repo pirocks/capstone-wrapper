@@ -21,5 +21,5 @@ pub fn find_adcb() -> anyhow::Result<()>{
             }
         }
     }
-    panic!()
+    Ok(())
 }

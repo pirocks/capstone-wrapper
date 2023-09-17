@@ -1,6 +1,11 @@
 use std::assert_matches::assert_matches;
 use std::collections::HashMap;
 
+use itertools::Itertools;
+
+use wrapper_common::operand_type::OperandType;
+
+use crate::InstructionDescriptor;
 use crate::k_expressions::KExpression;
 use crate::k_to_raw::extract_register_expression::ExpressionDiffData;
 use crate::k_to_raw::utils::{extract_apply_args, extract_apply_label};
@@ -18,28 +23,40 @@ pub enum InstructionDefinition {
 }
 
 
+#[derive(Debug)]
+pub enum OperandKind {
+    Mem,
+    Imm,
+    Reg,
+}
+
 pub struct OperandNames {
+    kinds: Vec<OperandKind>,
     operands_original: HashMap<String, OperandIdx>,
     memory_operand_rename_index: usize,
+    register_operand_rename_index: usize,
+    imm_operand_rename_index: usize,
     operands_renamed: HashMap<String, OperandIdx>,
 }
 
 impl OperandNames {
-    pub fn new(operands_data: RuleOperandsData) -> Self {
-        let mut operands = HashMap::new();
-        for (i, raw_operands) in operands_data.raw_operand_list.iter().enumerate() {
-            match raw_operands.raw_operand_type {
-                None => {
-                    todo!("{raw_operands:?}")
-                }
-                Some(RawOperandType::R8) | Some(RawOperandType::XMM) | Some(RawOperandType::Mem) | Some(RawOperandType::R64) => {
-                    operands.insert(raw_operands.name.clone(), OperandIdx(i as u8));
-                }
-            }
-        }
+    pub fn new(desc: &InstructionDescriptor) -> Self {
         Self {
-            operands_original: operands,
+            kinds: desc.operands.iter().map(|op| match op {
+                OperandType::Mem(_) => OperandKind::Mem,
+                OperandType::Reg(_) => OperandKind::Reg,
+                OperandType::Imm(_) => OperandKind::Imm,
+                OperandType::ImmSpecific(_) => OperandKind::Imm,
+                OperandType::Flags(_) => todo!(),
+                OperandType::Agen(_) => todo!(),
+                OperandType::Rel8 => OperandKind::Imm,
+                OperandType::Rel16 => OperandKind::Imm,
+                OperandType::Rel32 => OperandKind::Imm,
+            }).collect(),
+            operands_original: HashMap::new(),
             memory_operand_rename_index: 0,
+            register_operand_rename_index: 0,
+            imm_operand_rename_index: 0,
             operands_renamed: Default::default(),
         }
     }
@@ -53,15 +70,49 @@ impl OperandNames {
         match self.operands_renamed.get(&name) {
             Some(x) => Some(*x),
             None => {
-                self.operands_original.get(&name).cloned()
+                match self.operands_original.get(&name).cloned() {
+                    None => {
+                        match name.as_str() {
+                            "R1" => {
+                                assert_matches!(&self.kinds[0],OperandKind::Reg);
+                                return Some(OperandIdx(0));
+                            }
+                            "R2" => {
+                                assert_matches!(&self.kinds[1],OperandKind::Reg);
+                                return Some(OperandIdx(1));
+                            }
+                            "R3" => {
+                                assert_matches!(&self.kinds[2],OperandKind::Reg);
+                                return Some(OperandIdx(2));
+                            }
+                            "MemOff" => {
+                                assert_eq!(self.kinds.iter().filter(|k| matches!(k, OperandKind::Mem)).count(), 1);
+                                return Some(OperandIdx(self.kinds.iter().find_position(|k| matches!(k, OperandKind::Mem)).unwrap().0 as u8));
+                            }
+                            "CF" | "PF" | "AF" | "ZF" | "SF" | "OF" => {
+                                return None;
+                            }
+                            "RIP" => {
+                                return None;
+                            }
+                            name => {
+                                todo!("{name}")
+                            }
+                        }
+                    }
+                    Some(op_idx) => {
+                        return Some(op_idx);
+                    }
+                }
             }
         }
     }
 
     pub fn sink_new_memory_operand(&mut self, new_memory_name: impl Into<String>) {
         let new_memory_name = new_memory_name.into();
-        self.operands_renamed.insert(new_memory_name, OperandIdx(self.memory_operand_rename_index as u8));
-        self.memory_operand_rename_index += 1;
+        let op_idx = self.memory_operand_rename_index + self.kinds[self.memory_operand_rename_index..].iter().find_position(|x| matches!(x,OperandKind::Mem)).unwrap().0;
+        self.operands_renamed.insert(new_memory_name, OperandIdx(op_idx as u8));
+        self.memory_operand_rename_index = op_idx;
     }
 }
 
@@ -143,6 +194,7 @@ pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Optio
 
 pub struct LoadExpression {}
 
+#[derive(Debug)]
 pub enum RuleAtom {
     RulesDecl(RuleOperandsData),
     LoadExpression {
@@ -164,20 +216,20 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
     match semantic_rule_decl {
         KExpression::KRewrite { lhs, rhs } => {
             match lhs.as_ref() {
-                KExpression::KApply { label, args, .. } => {
-                    assert_eq!(label.as_str(), "execinstr");
-                    assert_eq!(args.len(), 1);
-                    let args = extract_apply_args(&args[0], "___X86-SYNTAX");
-                    assert_eq!(args.len(), 2);
-                    let instruction_name_kapply = args.first().unwrap();
-                    let raw_instruction_name = extract_apply_label(instruction_name_kapply);
-                    let operand_list = args.last().unwrap();
-                    let mut raw_operand_list = vec![];
-                    recursive_operand_extract(operand_list, None, &mut raw_operand_list);
-                    res.push(RuleAtom::RulesDecl(RuleOperandsData {
-                        raw_instruction_name: raw_instruction_name.to_string(),
-                        raw_operand_list,
-                    }));
+                KExpression::KApply { label:_, args:_, .. } => {
+                    // assert_eq!(label.as_str(), "execinstr");
+                    // assert_eq!(args.len(), 1);
+                    // let args = extract_apply_args(&args[0], "___X86-SYNTAX");
+                    // assert_eq!(args.len(), 2);
+                    // let instruction_name_kapply = args.first().unwrap();
+                    // let raw_instruction_name = extract_apply_label(instruction_name_kapply);
+                    // let operand_list = args.last().unwrap();
+                    // let mut raw_operand_list = vec![];
+                    // recursive_operand_extract(operand_list, None, &mut raw_operand_list);
+                    // res.push(RuleAtom::RulesDecl(RuleOperandsData {
+                    //     raw_instruction_name: raw_instruction_name.to_string(),
+                    //     raw_operand_list,
+                    // }));
                 }
                 KExpression::KSequence { items, .. } => {
                     assert_eq!(items.len(), 2);
@@ -187,8 +239,7 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                     assert_eq!(extract_apply_label(without_semantic_cast), "memLoadValue");
                     let without_mem_load_value = &extract_apply_args(without_semantic_cast, "memLoadValue")[0];
                     let variable = &extract_apply_args(without_mem_load_value, "#SemanticCastToMInt")[0];
-                    if let KExpression::KVariable { name, originalName:_ } = variable {
-                        assert_eq!(name.as_str(), "MemVal");
+                    if let KExpression::KVariable { name, originalName: _ } = variable {
                         res.push(RuleAtom::MemLoadValue(name.to_string()));
                     } else { todo!() }
                 }
@@ -198,13 +249,19 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                 }
             }
             match rhs.as_ref() {
-                KExpression::KApply { .. } => todo!(),
                 KExpression::KVariable { .. } => todo!(),
                 KExpression::KToken { .. } => todo!(),
                 KExpression::KRewrite { lhs, rhs } => {
                     dbg!(lhs);
                     dbg!(rhs);
                     todo!()
+                }
+                KExpression::KApply { label, .. } => {
+                    if label.as_str() == "storeToMemory" {
+                        res.push(RuleAtom::StoreExpression { expr: rhs.as_ref().clone() })
+                    } else {
+                        todo!()
+                    }
                 }
                 KExpression::KSequence { items, .. } => {
                     if items.len() != 0 {

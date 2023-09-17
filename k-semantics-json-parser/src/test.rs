@@ -50,6 +50,7 @@ pub fn test_extract_movq_r64_r64() -> anyhow::Result<()> {
         operands: vec![OperandType::Reg(RegisterType::AllGP64WithRIP), OperandType::Reg(RegisterType::AllGP64WithRIP)],
         name: "MOVQ-R64-R64".to_string(),
     });
+    dbg!(_rule);
     Ok(())
 }
 
@@ -58,8 +59,29 @@ pub fn test_extract_movq_r64_r64() -> anyhow::Result<()> {
 pub fn test_extract_andb_m8_rh() -> anyhow::Result<()> {
     let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-ANDB-M8-RH.json")?))?;
     let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
-        operands: vec![OperandType::Reg(RegisterType::AllGP64WithRIP), OperandType::Reg(RegisterType::AllGP64WithRIP)],
+        operands: vec![OperandType::Reg(RegisterType::AllGP8), OperandType::Mem(MemoryOperandType {
+            vsib: None,
+            kind: MemoryOperandTypeKind::Mem8,
+            load: true,
+            store: true,
+        })],
         name: "ANDB-M8-RH".to_string(),
+    });
+    Ok(())
+}
+
+
+#[test]
+pub fn test_extract_andnps_xmm_m128() -> anyhow::Result<()> {
+    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-ANDNPS-XMM-M128.json")?))?;
+    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
+        operands: vec![OperandType::Mem(MemoryOperandType {
+            vsib: None,
+            kind: MemoryOperandTypeKind::Mem128,
+            load: true,
+            store: true,
+        }), OperandType::Reg(RegisterType::AllXmm32)],
+        name: "ANDNPS-XMM-M128".to_string(),
     });
     Ok(())
 }
