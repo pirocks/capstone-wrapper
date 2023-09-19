@@ -310,6 +310,13 @@ pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instructio
                     TypedExpression::_1(_) => {
                         todo!()
                     }
+                    TypedExpression::_16(_) => {
+                        todo!()
+                    }
+                    TypedExpression::_24(_) => {
+                        todo!()
+                    }
+                    other => todo!("{other:?}")
                 }
             }
             RuleElement::NewVectorRegisterValue { register: _, value } => {

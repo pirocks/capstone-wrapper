@@ -1,4 +1,6 @@
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Serialize, Deserialize)]
 pub struct OperandIdx(pub(crate) u8);
 
 
@@ -86,6 +88,7 @@ pub enum RawToken {
     CF,
     RIP,
     RSP,
+    YMM0,
 }
 
 #[derive(Debug)]

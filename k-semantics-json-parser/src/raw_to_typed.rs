@@ -1,9 +1,9 @@
 use wrapper_common::operand_type::{MemoryOperandTypeKind, OperandType};
-use wrapper_common::registers::{Reg64WithRIP, RegisterType};
+use wrapper_common::registers::{Reg64WithRIP, RegisterType, RegYMM};
 
 use crate::InstructionDescriptor;
 use crate::raw::{RawExpression, RawToken, SemanticCastKind};
-use crate::typed_semantics::{TypedExpression, TypedExpression1, TypedExpression128, TypedExpression256, TypedExpression56, TypedExpression64, TypedExpression8, TypedExpression9, TypedExpressionF64};
+use crate::typed_semantics::{TypedExpression, TypedExpression1, TypedExpression104, TypedExpression112, TypedExpression120, TypedExpression128, TypedExpression16, TypedExpression24, TypedExpression256, TypedExpression32, TypedExpression40, TypedExpression48, TypedExpression56, TypedExpression64, TypedExpression72, TypedExpression8, TypedExpression80, TypedExpression88, TypedExpression9, TypedExpression96, TypedExpressionF64};
 
 #[derive(Debug)]
 pub enum ExpressionType {
@@ -70,13 +70,21 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
             }
         }
         RawExpression::IfElse { condition, true_case, false_case } => {
-            let condition = expr_to_typed_expr(condition.as_ref(), expected_type, instruction_desc).unwrap_1();
+            let condition = expr_to_typed_expr(condition.as_ref(), Some(&ExpressionType::_1), instruction_desc).unwrap_1();
             let true_case = expr_to_typed_expr(true_case.as_ref(), expected_type, instruction_desc);
             let false_case = expr_to_typed_expr(false_case.as_ref(), expected_type, instruction_desc);
             match true_case {
                 TypedExpression::_9(true_case) => {
                     let false_case = false_case.unwrap_9();
                     TypedExpression::_9(TypedExpression9::IfThenElse {
+                        condition,
+                        true_case: Box::new(true_case),
+                        false_case: Box::new(false_case),
+                    })
+                }
+                TypedExpression::_8(true_case) => {
+                    let false_case = false_case.unwrap_8();
+                    TypedExpression::_8(TypedExpression8::IfThenElse {
                         condition,
                         true_case: Box::new(true_case),
                         false_case: Box::new(false_case),
@@ -90,7 +98,7 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                         false_case: Box::new(false_case),
                     })
                 }
-                _ => { todo!() }
+                true_case => { todo!("{true_case:?}") }
             }
         }
         RawExpression::AndBool { left, right } => {
@@ -167,6 +175,12 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 TypedExpression::_56(TypedExpression56::Extract64 { source: from.unwrap_64(), base: range_start as usize })
             } else if (range_end - range_start) == 8 {
                 match from {
+                    TypedExpression::_256(inner) => {
+                        TypedExpression::_8(TypedExpression8::Extract256 { source: inner, base: range_start as usize })
+                    }
+                    TypedExpression::_128(inner) => {
+                        TypedExpression::_8(TypedExpression8::Extract128 { source: inner, base: range_start as usize })
+                    }
                     TypedExpression::_64(inner) => {
                         TypedExpression::_8(TypedExpression8::Extract64 { source: inner, base: range_start as usize })
                     }
@@ -185,6 +199,9 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                     }
                     TypedExpression::_8(inner) => {
                         TypedExpression::_1(TypedExpression1::Extract8 { source: Box::new(inner), base: range_start as usize })
+                    }
+                    TypedExpression::_256(inner) => {
+                        TypedExpression::_1(TypedExpression1::Extract256 { source: Box::new(inner), base: range_start as usize })
                     }
                     _ => todo!(),
                 }
@@ -206,7 +223,6 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                     from => todo!("{from:?}"),
                 }
             } else {
-                dbg!(range_end - range_start);
                 todo!()
             }
         }
@@ -228,6 +244,56 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                             TypedExpression::_9(TypedExpression9::Concatenate18 { left: _1, right: Box::new(_8) })
                         }
                         _ => todo!(),
+                    }
+                }
+                TypedExpression::_8(_8_left) => {
+                    match right {
+                        TypedExpression::_8(_8_right) => {
+                            TypedExpression::_16(TypedExpression16::Concatenate88 { left: Box::new(_8_left), right: Box::new(_8_right) })
+                        }
+                        TypedExpression::_16(_16_right) => {
+                            TypedExpression::_24(TypedExpression24::Concatenate816 { left: Box::new(_8_left), right: Box::new(_16_right) })
+                        }
+                        TypedExpression::_24(_24_right) => {
+                            TypedExpression::_32(TypedExpression32::Concatenate824 { left: Box::new(_8_left), right: Box::new(_24_right) })
+                        }
+                        TypedExpression::_32(_32_right) => {
+                            TypedExpression::_40(TypedExpression40::Concatenate832 { left: Box::new(_8_left), right: Box::new(_32_right) })
+                        }
+                        TypedExpression::_40(_40_right) => {
+                            TypedExpression::_48(TypedExpression48::Concatenate840 { left: Box::new(_8_left), right: Box::new(_40_right) })
+                        }
+                        TypedExpression::_48(_48_right) => {
+                            TypedExpression::_56(TypedExpression56::Concatenate848 { left: Box::new(_8_left), right: Box::new(_48_right) })
+                        }
+                        TypedExpression::_56(_56_right) => {
+                            TypedExpression::_64(TypedExpression64::Concatenate856 { left: Box::new(_8_left), right: Box::new(_56_right) })
+                        }
+                        TypedExpression::_64(_64_right) => {
+                            TypedExpression::_72(TypedExpression72::Concatenate864 { left: Box::new(_8_left), right: Box::new(_64_right) })
+                        }
+                        TypedExpression::_72(_72_right) => {
+                            TypedExpression::_80(TypedExpression80::Concatenate872 { left: Box::new(_8_left), right: Box::new(_72_right) })
+                        }
+                        TypedExpression::_80(_80_right) => {
+                            TypedExpression::_88(TypedExpression88::Concatenate880 { left: Box::new(_8_left), right: Box::new(_80_right) })
+                        }
+                        TypedExpression::_88(_88_right) => {
+                            TypedExpression::_96(TypedExpression96::Concatenate888 { left: Box::new(_8_left), right: Box::new(_88_right) })
+                        }
+                        TypedExpression::_96(_96_right) => {
+                            TypedExpression::_104(TypedExpression104::Concatenate968 { left: Box::new(_8_left), right: Box::new(_96_right) })
+                        }
+                        TypedExpression::_104(_104_right) => {
+                            TypedExpression::_112(TypedExpression112::Concatenate1048 { left: Box::new(_8_left), right: Box::new(_104_right) })
+                        }
+                        TypedExpression::_112(_112_right) => {
+                            TypedExpression::_120(TypedExpression120::Concatenate1128 { left: Box::new(_8_left), right: Box::new(_112_right) })
+                        }
+                        TypedExpression::_120(_120_right) => {
+                            TypedExpression::_128(TypedExpression128::Concatenate1208 { left: Box::new(_8_left), right: Box::new(_120_right) })
+                        }
+                        right => todo!("{right:?}"),
                     }
                 }
                 TypedExpression::_64(left) => {
@@ -256,6 +322,10 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                         TypedExpression::_256(_) => {
                             todo!()
                         }
+                        TypedExpression::_16(_) => {
+                            todo!()
+                        }
+                        other => todo!("{other:?}")
                     }
                 }
                 TypedExpression::_128(left) => {
@@ -284,6 +354,10 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                         TypedExpression::_1(_) => {
                             todo!()
                         }
+                        TypedExpression::_16(_) => {
+                            todo!()
+                        }
+                        other => todo!("{other:?}")
                     }
                 }
                 _ => todo!("{left:?}"),
@@ -483,8 +557,8 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 }
                 Some(ExpressionType::_256) => {
                     TypedExpression::_256(TypedExpression256::And {
-                        left: Box::new(dbg!(left).unwrap_256()),
-                        right: Box::new(dbg!(right).unwrap_256()),
+                        left: Box::new(left.unwrap_256()),
+                        right: Box::new(right.unwrap_256()),
                     })
                 }
                 None => {
@@ -519,6 +593,10 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                                 right: Box::new(right.unwrap_1()),
                             })
                         }
+                        TypedExpression::_16(_) => {
+                            todo!()
+                        }
+                        other => todo!("{other:?}")
                     }
                 }
                 expected => todo!("{expected:?}")
@@ -550,7 +628,7 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
             }
         }
         RawExpression::Neg { inner } => {
-            let inner = expr_to_typed_expr(inner.as_ref(),expected_type,instruction_desc);
+            let inner = expr_to_typed_expr(inner.as_ref(), expected_type, instruction_desc);
             match inner {
                 TypedExpression::_256(_) => {
                     todo!()
@@ -573,6 +651,10 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 TypedExpression::_1(_) => {
                     todo!()
                 }
+                TypedExpression::_16(_) => {
+                    todo!()
+                }
+                other => todo!("{other:?}")
             }
         }
     }
@@ -582,7 +664,8 @@ fn raw_token_to_reg64(raw_token: &RawToken) -> Reg64WithRIP {
     match raw_token {
         RawToken::CF => panic!(),
         RawToken::RIP => Reg64WithRIP::RIP,
-        RawToken::RSP => Reg64WithRIP::RSP
+        RawToken::RSP => Reg64WithRIP::RSP,
+        RawToken::YMM0 => panic!()
     }
 }
 
@@ -625,6 +708,9 @@ fn handle_get_parent_value(lookup: &Box<RawExpression>, map: &Box<RawExpression>
             } else {
                 todo!()
             }
+        }
+        (RawExpression::Token(RawToken::YMM0), _) => {
+            return TypedExpression::_256(TypedExpression256::R256 { reg: RegYMM::YMM0 });
         }
         _ => todo!()
     }

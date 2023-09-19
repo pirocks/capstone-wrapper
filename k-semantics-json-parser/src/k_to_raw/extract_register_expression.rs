@@ -200,6 +200,8 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                 };
             } else if label.as_str() == "%rsp_X86-SYNTAX" {
                 return RawExpression::Token(RawToken::RSP);
+            }else if label.as_str() == "%ymm0_X86-SYNTAX" {
+                return RawExpression::Token(RawToken::YMM0);
             } else if label.as_str() == "undefMInt_MINT-WRAPPER-SYNTAX" {
                 return RawExpression::Undefined;
             } else if label.as_str() == "_(_,_,_)_MINT-WRAPPER-SYNTAX" {

@@ -9,7 +9,7 @@ use crate::k_expressions::TopLevel;
 
 #[test]
 pub fn test_minimized() -> anyhow::Result<()> {
-    let desc = InstructionDescriptor{
+    let desc = InstructionDescriptor {
         operands: vec![OperandType::Reg(RegisterType::AllGP8), OperandType::Reg(RegisterType::AllGP8)],
         name: "ADCB-R8-R8".to_string(),
     };
@@ -24,8 +24,8 @@ pub fn test_minimized() -> anyhow::Result<()> {
 #[test]
 pub fn test_extract_callq_m64() -> anyhow::Result<()> {
     let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-CALLQ-M64.json")?))?;
-    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor{
-        operands: vec![OperandType::Mem(MemoryOperandType{ vsib: None, kind: MemoryOperandTypeKind::Mem64, load: true, store: false })],
+    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
+        operands: vec![OperandType::Mem(MemoryOperandType { vsib: None, kind: MemoryOperandTypeKind::Mem64, load: true, store: false })],
         name: "CALLQ-M64".to_string(),
     });
     Ok(())
@@ -82,6 +82,23 @@ pub fn test_extract_andnps_xmm_m128() -> anyhow::Result<()> {
             store: true,
         }), OperandType::Reg(RegisterType::AllXmm32)],
         name: "ANDNPS-XMM-M128".to_string(),
+    });
+    Ok(())
+}
+
+
+#[test]
+pub fn test_extract_pblendvb_xmm_m128_xmm0() -> anyhow::Result<()> {
+    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-PBLENDVB-XMM-M128-XMM0.json")?))?;
+    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
+        operands: vec![OperandType::Reg(RegisterType::AllXmm32),
+                       OperandType::Mem(MemoryOperandType {
+                           vsib: None,
+                           kind: MemoryOperandTypeKind::Mem128,
+                           load: true,
+                           store: true,
+                       }), OperandType::Reg(RegisterType::AllXmm32)],
+        name: "PBLENDVB-XMM-M128-XMM0".to_string(),
     });
     Ok(())
 }
