@@ -1,0 +1,822 @@
+{
+  "version": 1,
+  "term": {
+    "mainModule": "X86-SEMANTICS",
+    "modules": [
+      {
+        "name": "PEXTRW-M16-XMM-IMM8",
+        "imports": [
+          "X86-CONFIGURATION",
+          "PEXTRW-M16-XMM-IMM8$SYNTAX"
+        ],
+        "localSentences": [
+          {
+            "node": "KRule",
+            "body": {
+              "node": "KApply",
+              "label": "#cells",
+              "variable": false,
+              "arity": 2,
+              "args": [
+                {
+                  "node": "KApply",
+                  "label": "<k>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KRewrite",
+                      "lhs": {
+                        "node": "KApply",
+                        "label": "execinstr",
+                        "variable": false,
+                        "arity": 1,
+                        "args": [
+                          {
+                            "node": "KApply",
+                            "label": "___X86-SYNTAX",
+                            "variable": false,
+                            "arity": 2,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "#SemanticCastToOpcode",
+                                "variable": false,
+                                "arity": 1,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "pextrw_X86-SYNTAX",
+                                    "variable": false,
+                                    "arity": 0,
+                                    "args": []
+                                  }
+                                ]
+                              },
+                              {
+                                "node": "KApply",
+                                "label": "operandlist",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToImm",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "Imm8",
+                                        "originalName": "Imm8"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "operandlist",
+                                    "variable": false,
+                                    "arity": 2,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "#SemanticCastToXmm",
+                                        "variable": false,
+                                        "arity": 1,
+                                        "args": [
+                                          {
+                                            "node": "KVariable",
+                                            "name": "R2",
+                                            "originalName": "R2"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "node": "KApply",
+                                        "label": "operandlist",
+                                        "variable": false,
+                                        "arity": 2,
+                                        "args": [
+                                          {
+                                            "node": "KApply",
+                                            "label": "#SemanticCastToMemOffset",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KApply",
+                                                "label": "memOffset",
+                                                "variable": false,
+                                                "arity": 1,
+                                                "args": [
+                                                  {
+                                                    "node": "KApply",
+                                                    "label": "#SemanticCastToMInt",
+                                                    "variable": false,
+                                                    "arity": 1,
+                                                    "args": [
+                                                      {
+                                                        "node": "KVariable",
+                                                        "name": "MemOff",
+                                                        "originalName": "MemOff"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "node": "KApply",
+                                            "label": ".List{\"operandlist\"}",
+                                            "variable": false,
+                                            "arity": 0,
+                                            "args": []
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "rhs": {
+                        "node": "KSequence",
+                        "arity": 2,
+                        "items": [
+                          {
+                            "node": "KApply",
+                            "label": "loadFromMemory",
+                            "variable": false,
+                            "arity": 2,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "#SemanticCastToMInt",
+                                "variable": false,
+                                "arity": 1,
+                                "args": [
+                                  {
+                                    "node": "KVariable",
+                                    "name": "MemOff",
+                                    "originalName": "MemOff"
+                                  }
+                                ]
+                              },
+                              {
+                                "node": "KToken",
+                                "sort": "Int",
+                                "token": "16"
+                              }
+                            ]
+                          },
+                          {
+                            "node": "KApply",
+                            "label": "execinstr",
+                            "variable": false,
+                            "arity": 1,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "___X86-SYNTAX",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "pextrw_X86-SYNTAX",
+                                    "variable": false,
+                                    "arity": 0,
+                                    "args": []
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "operandlist",
+                                    "variable": false,
+                                    "arity": 2,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "#SemanticCastToImm",
+                                        "variable": false,
+                                        "arity": 1,
+                                        "args": [
+                                          {
+                                            "node": "KVariable",
+                                            "name": "Imm8",
+                                            "originalName": "Imm8"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "node": "KApply",
+                                        "label": "operandlist",
+                                        "variable": false,
+                                        "arity": 2,
+                                        "args": [
+                                          {
+                                            "node": "KApply",
+                                            "label": "#SemanticCastToXmm",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KVariable",
+                                                "name": "R2",
+                                                "originalName": "R2"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "node": "KApply",
+                                            "label": "operandlist",
+                                            "variable": false,
+                                            "arity": 2,
+                                            "args": [
+                                              {
+                                                "node": "KApply",
+                                                "label": "memOffset",
+                                                "variable": false,
+                                                "arity": 1,
+                                                "args": [
+                                                  {
+                                                    "node": "KApply",
+                                                    "label": "#SemanticCastToMInt",
+                                                    "variable": false,
+                                                    "arity": 1,
+                                                    "args": [
+                                                      {
+                                                        "node": "KVariable",
+                                                        "name": "MemOff",
+                                                        "originalName": "MemOff"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "node": "KApply",
+                                                "label": ".List{\"operandlist\"}",
+                                                "variable": false,
+                                                "arity": 0,
+                                                "args": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#dots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                },
+                {
+                  "node": "KApply",
+                  "label": "<regstate>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#SemanticCastToMap",
+                      "variable": false,
+                      "arity": 1,
+                      "args": [
+                        {
+                          "node": "KVariable",
+                          "name": "RSMap",
+                          "originalName": "RSMap"
+                        }
+                      ]
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "requires": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "ensures": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "att": {
+              "node": "KAtt",
+              "att": {
+                "org.kframework.attributes.Location": "Location(9,8,14,37)",
+                "org.kframework.definition.Production": "syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions) symbol()]",
+                "contentStartLine": "9",
+                "org.kframework.attributes.Source": "Source(/home/user/X86-64-semantics/semantics/memoryInstructions/pextrw_m16_xmm_imm8.k)",
+                "contentStartColumn": "8"
+              }
+            }
+          },
+          {
+            "node": "KRule",
+            "body": {
+              "node": "KApply",
+              "label": "#cells",
+              "variable": false,
+              "arity": 2,
+              "args": [
+                {
+                  "node": "KApply",
+                  "label": "<k>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KRewrite",
+                      "lhs": {
+                        "node": "KSequence",
+                        "arity": 2,
+                        "items": [
+                          {
+                            "node": "KApply",
+                            "label": "#SemanticCastToMemLoadValue",
+                            "variable": false,
+                            "arity": 1,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "memLoadValue",
+                                "variable": false,
+                                "arity": 1,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToMInt",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KVariable",
+                                        "name": "Mem16",
+                                        "originalName": "Mem16"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "node": "KApply",
+                            "label": "execinstr",
+                            "variable": false,
+                            "arity": 1,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "___X86-SYNTAX",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "#SemanticCastToOpcode",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "pextrw_X86-SYNTAX",
+                                        "variable": false,
+                                        "arity": 0,
+                                        "args": []
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "operandlist",
+                                    "variable": false,
+                                    "arity": 2,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "#SemanticCastToImm",
+                                        "variable": false,
+                                        "arity": 1,
+                                        "args": [
+                                          {
+                                            "node": "KVariable",
+                                            "name": "Imm8",
+                                            "originalName": "Imm8"
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "node": "KApply",
+                                        "label": "operandlist",
+                                        "variable": false,
+                                        "arity": 2,
+                                        "args": [
+                                          {
+                                            "node": "KApply",
+                                            "label": "#SemanticCastToXmm",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KVariable",
+                                                "name": "R2",
+                                                "originalName": "R2"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "node": "KApply",
+                                            "label": "operandlist",
+                                            "variable": false,
+                                            "arity": 2,
+                                            "args": [
+                                              {
+                                                "node": "KApply",
+                                                "label": "#SemanticCastToMemOffset",
+                                                "variable": false,
+                                                "arity": 1,
+                                                "args": [
+                                                  {
+                                                    "node": "KApply",
+                                                    "label": "memOffset",
+                                                    "variable": false,
+                                                    "arity": 1,
+                                                    "args": [
+                                                      {
+                                                        "node": "KApply",
+                                                        "label": "#SemanticCastToMInt",
+                                                        "variable": false,
+                                                        "arity": 1,
+                                                        "args": [
+                                                          {
+                                                            "node": "KVariable",
+                                                            "name": "MemOff",
+                                                            "originalName": "MemOff"
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "node": "KApply",
+                                                "label": ".List{\"operandlist\"}",
+                                                "variable": false,
+                                                "arity": 0,
+                                                "args": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "rhs": {
+                        "node": "KApply",
+                        "label": "storeToMemory",
+                        "variable": false,
+                        "arity": 3,
+                        "args": [
+                          {
+                            "node": "KApply",
+                            "label": "extractMInt",
+                            "variable": false,
+                            "arity": 3,
+                            "args": [
+                              {
+                                "node": "KApply",
+                                "label": "lshrMInt",
+                                "variable": false,
+                                "arity": 2,
+                                "args": [
+                                  {
+                                    "node": "KApply",
+                                    "label": "extractMInt",
+                                    "variable": false,
+                                    "arity": 3,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "getParentValue",
+                                        "variable": false,
+                                        "arity": 2,
+                                        "args": [
+                                          {
+                                            "node": "KApply",
+                                            "label": "#SemanticCastToXmm",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KVariable",
+                                                "name": "R2",
+                                                "originalName": "R2"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "node": "KApply",
+                                            "label": "#SemanticCastToMap",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KVariable",
+                                                "name": "RSMap",
+                                                "originalName": "RSMap"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "node": "KToken",
+                                        "sort": "Int",
+                                        "token": "128"
+                                      },
+                                      {
+                                        "node": "KToken",
+                                        "sort": "Int",
+                                        "token": "256"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "node": "KApply",
+                                    "label": "uvalueMInt",
+                                    "variable": false,
+                                    "arity": 1,
+                                    "args": [
+                                      {
+                                        "node": "KApply",
+                                        "label": "shiftLeftMInt",
+                                        "variable": false,
+                                        "arity": 2,
+                                        "args": [
+                                          {
+                                            "node": "KApply",
+                                            "label": "concatenateMInt",
+                                            "variable": false,
+                                            "arity": 2,
+                                            "args": [
+                                              {
+                                                "node": "KApply",
+                                                "label": "mi",
+                                                "variable": false,
+                                                "arity": 2,
+                                                "args": [
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "125"
+                                                  },
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "0"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "node": "KApply",
+                                                "label": "extractMInt",
+                                                "variable": false,
+                                                "arity": 3,
+                                                "args": [
+                                                  {
+                                                    "node": "KApply",
+                                                    "label": "handleImmediateWithSignExtend",
+                                                    "variable": false,
+                                                    "arity": 3,
+                                                    "args": [
+                                                      {
+                                                        "node": "KApply",
+                                                        "label": "#SemanticCastToImm",
+                                                        "variable": false,
+                                                        "arity": 1,
+                                                        "args": [
+                                                          {
+                                                            "node": "KVariable",
+                                                            "name": "Imm8",
+                                                            "originalName": "Imm8"
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "node": "KToken",
+                                                        "sort": "Int",
+                                                        "token": "8"
+                                                      },
+                                                      {
+                                                        "node": "KToken",
+                                                        "sort": "Int",
+                                                        "token": "8"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "5"
+                                                  },
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "8"
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "node": "KApply",
+                                            "label": "uvalueMInt",
+                                            "variable": false,
+                                            "arity": 1,
+                                            "args": [
+                                              {
+                                                "node": "KApply",
+                                                "label": "mi",
+                                                "variable": false,
+                                                "arity": 2,
+                                                "args": [
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "128"
+                                                  },
+                                                  {
+                                                    "node": "KToken",
+                                                    "sort": "Int",
+                                                    "token": "4"
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "node": "KToken",
+                                "sort": "Int",
+                                "token": "112"
+                              },
+                              {
+                                "node": "KToken",
+                                "sort": "Int",
+                                "token": "128"
+                              }
+                            ]
+                          },
+                          {
+                            "node": "KApply",
+                            "label": "#SemanticCastToMInt",
+                            "variable": false,
+                            "arity": 1,
+                            "args": [
+                              {
+                                "node": "KVariable",
+                                "name": "MemOff",
+                                "originalName": "MemOff"
+                              }
+                            ]
+                          },
+                          {
+                            "node": "KToken",
+                            "sort": "Int",
+                            "token": "16"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#dots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                },
+                {
+                  "node": "KApply",
+                  "label": "<regstate>",
+                  "variable": false,
+                  "arity": 3,
+                  "args": [
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#SemanticCastToMap",
+                      "variable": false,
+                      "arity": 1,
+                      "args": [
+                        {
+                          "node": "KVariable",
+                          "name": "RSMap",
+                          "originalName": "RSMap"
+                        }
+                      ]
+                    },
+                    {
+                      "node": "KApply",
+                      "label": "#noDots",
+                      "variable": false,
+                      "arity": 0,
+                      "args": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "requires": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "ensures": {
+              "node": "KToken",
+              "sort": "Bool",
+              "token": "true"
+            },
+            "att": {
+              "node": "KAtt",
+              "att": {
+                "contentStartColumn": "8",
+                "org.kframework.definition.Production": "syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions) symbol()]",
+                "contentStartLine": "16",
+                "org.kframework.attributes.Location": "Location(16,8,26,37)",
+                "org.kframework.attributes.Source": "Source(/home/user/X86-64-semantics/semantics/memoryInstructions/pextrw_m16_xmm_imm8.k)"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
