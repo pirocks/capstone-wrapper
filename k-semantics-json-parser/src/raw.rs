@@ -81,6 +81,10 @@ pub enum RawExpression {
     FunctionCall { token: String, args: Vec<RawExpression> },
     Undefined,
     Neg { inner: Box<RawExpression> },
+    LShr { left: Box<RawExpression>, right: Box<RawExpression> },
+    UnsignedPortion { inner: Box<RawExpression> },
+    ShiftLeft { left: Box<RawExpression>, right: Box<RawExpression> },
+    HandleImmediateWithSignExtend { imm: Box<RawExpression>, length: Box<RawExpression>, extend_to_length: Box<RawExpression> },
 }
 
 #[derive(Debug)]
@@ -89,6 +93,7 @@ pub enum RawToken {
     RIP,
     RSP,
     YMM0,
+    RAX,
 }
 
 #[derive(Debug)]
@@ -99,6 +104,7 @@ pub enum SemanticCastKind {
     Xmm,
     R64,
     RH,
+    Imm,
 }
 
 

@@ -1,4 +1,5 @@
 use std::str::FromStr;
+
 use wrapper_common::registers::Reg64WithRIP;
 
 use crate::k_expressions::KExpression;
@@ -20,7 +21,6 @@ pub enum Flag {
 }
 
 #[derive(Debug)]
-
 pub enum MapEntryKind {
     Op(OperandIdx),
     Flag(Flag),
@@ -125,9 +125,14 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                 return RawExpression::ProjectMInt {
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
-            }else if label.as_str() == "negMInt" {
+            } else if label.as_str() == "negMInt" {
                 assert_eq!(args.len(), 1);
                 return RawExpression::Neg {
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
+            } else if label.as_str() == "uvalueMInt" {
+                assert_eq!(args.len(), 1);
+                return RawExpression::UnsignedPortion {
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
             } else if label.as_str() == "addMInt" {
@@ -164,6 +169,20 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                     left: Box::new(extract_expression(&args[0], operands)),
                     right: Box::new(extract_expression(&args[1], operands)),
                 };
+            } else if label.as_str() == "lshrMInt" {
+                assert_eq!(args.len(), 2);
+                //shifts left creating uncapped length res
+                return RawExpression::LShr {
+                    left: Box::new(extract_expression(&args[0], operands)),
+                    right: Box::new(extract_expression(&args[1], operands)),
+                };
+            } else if label.as_str() == "shiftLeftMInt" {
+                assert_eq!(args.len(), 2);
+                //shifts left creating capped length res
+                return RawExpression::ShiftLeft {
+                    left: Box::new(extract_expression(&args[0], operands)),
+                    right: Box::new(extract_expression(&args[1], operands)),
+                };
             } else if label.as_str() == "_xorBool_" {
                 assert_eq!(args.len(), 2);
                 return RawExpression::XorBool {
@@ -183,6 +202,13 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                     address: Box::new(extract_expression(&args[1], operands)),
                     size: Box::new(extract_expression(&args[2], operands)),
                 };
+            }else if label.as_str() == "handleImmediateWithSignExtend" {
+                assert_eq!(args.len(), 3);
+                return RawExpression::HandleImmediateWithSignExtend {
+                    imm: Box::new(extract_expression(&args[0], operands)),
+                    length: Box::new(extract_expression(&args[1], operands)),
+                    extend_to_length: Box::new(extract_expression(&args[2], operands)),
+                };
             } else if label.as_str() == "#SemanticCastToMInt" {
                 return RawExpression::SemanticCast {
                     kind: SemanticCastKind::MInt,
@@ -198,10 +224,17 @@ pub fn extract_expression(expr: &KExpression, operands: &OperandNames) -> RawExp
                     kind: SemanticCastKind::R64,
                     inner: Box::new(extract_expression(&args[0], operands)),
                 };
+            } else if label.as_str() == "#SemanticCastToImm" {
+                return RawExpression::SemanticCast {
+                    kind: SemanticCastKind::Imm,
+                    inner: Box::new(extract_expression(&args[0], operands)),
+                };
             } else if label.as_str() == "%rsp_X86-SYNTAX" {
                 return RawExpression::Token(RawToken::RSP);
-            }else if label.as_str() == "%ymm0_X86-SYNTAX" {
+            } else if label.as_str() == "%ymm0_X86-SYNTAX" {
                 return RawExpression::Token(RawToken::YMM0);
+            } else if label.as_str() == "%rax_X86-SYNTAX" {
+                return RawExpression::Token(RawToken::RAX);
             } else if label.as_str() == "undefMInt_MINT-WRAPPER-SYNTAX" {
                 return RawExpression::Undefined;
             } else if label.as_str() == "_(_,_,_)_MINT-WRAPPER-SYNTAX" {
@@ -253,6 +286,7 @@ fn handle_map_entry_kind(str: impl Into<String>, operands: &OperandNames) -> Map
         None => {
             match str.as_str() {
                 "RIP" => MapEntryKind::Reg64(Reg64WithRIP::RIP),
+                "RAX" => MapEntryKind::Reg64(Reg64WithRIP::RAX),
                 "CF" => MapEntryKind::Flag(Flag::CF),
                 "PF" => MapEntryKind::Flag(Flag::PF),
                 "AF" => MapEntryKind::Flag(Flag::PF),
@@ -344,8 +378,8 @@ pub fn extract_diff_expression_from_semantics(semantic_rule_decl: &[KExpression]
         }
         KExpression::KApply { label, args, .. } => {
             if label.as_str() == "#SemanticCastToMap" {
-                if args.as_slice() == &[KExpression::KVariable { name: "RSMap".to_string(), originalName: "RSMap".to_string() }]{
-                    return ExpressionDiffData{ reg_state_entries: vec![] }
+                if args.as_slice() == &[KExpression::KVariable { name: "RSMap".to_string(), originalName: "RSMap".to_string() }] {
+                    return ExpressionDiffData { reg_state_entries: vec![] };
                 }
             }
             todo!()

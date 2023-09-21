@@ -85,6 +85,10 @@ impl OperandNames {
                                 assert_matches!(&self.kinds[2],OperandKind::Reg);
                                 return Some(OperandIdx(2));
                             }
+                            "Imm8" => {
+                                assert_eq!(self.kinds.iter().filter(|k| matches!(k, OperandKind::Imm)).count(), 1);
+                                return Some(OperandIdx(self.kinds.iter().find_position(|k| matches!(k, OperandKind::Mem)).unwrap().0 as u8));
+                            }
                             "MemOff" => {
                                 assert_eq!(self.kinds.iter().filter(|k| matches!(k, OperandKind::Mem)).count(), 1);
                                 return Some(OperandIdx(self.kinds.iter().find_position(|k| matches!(k, OperandKind::Mem)).unwrap().0 as u8));
@@ -92,7 +96,7 @@ impl OperandNames {
                             "CF" | "PF" | "AF" | "ZF" | "SF" | "OF" => {
                                 return None;
                             }
-                            "RIP" => {
+                            "RAX" | "RIP" => {
                                 return None;
                             }
                             name => {

@@ -131,17 +131,14 @@ pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instructio
                     let address_out;
                     let value_out;
                     if let RawExpression::ConstantInt(size) = size {
-                        match size {
-                            64 => {
-                                address_out = expr_to_typed_expr(address, Some(&ExpressionType::_64), instruction_desc).unwrap_64();
-                                value_out = expr_to_typed_expr(value, Some(&ExpressionType::_64), instruction_desc)
-                            }
-                            8 => {
-                                address_out = expr_to_typed_expr(address, Some(&ExpressionType::_64), instruction_desc).unwrap_64();
-                                value_out = expr_to_typed_expr(value, Some(&ExpressionType::_8), instruction_desc)
-                            }
+                        address_out = expr_to_typed_expr(address, Some(&ExpressionType::_64), instruction_desc).unwrap_64();
+                        let size_expected_type = match size {
+                            64 => ExpressionType::_64,
+                            8 => ExpressionType::_8,
+                            16 => ExpressionType::_16,
                             size => todo!("{size}")
                         };
+                        value_out = expr_to_typed_expr(value, Some(&size_expected_type), instruction_desc);
                         rule.new_store(address_out, value_out);
                     }
                 }
@@ -168,7 +165,6 @@ pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instructio
                                             todo!()
                                         }
                                     }
-
                                 }
                                 OperandType::Imm(_) |
                                 OperandType::ImmSpecific(_) |
@@ -283,9 +279,7 @@ pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instructio
                 }
             }
             RuleElement::Store { address, value } => {
-                if let TypedExpression64::OperandR8 {..} | TypedExpression64::OperandR64 {..}   = address{
-
-                } else {
+                if let TypedExpression64::OperandR8 { .. } | TypedExpression64::OperandR64 { .. } = address {} else {
                     values_to_operand_replace_64.push(address);
                 }
                 match value {
@@ -323,13 +317,13 @@ pub fn build_rule(name: impl Into<String>, rule_datas: Vec<RuleData>, instructio
                 values_to_operand_replace_256.push(value);
             }
             RuleElement::Load { op_idx, address } => {
-                pending_loads.push((*op_idx,address));
+                pending_loads.push((*op_idx, address));
             }
         }
 
 
         for (pending_load_op_idx, address) in pending_loads.iter() {
-            let replace_with = ReplaceWith{
+            let replace_with = ReplaceWith {
                 _256: TypedExpression256::Load(Box::new((*address).clone())),
                 _128: TypedExpression128::Load(Box::new((*address).clone())),
                 _64: TypedExpression64::Load(Box::new((*address).clone())),

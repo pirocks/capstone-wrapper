@@ -106,7 +106,7 @@ pub fn test_extract_pblendvb_xmm_m128_xmm0() -> anyhow::Result<()> {
 
 #[test]
 pub fn test_extract_pextrw_mm16_xmm_imm8() -> anyhow::Result<()> {
-    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-PBLENDVB-XMM-M128-XMM0.json")?))?;
+    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-PEXTRW-M16-XMM-IMM8.json")?))?;
     let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
         operands: vec![OperandType::Imm(Imm::Imm8 {}), OperandType::Reg(RegisterType::AllXmm32),
                        OperandType::Mem(MemoryOperandType {
@@ -116,6 +116,22 @@ pub fn test_extract_pextrw_mm16_xmm_imm8() -> anyhow::Result<()> {
                            store: true,
                        })],
         name: "PEXTRW-M16-XMM-IMM8".to_string(),
+    });
+    Ok(())
+}
+
+#[test]
+pub fn test_extract_adcb_al_imm8() -> anyhow::Result<()> {
+    let top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open("data/minimized-ADCB-AL-IMM8.json")?))?;
+    let _rule = extract_rule_from_semantics(top_level, &InstructionDescriptor {
+        operands: vec![OperandType::Imm(Imm::Imm8 {}), OperandType::Reg(RegisterType::AllXmm32),
+                       OperandType::Mem(MemoryOperandType {
+                           vsib: None,
+                           kind: MemoryOperandTypeKind::Mem16,
+                           load: true,
+                           store: true,
+                       })],
+        name: "ADCB-AL-IMM8".to_string(),
     });
     Ok(())
 }

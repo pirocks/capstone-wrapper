@@ -10,6 +10,7 @@ pub enum ExpressionType {
     _1,
     _8,
     _9,
+    _16,
     _64,
     _128,
     _256,
@@ -32,6 +33,7 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                     TypedExpression::_256(TypedExpression256::OperandR256 { operand_idx: *op_idx })
                 }
                 Some(ExpressionType::_9) |
+                Some(ExpressionType::_16) |
                 Some(ExpressionType::_128) => {
                     todo!()
                 }
@@ -165,6 +167,7 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
             if len == 128 {
                 return TypedExpression::_128(TypedExpression128::Constant(val));
             }
+            dbg!(val);
             todo!("{len}")
         }
         RawExpression::Extract { from, range_start, range_end } => {
@@ -398,6 +401,9 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 SemanticCastKind::RH => {
                     todo!()
                 }
+                SemanticCastKind::Imm => {
+                    todo!()
+                }
             }
         }
         RawExpression::ConstantInt(const_) => {
@@ -625,6 +631,9 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 Some(ExpressionType::_256) => {
                     todo!()
                 }
+                Some(ExpressionType::_16) => {
+                    todo!()
+                }
             }
         }
         RawExpression::Neg { inner } => {
@@ -657,6 +666,28 @@ pub fn expr_to_typed_expr(expr: &RawExpression, expected_type: Option<&Expressio
                 other => todo!("{other:?}")
             }
         }
+        RawExpression::LShr { left, right } => {
+            let left = expr_to_typed_expr(left.as_ref(),None,instruction_desc);
+            let right = expr_to_typed_expr(right.as_ref(),None,instruction_desc);
+            dbg!(left);
+            dbg!(right);
+            todo!()
+        }
+        RawExpression::UnsignedPortion { inner } => {
+            let inner = expr_to_typed_expr(inner.as_ref(),expected_type,instruction_desc);
+            dbg!(inner);
+            todo!()
+        }
+        RawExpression::ShiftLeft { left, right } => {
+            let left = expr_to_typed_expr(left.as_ref(),None,instruction_desc);
+            let right = expr_to_typed_expr(right.as_ref(),None,instruction_desc);
+            dbg!(left);
+            dbg!(right);
+            todo!()
+        }
+        RawExpression::HandleImmediateWithSignExtend { imm, length, extend_to_length } => {
+            todo!()
+        }
     }
 }
 
@@ -665,7 +696,8 @@ fn raw_token_to_reg64(raw_token: &RawToken) -> Reg64WithRIP {
         RawToken::CF => panic!(),
         RawToken::RIP => Reg64WithRIP::RIP,
         RawToken::RSP => Reg64WithRIP::RSP,
-        RawToken::YMM0 => panic!()
+        RawToken::YMM0 => panic!(),
+        RawToken::RAX => Reg64WithRIP::RAX,
     }
 }
 
@@ -712,7 +744,10 @@ fn handle_get_parent_value(lookup: &Box<RawExpression>, map: &Box<RawExpression>
         (RawExpression::Token(RawToken::YMM0), _) => {
             return TypedExpression::_256(TypedExpression256::R256 { reg: RegYMM::YMM0 });
         }
-        _ => todo!()
+        (RawExpression::Token(RawToken::RAX), _) => {
+            return TypedExpression::_64(TypedExpression64::R64 { reg: Reg64WithRIP::RAX });
+        }
+        other => todo!("{other:?}")
     }
     todo!()
 }
