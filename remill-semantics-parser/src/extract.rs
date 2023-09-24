@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 use derive_visitor::{Drive, Visitor};
 
-use crate::clang_json_defs::ASTNode;
+use crate::unneeded_data_stripped::ASTNodeCleanedUp;
 
 #[derive(Visitor)]
-#[visitor(ASTNode(enter))]
-struct ASTNodeFunctionsExtractorVisitor {
-    functions_by_id: HashMap<u64, ASTNode>,
+#[visitor(ASTNodeCleanedUp(enter))]
+struct ASTNodeCleanedUpFunctionsExtractorVisitor {
+    functions_by_id: HashMap<u64, ASTNodeCleanedUp>,
 }
 
-impl ASTNodeFunctionsExtractorVisitor {
-    fn enter_ast_node(&mut self, ast_node: &ASTNode) {
+impl ASTNodeCleanedUpFunctionsExtractorVisitor {
+    fn enter_ast_node_cleaned_up(&mut self, ast_node: &ASTNodeCleanedUp) {
         match ast_node {
-            ASTNode::FunctionDecl { id,inner,  .. } => {
+            ASTNodeCleanedUp::FunctionDecl { id,inner,  .. } => {
                 if inner.is_some(){
                     self.functions_by_id.insert(*id, ast_node.clone());
                 }
@@ -22,23 +22,23 @@ impl ASTNodeFunctionsExtractorVisitor {
     }
 }
 
-pub fn functions_by_id(top_level: &ASTNode) -> HashMap<u64, ASTNode> {
-    let mut visitor = ASTNodeFunctionsExtractorVisitor { functions_by_id: HashMap::new() };
+pub fn functions_by_id(top_level: &ASTNodeCleanedUp) -> HashMap<u64, ASTNodeCleanedUp> {
+    let mut visitor = ASTNodeCleanedUpFunctionsExtractorVisitor { functions_by_id: HashMap::new() };
     top_level.drive(&mut visitor);
     visitor.functions_by_id
 }
 
 
 #[derive(Visitor)]
-#[visitor(ASTNode(enter))]
-struct ASTNodeISELExtractorVisitor {
-    isel_names: Vec<ASTNode>,
+#[visitor(ASTNodeCleanedUp(enter))]
+struct ASTNodeCleanedUpISELExtractorVisitor {
+    isel_names: Vec<ASTNodeCleanedUp>,
 }
 
-impl ASTNodeISELExtractorVisitor {
-    fn enter_ast_node(&mut self, ast_node: &ASTNode) {
+impl ASTNodeCleanedUpISELExtractorVisitor {
+    fn enter_ast_node_cleaned_up(&mut self, ast_node: &ASTNodeCleanedUp) {
         match ast_node {
-            ASTNode::VarDecl { name, .. } => {
+            ASTNodeCleanedUp::VarDecl { name, .. } => {
                 if let Some(name) = name.as_ref(){
                     if name.starts_with("ISEL"){
                         self.isel_names.push(ast_node.clone())
@@ -52,19 +52,19 @@ impl ASTNodeISELExtractorVisitor {
 
 
 
-pub fn isels(top_level: &ASTNode) -> Vec<ASTNode> {
-    let mut visitor = ASTNodeISELExtractorVisitor { isel_names: vec![] };
+pub fn isels(top_level: &ASTNodeCleanedUp) -> Vec<ASTNodeCleanedUp> {
+    let mut visitor = ASTNodeCleanedUpISELExtractorVisitor { isel_names: vec![] };
     top_level.drive(&mut visitor);
     visitor.isel_names
 }
 
-pub fn extract_referenced_id_isel(isel: &ASTNode) -> u64 {
-    if let ASTNode::VarDecl {inner,.. } = isel {
+pub fn extract_referenced_id_isel(isel: &ASTNodeCleanedUp) -> u64 {
+    if let ASTNodeCleanedUp::VarDecl {inner,.. } = isel {
         let implicit_cast = &inner.as_ref().unwrap()[0];
-        if let ASTNode::ImplicitCastExpr {inner, ..} = implicit_cast{
+        if let ASTNodeCleanedUp::ImplicitCastExpr {inner, ..} = implicit_cast{
             let decl_ref_expr = &inner[0];
-            if let ASTNode::DeclRefExpr {referenced_decl, ..} = decl_ref_expr{
-                if let ASTNode::FunctionDecl {id, .. } = referenced_decl.as_ref(){
+            if let ASTNodeCleanedUp::DeclRefExpr {referenced_decl, ..} = decl_ref_expr{
+                if let ASTNodeCleanedUp::FunctionDecl {id, .. } = referenced_decl.as_ref(){
                     return *id;
                 }
             }
