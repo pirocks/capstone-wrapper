@@ -29,5 +29,6 @@ members = [
     "remill-semantics-parser",
     "k-semantics-json-parser",
     "k-semantics-json-minimize",
-    "serde-enum-generator"
+    "serde-enum-generator",
+    "enum-visitor"
 ]

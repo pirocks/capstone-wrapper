@@ -437,6 +437,12 @@ checksum = "fbdcdcb6d86f71c5e97409ad45898af11cbc995b4ee8112d59095a28d376c935"
 
 [[package]]
 name = "convert_case"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
+name = "convert_case"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
@@ -588,6 +594,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2696e8a945f658fd14dc3b87242e6b80cd0f36ff04ea560fa39082368847946"
 
 [[package]]
+name = "derive-visitor"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21045832f19977a1bec46f3d826609794661c0d23370f3ee35b8ef6537861cd6"
+dependencies = [
+ "derive-visitor-macros",
+]
+
+[[package]]
+name = "derive-visitor-macros"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22c6a42ab7b480fb19a029c5e54cb8cdf912c7798cf0192441d2d92eb4af8012"
+dependencies = [
+ "convert_case 0.4.0",
+ "itertools 0.10.5",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -710,6 +738,15 @@ dependencies = [
  "itertools 0.10.5",
  "string-concat-utils",
  "wrapper-common",
+]
+
+[[package]]
+name = "enum-visitor"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.29",
 ]
 
 [[package]]
@@ -1687,6 +1724,7 @@ name = "remill-semantics-parser"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "derive-visitor",
  "hex",
  "serde",
  "serde_json",
@@ -2620,7 +2658,7 @@ dependencies = [
 name = "xed-enum-generator"
 version = "0.1.0"
 dependencies = [
- "convert_case",
+ "convert_case 0.6.0",
  "itertools 0.10.5",
  "proc-macro2",
  "quote",
