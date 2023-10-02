@@ -1,6 +1,10 @@
+#![allow(dead_code)]
+
 pub mod clang_json_defs;
 pub mod unneeded_data_stripped;
 pub mod extract;
+pub mod function_def_to_rust;
+
 
 #[cfg(test)]
 mod tests {
@@ -10,6 +14,7 @@ mod tests {
 
     use crate::clang_json_defs::ASTNode;
     use crate::extract::{extract_referenced_id_isel, functions_by_id, isels};
+    use crate::function_def_to_rust::function_def_to_rust;
     use crate::unneeded_data_stripped::ASTNodeCleanedUp;
 
     #[ignore]
@@ -30,11 +35,12 @@ mod tests {
         let top_level: ASTNodeCleanedUp = serde_json::from_reader(decoder)?;
         let indexed_functions = functions_by_id(&top_level);
         let isels = isels(&top_level);
-        let isel = &isels[100];
-        let id = extract_referenced_id_isel(isel);
-        let extracted = indexed_functions.get(&id).unwrap();
-        dbg!(extracted);
-        panic!();
+        for (i,isel) in isels.iter().enumerate(){
+            let id = extract_referenced_id_isel(isel);
+            let extracted = indexed_functions.get(&id).unwrap();
+            dbg!(i);
+            dbg!(function_def_to_rust(extracted));
+        }
         Ok(())
     }
 }

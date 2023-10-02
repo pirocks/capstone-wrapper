@@ -106,7 +106,7 @@ pub struct ASTRange {
 pub struct ASTType {
     #[serde(rename = "qualType")]
     #[drive(skip)]
-    qual_type: String,
+    pub qual_type: String,
     #[serde(rename = "desugaredQualType")]
     #[drive(skip)]
     desugared_qual_type: Option<String>,
@@ -2817,19 +2817,3 @@ fn from_hex<'de, D>(deserializer: D) -> Result<u64, D::Error>
     let s: String = Deserialize::deserialize(deserializer)?;
     u64::from_str_radix(&s[2..], 16).map_err(D::Error::custom)
 }
-
-/*fn from_hex_optional<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-    where
-        D: Deserializer<'de>,
-{
-    let s: Option<String> = Deserialize::deserialize(deserializer)?;
-    match s {
-        None => {
-            Ok(None)
-        }
-        Some(s) => {
-            u64::from_str_radix(&s[2..], 16).map_err(D::Error::custom).map(Some)
-        }
-    }
-}
-*/

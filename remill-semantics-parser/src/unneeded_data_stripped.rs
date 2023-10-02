@@ -2361,7 +2361,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::ModeAttr { id }
             }
             ASTNode::CXXMethodDecl { id, is_referenced, mangled_name, storage_class, explicitly_defaulted, inline, name, variadic, is_implicit, constexpr, type_, virtual_, previous_decl, pure, explicitly_deleted, parent_decl_context_id, is_used, inner, .. } => {
-                ASTNodeCleanedUp::CXXMethodDecl { id, is_referenced, mangled_name, storage_class, explicitly_defaulted, inline, name, variadic, is_implicit, constexpr, type_, virtual_, previous_decl, pure, explicitly_deleted, parent_decl_context_id, is_used, inner : Self::from_unclean_vec_option(inner) }
+                ASTNodeCleanedUp::CXXMethodDecl { id, is_referenced, mangled_name, storage_class, explicitly_defaulted, inline, name, variadic, is_implicit, constexpr, type_, virtual_, previous_decl, pure, explicitly_deleted, parent_decl_context_id, is_used, inner: Self::from_unclean_vec_option(inner) }
             }
             ASTNode::BuiltinAttr { id, inherited, implicit, .. } => {
                 ASTNodeCleanedUp::BuiltinAttr { id, inherited, implicit }
@@ -2406,7 +2406,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::FlattenAttr { id }
             }
             ASTNode::LValueReferenceType { is_instantiation_dependent, id, is_dependent, inner, type_, .. } => {
-                ASTNodeCleanedUp::LValueReferenceType { is_instantiation_dependent, id, is_dependent, inner : Self::from_unclean_vec(inner), type_ }
+                ASTNodeCleanedUp::LValueReferenceType { is_instantiation_dependent, id, is_dependent, inner: Self::from_unclean_vec(inner), type_ }
             }
             ASTNode::LoopHintAttr { implicit, id, inner, .. } => {
                 ASTNodeCleanedUp::LoopHintAttr { implicit, id, inner: Self::from_unclean_vec(inner) }
@@ -2424,10 +2424,10 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::UsingDecl { name, id }
             }
             ASTNode::RValueReferenceType { is_instantiation_dependent, inner, id, type_, is_dependent, .. } => {
-                ASTNodeCleanedUp::RValueReferenceType { is_instantiation_dependent, inner : Self::from_unclean_vec(inner), id, type_, is_dependent }
+                ASTNodeCleanedUp::RValueReferenceType { is_instantiation_dependent, inner: Self::from_unclean_vec(inner), id, type_, is_dependent }
             }
             ASTNode::UnaryTransformType { type_, transform_kind, inner, id, is_instantiation_dependent, is_dependent, .. } => {
-                ASTNodeCleanedUp::UnaryTransformType { type_, transform_kind, inner : Self::from_unclean_vec(inner), id, is_instantiation_dependent, is_dependent }
+                ASTNodeCleanedUp::UnaryTransformType { type_, transform_kind, inner: Self::from_unclean_vec(inner), id, is_instantiation_dependent, is_dependent }
             }
             ASTNode::SizeOfPackExpr { id, type_, value_category, name, .. } => {
                 ASTNodeCleanedUp::SizeOfPackExpr { id, type_, value_category, name }
@@ -2472,7 +2472,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::GCCAsmStmt { id }
             }
             ASTNode::PackExpansionType { id, inner, type_, is_instantiation_dependent, is_dependent, .. } => {
-                ASTNodeCleanedUp::PackExpansionType { id, inner : Self::from_unclean_vec(inner), type_, is_instantiation_dependent, is_dependent }
+                ASTNodeCleanedUp::PackExpansionType { id, inner: Self::from_unclean_vec(inner), type_, is_instantiation_dependent, is_dependent }
             }
             ASTNode::CXXThrowExpr { value_category, id, type_, .. } => {
                 ASTNodeCleanedUp::CXXThrowExpr { value_category, id, type_ }
@@ -2481,7 +2481,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::InjectedClassNameType { id, decl: Box::new(Self::from_unclean(*decl)), is_instantiation_dependent, is_dependent, type_ }
             }
             ASTNode::ClassTemplatePartialSpecializationDecl { parent_decl_context_id, definition_data, name, bases, complete_definition, inner, tag_used, id, .. } => {
-                ASTNodeCleanedUp::ClassTemplatePartialSpecializationDecl { parent_decl_context_id, definition_data, name, bases, complete_definition, inner : Self::from_unclean_vec(inner), tag_used, id }
+                ASTNodeCleanedUp::ClassTemplatePartialSpecializationDecl { parent_decl_context_id, definition_data, name, bases, complete_definition, inner: Self::from_unclean_vec(inner), tag_used, id }
             }
             ASTNode::DefaultStmt { inner, id, .. } => {
                 ASTNodeCleanedUp::DefaultStmt { inner: Self::from_unclean_vec(inner), id }
@@ -2499,10 +2499,10 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::AsmLabelAttr { id }
             }
             ASTNode::StmtExpr { id, value_category, inner, type_, .. } => {
-                ASTNodeCleanedUp::StmtExpr { id, value_category, inner : Self::from_unclean_vec(inner), type_ }
+                ASTNodeCleanedUp::StmtExpr { id, value_category, inner: Self::from_unclean_vec(inner), type_ }
             }
             ASTNode::UserDefinedLiteral { id, inner, type_, value_category, .. } => {
-                ASTNodeCleanedUp::UserDefinedLiteral { id, inner : Self::from_unclean_vec(inner), type_, value_category }
+                ASTNodeCleanedUp::UserDefinedLiteral { id, inner: Self::from_unclean_vec(inner), type_, value_category }
             }
             ASTNode::PointerAttr { id, implicit, inherited, .. } => {
                 ASTNodeCleanedUp::PointerAttr { id, implicit, inherited }
@@ -2523,7 +2523,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::LambdaExpr { inner: Self::from_unclean_vec(inner), value_category, id, type_ }
             }
             ASTNode::BinaryOperator { type_, value_category, opcode, id, inner, .. } => {
-                ASTNodeCleanedUp::BinaryOperator { type_, value_category, opcode, id, inner : Self::from_unclean_vec(inner) }
+                ASTNodeCleanedUp::BinaryOperator { type_, value_category, opcode, id, inner: Self::from_unclean_vec(inner) }
             }
             ASTNode::SwitchStmt { inner, id, .. } => {
                 ASTNodeCleanedUp::SwitchStmt { inner: Self::from_unclean_vec(inner), id }
@@ -2559,7 +2559,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::CXXDeductionGuideDecl { id, name, inner: Self::from_unclean_vec_option(inner), variadic, is_implicit, type_ }
             }
             ASTNode::CXXPseudoDestructorExpr { id, inner, value_category, type_, .. } => {
-                ASTNodeCleanedUp::CXXPseudoDestructorExpr { id, inner : Self::from_unclean_vec(inner), value_category, type_ }
+                ASTNodeCleanedUp::CXXPseudoDestructorExpr { id, inner: Self::from_unclean_vec(inner), value_category, type_ }
             }
             ASTNode::BreakStmt { id, .. } => {
                 ASTNodeCleanedUp::BreakStmt { id }
@@ -2643,7 +2643,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::NullStmt { id }
             }
             ASTNode::CXXUnresolvedConstructExpr { type_, inner, value_category, id, type_as_written, list, .. } => {
-                ASTNodeCleanedUp::CXXUnresolvedConstructExpr { type_, inner : Self::from_unclean_vec_option(inner), value_category, id, type_as_written, list }
+                ASTNodeCleanedUp::CXXUnresolvedConstructExpr { type_, inner: Self::from_unclean_vec_option(inner), value_category, id, type_as_written, list }
             }
             ASTNode::DeclStmt { id, inner, .. } => {
                 ASTNodeCleanedUp::DeclStmt { id, inner: Self::from_unclean_vec(inner) }
@@ -2682,7 +2682,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::StringLiteral { type_, id, value, value_category }
             }
             ASTNode::TemplateTypeParmDecl { index, id, is_referenced, default_arg, is_implicit, is_parameter_pack, name, inner, depth, tag_used, .. } => {
-                ASTNodeCleanedUp::TemplateTypeParmDecl { index, id, is_referenced, default_arg: Self::from_unclean_option_box(default_arg), is_implicit, is_parameter_pack, name, inner : Self::from_unclean_vec_option(inner), depth, tag_used }
+                ASTNodeCleanedUp::TemplateTypeParmDecl { index, id, is_referenced, default_arg: Self::from_unclean_option_box(default_arg), is_implicit, is_parameter_pack, name, inner: Self::from_unclean_vec_option(inner), depth, tag_used }
             }
             ASTNode::CXXFoldExpr { type_, inner, id, value_category, .. } => {
                 ASTNodeCleanedUp::CXXFoldExpr { type_, inner: Self::from_unclean_vec(inner), id, value_category }
@@ -2781,7 +2781,7 @@ impl ASTNodeCleanedUp {
                 ASTNodeCleanedUp::NamespaceDecl { is_nested, id, inner: Self::from_unclean_vec_option(inner), previous_decl, is_inline, original_namespace: Self::from_unclean_option_box(original_namespace), name }
             }
             ASTNode::FriendDecl { id, inner, type_, .. } => {
-                ASTNodeCleanedUp::FriendDecl { id, inner : Self::from_unclean_vec_option(inner), type_ }
+                ASTNodeCleanedUp::FriendDecl { id, inner: Self::from_unclean_vec_option(inner), type_ }
             }
             ASTNode::TemplateTypeParmType { depth, index, decl, id, type_, is_dependent, contains_unexpanded_pack, is_pack, is_instantiation_dependent, .. } => {
                 ASTNodeCleanedUp::TemplateTypeParmType { depth, index, decl: Box::new(Self::from_unclean(*decl)), id, type_, is_dependent, contains_unexpanded_pack, is_pack, is_instantiation_dependent }
@@ -2854,18 +2854,3 @@ pub fn to_hex<S>(
     serializer.serialize_str(s.as_str())
 }
 
-/*fn from_hex_optional<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-let s: Option<String> = Deserialize::deserialize(deserializer)?;
-match s {
-    None => {
-        Ok(None)
-    }
-    Some(s) => {
-        u64::from_str_radix(&s[2..], 16).map_err(D::Error::custom).map(Some)
-    }
-}
-}
-*/
