@@ -32,7 +32,7 @@ pub fn functions_by_id(top_level: &ASTNodeCleanedUp) -> HashMap<u64, ASTNodeClea
 #[derive(Visitor)]
 #[visitor(ASTNodeCleanedUp(enter))]
 struct ASTNodeCleanedUpISELExtractorVisitor {
-    isel_names: Vec<ASTNodeCleanedUp>,
+    isel_by_name: HashMap<String,ASTNodeCleanedUp>,
 }
 
 impl ASTNodeCleanedUpISELExtractorVisitor {
@@ -41,7 +41,7 @@ impl ASTNodeCleanedUpISELExtractorVisitor {
             ASTNodeCleanedUp::VarDecl { name, .. } => {
                 if let Some(name) = name.as_ref(){
                     if name.starts_with("ISEL"){
-                        self.isel_names.push(ast_node.clone())
+                        self.isel_by_name.insert(name.to_string(), ast_node.clone());
                     }
                 }
             }
@@ -52,10 +52,10 @@ impl ASTNodeCleanedUpISELExtractorVisitor {
 
 
 
-pub fn isels(top_level: &ASTNodeCleanedUp) -> Vec<ASTNodeCleanedUp> {
-    let mut visitor = ASTNodeCleanedUpISELExtractorVisitor { isel_names: vec![] };
+pub fn isels(top_level: &ASTNodeCleanedUp) -> HashMap<String,ASTNodeCleanedUp> {
+    let mut visitor = ASTNodeCleanedUpISELExtractorVisitor { isel_by_name: HashMap::new() };
     top_level.drive(&mut visitor);
-    visitor.isel_names
+    visitor.isel_by_name
 }
 
 pub fn extract_referenced_id_isel(isel: &ASTNodeCleanedUp) -> u64 {

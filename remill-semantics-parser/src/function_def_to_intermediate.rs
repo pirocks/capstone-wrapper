@@ -5,8 +5,8 @@ use std::vec;
 use crate::clang_json_defs::ASTType;
 use crate::unneeded_data_stripped::ASTNodeCleanedUp;
 
-fn expression(inner: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
-    match inner {
+fn expression(expr: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
+    match expr {
         ASTNodeCleanedUp::CallExpr { inner, .. } => {
             let function = &inner[0];
             let mut args = vec![];
@@ -141,9 +141,16 @@ fn expression(inner: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
         }
         ASTNodeCleanedUp::MemberExpr { inner, name, .. } => {
             assert_eq!(inner.len(), 1);
-            let inner = Box::new(expression(&inner[0]));
+            let inner = expression(&inner[0]);
             let name = name.to_string();
-            RemillSemanticsExpression::DotMember { inner, name }
+            if name.contains("operator"){
+                return inner;
+            }
+            if name == "" {
+                return inner;
+            } else {
+                RemillSemanticsExpression::DotMember { inner: Box::new(inner), name }
+            }
         }
         ASTNodeCleanedUp::InitListExpr { field, inner, .. } => {
             if let Some(field) = field.as_ref() {
@@ -206,7 +213,7 @@ fn expression(inner: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
                             other => todo!("{other:?}")
                         }
                     }
-                    ASTNodeCleanedUp::UnaryOperator {.. } | ASTNodeCleanedUp::BinaryOperator { .. } => {
+                    ASTNodeCleanedUp::UnaryOperator { .. } | ASTNodeCleanedUp::BinaryOperator { .. } => {
                         return expression(&inner);
                     }
                     other => todo!("{other:?}")
@@ -255,9 +262,21 @@ fn expression(inner: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
         ASTNodeCleanedUp::CXXBoolLiteralExpr { value, .. } => {
             return RemillSemanticsExpression::Bool { value: *value };
         }
-        ASTNodeCleanedUp::UnaryExprOrTypeTraitExpr { name, arg_type, .. } => {
+        ASTNodeCleanedUp::UnaryExprOrTypeTraitExpr { name, arg_type, inner, .. } => {
             match name.as_str() {
-                "sizeof" => return RemillSemanticsExpression::Sizeof { arg_type: arg_type.clone() },
+                "sizeof" => {
+                    if let Some(arg_type) = arg_type.as_ref() {
+                        return RemillSemanticsExpression::Sizeof { arg_type: arg_type.clone() };
+                    } else {
+                        let inner = &inner.as_ref().unwrap()[0];
+                        match inner {
+                            ASTNodeCleanedUp::ParenExpr { type_, .. } => {
+                                return RemillSemanticsExpression::Sizeof { arg_type: type_.clone() };
+                            }
+                            other => todo!("{other:?}")
+                        }
+                    }
+                }
                 other => todo!("{other:?}")
             }
         }
@@ -293,17 +312,16 @@ fn expression(inner: &ASTNodeCleanedUp) -> RemillSemanticsExpression {
             expression(&inner[0])
         }
         ASTNodeCleanedUp::LambdaExpr { inner, .. } => {
-            dbg!(inner);
             assert_eq!(inner.len(), 2);
             let _record_decl = &inner[0];
             let compound_statement = &inner[1];
-            return RemillSemanticsExpression::Lambda { statments: statement(compound_statement) };
+            return RemillSemanticsExpression::Lambda { statements: statement(compound_statement) };
         }
         ASTNodeCleanedUp::ConditionalOperator { inner, .. } => {
             let condition = Box::new(expression(&inner[0]));
             let true_case = Box::new(expression(&inner[1]));
             let false_case = Box::new(expression(&inner[2]));
-            return RemillSemanticsExpression::Conditional { condition, true_case, false_case }
+            return RemillSemanticsExpression::Conditional { condition, true_case, false_case };
         }
         other => todo!("{other:?}")
     }
@@ -358,7 +376,7 @@ pub enum RemillSemanticsExpression {
     Mul { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
     Add { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
     Sub { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
-    Sizeof { arg_type: Option<ASTType> },
+    Sizeof { arg_type: ASTType },
     LessThanEq { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
     Neg { inner: Box<RemillSemanticsExpression> },
     Dec { inner: Box<RemillSemanticsExpression> },
@@ -381,7 +399,7 @@ pub enum RemillSemanticsExpression {
     DefaultInitUnionArray { len: usize },
     BoolOr { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
     NotEq { left: Box<RemillSemanticsExpression>, right: Box<RemillSemanticsExpression> },
-    Lambda { statments: Vec<RemillSemanticsStatement> },
+    Lambda { statements: Vec<RemillSemanticsStatement> },
     Conditional { condition: Box<RemillSemanticsExpression>, true_case: Box<RemillSemanticsExpression>, false_case: Box<RemillSemanticsExpression> },
     Address { inner: Box<RemillSemanticsExpression> },
 }
@@ -414,10 +432,10 @@ pub enum RemillSemanticsStatement {
 
 #[derive(Debug)]
 pub struct RemillSemanticsParsed {
-    name: String,
-    template_params: Vec<String>,
-    params: Vec<String>,
-    statements: Vec<RemillSemanticsStatement>,
+    pub name: String,
+    pub template_params: Vec<String>,
+    pub params: Vec<String>,
+    pub statements: Vec<RemillSemanticsStatement>,
 }
 
 #[derive(Debug)]
@@ -431,7 +449,6 @@ pub struct RemillSemanticsParsedUninit {
 impl RemillSemanticsParsedUninit {
     pub fn to_init(self) -> RemillSemanticsParsed {
         let RemillSemanticsParsedUninit { name, template_params, params, statements } = self;
-        dbg!(&name);
         assert!(statements.len() > 1);
         RemillSemanticsParsed {
             name: name.unwrap(),
@@ -753,7 +770,7 @@ fn statement(inner: &ASTNodeCleanedUp) -> Vec<RemillSemanticsStatement> {
                     ASTNodeCleanedUp::StmtExpr { inner, .. } => {
                         return statement(&inner[0]);
                     }
-                    ASTNodeCleanedUp::DeclRefExpr {..} => {
+                    ASTNodeCleanedUp::DeclRefExpr { .. } => {
                         return vec![RemillSemanticsStatement::ExprStatement { expression: expression(&inner[0]) }];
                     }
                     other => todo!("{other:?}")

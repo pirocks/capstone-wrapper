@@ -13,3 +13,9 @@ anyhow = "1"
 derive-visitor = "0.3.0"
 zstd = "0.12"
 #enum-visitor = { path = "../enum-visitor"}
+quote = "1.0"
+proc-macro2 = "1.0"
+itertools = "0.11"
+
+[lib]
+proc-macro = true

@@ -4,21 +4,21 @@ use serde::de::Error;
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct PathElem {
+pub(crate) struct PathElem {
     #[drive(skip)]
     name: String,
 }
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct IncludedFrom {
+pub(crate) struct IncludedFrom {
     #[drive(skip)]
     file: String,
 }
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct Loc {
+pub(crate) struct Loc {
     #[drive(skip)]
     offset: Option<usize>,
     #[drive(skip)]
@@ -40,7 +40,7 @@ pub struct Loc {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ASTRangeBegin {
+pub(crate) struct ASTRangeBegin {
     #[drive(skip)]
     offset: Option<usize>,
     #[drive(skip)]
@@ -68,7 +68,7 @@ pub struct ASTRangeBegin {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ASTRangeEnd {
+pub(crate) struct ASTRangeEnd {
     #[drive(skip)]
     offset: Option<usize>,
     #[drive(skip)]
@@ -96,17 +96,17 @@ pub struct ASTRangeEnd {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ASTRange {
+pub(crate) struct ASTRange {
     begin: ASTRangeBegin,
     end: ASTRangeEnd,
 }
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ASTType {
+pub(crate) struct ASTType {
     #[serde(rename = "qualType")]
     #[drive(skip)]
-    pub qual_type: String,
+    pub(crate) qual_type: String,
     #[serde(rename = "desugaredQualType")]
     #[drive(skip)]
     desugared_qual_type: Option<String>,
@@ -117,7 +117,7 @@ pub struct ASTType {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct CopyAssign {
+pub(crate) struct CopyAssign {
     #[serde(rename = "hasConstParam")]
     #[drive(skip)]
     has_const_param: bool,
@@ -144,7 +144,7 @@ pub struct CopyAssign {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct CopyCtor {
+pub(crate) struct CopyCtor {
     #[serde(rename = "hasConstParam")]
     #[drive(skip)]
     has_const_param: bool,
@@ -174,7 +174,7 @@ pub struct CopyCtor {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct DefaultCtor {
+pub(crate) struct DefaultCtor {
     #[serde(rename = "defaultedIsConstexpr")]
     #[drive(skip)]
     defaulted_is_constexpr: Option<bool>,
@@ -205,7 +205,7 @@ pub struct DefaultCtor {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct Dtor {
+pub(crate) struct Dtor {
     #[drive(skip)]
     irrelevant: Option<bool>,
     #[serde(rename = "needsImplicit")]
@@ -228,7 +228,7 @@ pub struct Dtor {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct MoveAssign {
+pub(crate) struct MoveAssign {
     #[drive(skip)]
     exists: Option<bool>,
     #[serde(rename = "needsImplicit")]
@@ -251,7 +251,7 @@ pub struct MoveAssign {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct MoveCtor {
+pub(crate) struct MoveCtor {
     #[drive(skip)]
     exists: Option<bool>,
     #[serde(rename = "needsImplicit")]
@@ -274,7 +274,7 @@ pub struct MoveCtor {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct DefinitionData {
+pub(crate) struct DefinitionData {
     #[serde(rename = "canConstDefaultInit")]
     #[drive(skip)]
     can_const_default_init: Option<bool>,
@@ -336,7 +336,7 @@ pub struct DefinitionData {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct Base {
+pub(crate) struct Base {
     access: Access,
     #[serde(rename = "writtenAccess")]
     written_access: Access,
@@ -347,7 +347,7 @@ pub struct Base {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum CastKind {
+pub(crate) enum CastKind {
     Dependent,
     BitCast,
     LValueBitCast,
@@ -418,7 +418,7 @@ pub enum CastKind {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum NonOdrUseReason {
+pub(crate) enum NonOdrUseReason {
     #[serde(rename = "constant")]
     Constant,
     #[serde(rename = "unevaluated")]
@@ -427,7 +427,7 @@ pub enum NonOdrUseReason {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum StorageClass {
+pub(crate) enum StorageClass {
     #[serde(rename = "extern")]
     Extern,
     #[serde(rename = "static")]
@@ -437,7 +437,7 @@ pub enum StorageClass {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum TagUsed {
+pub(crate) enum TagUsed {
     #[serde(rename = "struct")]
     Struct,
     #[serde(rename = "class")]
@@ -450,14 +450,14 @@ pub enum TagUsed {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum ScopedEnumTag {
+pub(crate) enum ScopedEnumTag {
     #[serde(rename = "class")]
     Class,
 }
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum Access {
+pub(crate) enum Access {
     #[serde(rename = "public")]
     Public,
     #[serde(rename = "none")]
@@ -471,7 +471,7 @@ pub enum Access {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub enum ExplicitlyDefaulted {
+pub(crate) enum ExplicitlyDefaulted {
     #[serde(rename = "default")]
     Default,
     #[serde(rename = "deleted")]
@@ -480,7 +480,7 @@ pub enum ExplicitlyDefaulted {
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct Empty {
+pub(crate) struct Empty {
     #[serde(deserialize_with = "from_hex")]
     #[drive(skip)]
     id: u64,
@@ -490,7 +490,7 @@ pub struct Empty {
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 #[serde(tag = "kind")]
-pub enum ASTNode {
+pub(crate) enum ASTNode {
     DependentSizedArrayType {
         #[serde(deserialize_with = "from_hex")]
         #[drive(skip)]
