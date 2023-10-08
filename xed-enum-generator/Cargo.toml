@@ -13,5 +13,6 @@ convert_case = "0.6.0"
 itertools = "0.10"
 wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
+enum-visitor = { path = "../enum-visitor" }
 [lib]
 proc-macro = true

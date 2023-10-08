@@ -17,6 +17,7 @@ pub fn top_level_instruction_enum(_: proc_macro::TokenStream) -> proc_macro::Tok
 
     let res = quote! {
         #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+        #[derive(enum_visitor::EnumVisitor)]
         pub enum X86Instruction{
             #(#instruction_names(#instruction_enum_names)),*
         }
@@ -51,6 +52,7 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let instruction_enum_name = instruction_name.proc_macro_safe_name();
         enums.push(quote! {
             #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+            #[derive(enum_visitor::EnumVisitor)]
             pub enum #instruction_enum_name {
                 #(#instruction_variant_names1{
                     #(#variant_field_names: #variant_types),*
