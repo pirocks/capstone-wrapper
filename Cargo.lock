@@ -468,6 +468,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e496a50fda8aacccc86d7529e2c1e0892dbd0f898a6b5645b5561b89c3210efa"
 
 [[package]]
+name = "cpp_demangle"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e8227005286ec39567949b33df9896bcadfa6051bccca2488129f108ca23119"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1301,6 +1310,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57bcfdad1b858c2db7c38303a6d2ad4dfaf5eb53dfeb0910128b2c26d6158503"
 
 [[package]]
+name = "llvm-ir"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15b2723e66d23972d0428deafff609cb96e6466f1ea6ca121b716681a3722d6b"
+dependencies = [
+ "either",
+ "llvm-sys",
+ "log",
+]
+
+[[package]]
+name = "llvm-ir-parse"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cpp_demangle",
+ "llvm-ir",
+]
+
+[[package]]
+name = "llvm-sys"
+version = "150.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "417dbaef2fece3b186fe15704e010849279de5f7eea1caa8845558130867bdd2"
+dependencies = [
+ "cc",
+ "lazy_static",
+ "libc",
+ "regex",
+ "semver 1.0.19",
+]
+
+[[package]]
 name = "log"
 version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1799,7 +1841,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 dependencies = [
- "semver",
+ "semver 0.9.0",
 ]
 
 [[package]]
@@ -1864,7 +1906,10 @@ name = "semantics"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
+ "remill-semantics-parser",
+ "wrapper-common",
  "xed-enum",
+ "xed-wrapper",
 ]
 
 [[package]]
@@ -1883,6 +1928,12 @@ checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 dependencies = [
  "semver-parser",
 ]
+
+[[package]]
+name = "semver"
+version = "1.0.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad977052201c6de01a8ef2aa3378c4bd23217a056337d1d6da40468d267a4fb0"
 
 [[package]]
 name = "semver-parser"
@@ -2662,6 +2713,7 @@ dependencies = [
 name = "xed-enum"
 version = "0.1.0"
 dependencies = [
+ "enum-visitor",
  "wrapper-common",
  "xed-enum-generator",
  "xed-sys",
@@ -2673,6 +2725,7 @@ name = "xed-enum-generator"
 version = "0.1.0"
 dependencies = [
  "convert_case 0.6.0",
+ "enum-visitor",
  "itertools 0.10.5",
  "proc-macro2",
  "quote",

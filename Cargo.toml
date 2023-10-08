@@ -30,7 +30,8 @@ members = [
     "k-semantics-json-parser",
     "k-semantics-json-minimize",
     "serde-enum-generator",
-    "enum-visitor"
+    "enum-visitor",
+    "llvm-ir-parse"
 ]
 
 

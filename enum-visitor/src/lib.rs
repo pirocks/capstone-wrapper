@@ -1,8 +1,7 @@
 use proc_macro::TokenStream;
 
 use quote::{format_ident, quote, ToTokens};
-use syn::{Data, Token};
-use syn::punctuated::Punctuated;
+use syn::Data;
 
 #[proc_macro_derive(EnumVisitor)]
 pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
@@ -20,9 +19,10 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
                         #ident : #type_tokens
                     });
                 } else {
-                    let number_ident = format_ident!("_{}",i);
+                    // let number_ident = format_ident!("{}",i);
+                    assert_eq!(i, 0);
                     fields.push(quote! {
-                        #number_ident : #type_tokens
+                        _0 : #type_tokens
                     });
                 }
                 if let Some(ident) = &field.ident {
@@ -30,9 +30,10 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
                         #ident
                     });
                 } else {
-                    let number_ident = format_ident!("_{}",i);
+                    assert_eq!(i, 0);
+                    // let number_ident = format_ident!("{}",i);
                     field_names.push(quote! {
-                        #number_ident
+                        0
                     });
                 }
             }
