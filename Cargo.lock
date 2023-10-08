@@ -746,6 +746,7 @@ dependencies = [
  "bincode",
  "instruction-enum-generator2",
  "itertools 0.10.5",
+ "quote",
  "string-concat-utils",
  "wrapper-common",
 ]

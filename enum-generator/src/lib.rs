@@ -1,9 +1,8 @@
-extern crate proc_macro;
-
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::num::NonZeroU8;
+use quote::{format_ident, quote};
 
 use string_concat_utils::concat_camel_case;
 use wrapper_common::instructions::{Instruction, InstructionEncoding, InstructionName, Instructions};
@@ -393,36 +392,49 @@ fn generate_from_encoding() -> Vec<TokenStream> {
 #[proc_macro]
 pub fn make_enums(_: TokenStream) -> TokenStream {
     let Instructions { instructions } = get_instruction_metadata();
-    let mut res = vec![];
     let generator = Generator::new(instructions);
+    let mut lower_enums = vec![];
     for (instruction_name, variants) in generator.instruction_names.iter() {
-        let mut instruction_encoding_enum = "pub enum ".to_string();
-        instruction_encoding_enum.push_str(instruction_name.0.as_str());
-        instruction_encoding_enum.push_str(" { ");
+        let mut enum_variants = vec![];
         for variant_data in variants.iter() {
             let variant_name = &variant_data.variant_name;
-            instruction_encoding_enum.push_str(variant_name.0.as_str());
-            instruction_encoding_enum.push_str(" { ");
+            let variant_name = format_ident!("{}", variant_name.0.as_str());
+            let mut fields = vec![];
             for (idx, name) in variant_data.encoding.operand_names.iter() {
                 let type_string = variant_data.encoding.operand_type_names.get(idx).unwrap();
-                instruction_encoding_enum.push_str(format!("{} : {}", name.as_str(), type_string.as_str()).as_str());
-                instruction_encoding_enum.push_str(" , ");
+                let name = format_ident!("{}", name.as_str());
+                let type_string = format_ident!("{}", type_string);
+                fields.push(quote! {
+                    #name : #type_string
+                });
             }
-            instruction_encoding_enum.push_str(" } ");
-            instruction_encoding_enum.push_str(", ");
+            enum_variants.push(quote! {
+                #variant_name {
+                    #(#fields),*
+                }
+            });
         }
-        instruction_encoding_enum.push_str(" } ");
-        let token_stream: TokenStream = instruction_encoding_enum.parse().unwrap();
-        res.extend(token_stream);
+        let instruction_name = format_ident!("{}",instruction_name.0.as_str());
+        lower_enums.push(quote! {
+            pub enum #instruction_name {
+                #(#enum_variants),*
+            }
+        });
     }
-    let mut instruction_enum = "pub enum Instructions { ".to_string();
+    let mut upper_variants = vec![];
     for (instruction_name, _) in generator.instruction_names.iter() {
-        instruction_enum.push_str(format!("{}({}),", instruction_name.0.as_str(), instruction_name.0.as_str()).as_str());
+        let instruction_name1 = format_ident!("{}",instruction_name.0.as_str());
+        let instruction_name2 = format_ident!("{}",instruction_name.0.as_str());
+        upper_variants.push(quote! {
+            #instruction_name1(#instruction_name2)
+        });
     }
-    instruction_enum.push_str(" }");
-    let token_stream: TokenStream = instruction_enum.parse().unwrap();
-    res.extend(token_stream);
-    TokenStream::from_iter(res.into_iter())
+    TokenStream::from(quote! {
+        #(#lower_enums)*
+        pub enum Instruction {
+            #(#upper_variants),*
+        }
+    })
 }
 
 fn unsupported_instruction(s: &str) -> bool {
