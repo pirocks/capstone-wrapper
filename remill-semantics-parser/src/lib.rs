@@ -3,9 +3,12 @@
 
 use std::collections::HashMap;
 use std::fs::File;
+use itertools::Itertools;
+use quote::quote;
 
 use crate::extract::{extract_referenced_id_isel, functions_by_id, isels};
 use crate::function_def_to_intermediate::{function_def_to_rust, RemillSemanticsParsed};
+use crate::intermediate_to_rust::to_rust;
 use crate::unneeded_data_stripped::ASTNodeCleanedUp;
 
 pub(crate) mod clang_json_defs;
@@ -25,11 +28,25 @@ pub(crate) fn load_simplified_semantics() -> anyhow::Result<HashMap<String, Remi
     for (isel_name, isel) in isels.into_iter() {
         let id = extract_referenced_id_isel(&isel);
         let extracted = indexed_functions.get(&id).unwrap();
-        if let Some(semantics) = function_def_to_rust(extracted) {
+        if let Some(mut semantics) = function_def_to_rust(extracted) {
+            semantics.name = isel_name.to_string();
             simplified_semantics_by_name.insert(isel_name, semantics);
         }
     }
     Ok(simplified_semantics_by_name)
+}
+
+#[proc_macro]
+pub fn remill_semantics(_ : proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let mut semantic_tokens = vec![];
+    for (_name, semantics) in load_simplified_semantics().unwrap().iter().sorted_by_key(|(name,_)|name.as_str()) {
+        if let Some(tokens) = to_rust(semantics){
+            semantic_tokens.push(tokens);
+        }
+    }
+    (quote! {
+        #(#semantic_tokens)*
+    }).into()
 }
 
 

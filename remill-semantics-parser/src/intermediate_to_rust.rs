@@ -11,11 +11,16 @@ pub fn to_rust(semantics: &RemillSemanticsParsed) -> Option<proc_macro2::TokenSt
     for statement in statements {
         statement_tokens.push(statement_to_rust(statement));
     }
-    let params = params.iter().map(|param| format_ident!("{param}")).collect_vec();
+    let params = params.iter().map(|param| {
+        let param = format_ident!("{param}");
+        quote! {
+            #param: Input
+        }
+    }).collect_vec();
 
     let statement_tokens: proc_macro2::TokenStream = statement_tokens.into_iter().collect::<Option<_>>()?;
     let stream = quote! {
-        pub fn #name(#(#params,)*) {
+        pub fn #name(#(#params,)*) -> MemoryRes {
             #statement_tokens
         }
     };
@@ -29,7 +34,7 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
             let name = format_ident!("{name}");
             let expression: proc_macro2::TokenStream = expression_to_rust(expression)?;
             quote! {
-                let #name = #expression;
+                let #name = (#expression);
             }
         }
         RemillSemanticsStatement::VarAssign { expression, variable } => {
@@ -94,8 +99,8 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                 #init_statements;
                 while(#condition){
                     #for_statements;
-                    #increment
-                }
+                    #increment;
+                };
             }
         }
         RemillSemanticsStatement::IfElse { condition, if_body, else_body } => {
@@ -146,29 +151,32 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
             todo!()
         }
         RemillSemanticsStatement::WhileStatement { condition, statements } => {
-            let condition = expression_to_rust(condition)?;
+            /*let condition = expression_to_rust(condition)?;
             let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
             quote! {
                 while(#condition) {
                     #statement_tokens
                 };
-            }
+            }*/
+            return None
         }
         RemillSemanticsStatement::DoWhile { condition, statements } => {
-            let condition = expression_to_rust(condition)?;
+            /*let condition = expression_to_rust(condition)?;
             let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
             quote! {
-                do {
-                    #statement_tokens
-                } while(#condition);
-            }
+                while {
+                    #statement_tokens;
+                    #condition
+                }{};
+            }*/
+            return None
         }
         RemillSemanticsStatement::VarMulEqual { expression, variable_lvalue } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
-                    #variable_lvalue *= #expression;
-                }
+                #variable_lvalue *= #expression;
+            }
         }
         RemillSemanticsStatement::VarOrEqual { expression, variable_lvalue } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
@@ -196,152 +204,109 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
 fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::TokenStream> {
     Some(match expr {
         RemillSemanticsExpression::Call { function_name, args } => {
-            let function_name = function_name.replace("\"", "_quote_");
+            let mut function_name = function_name.replace("\"", "_quote_");
+            if function_name == "" {
+                function_name = "empty".to_string();
+            }
             let function_name = format_ident!("{function_name}");
             let args = args.iter().map(|arg| expression_to_rust(arg)).collect::<Option<Vec<_>>>()?;
-            quote! {
-                #function_name(#(#args),*)
-            }
+            quote!((#function_name(#(#args),*)))
         }
         RemillSemanticsExpression::VariableRef { name } => {
             let name = format_ident!("{name}");
-            quote! {
-                #name
-            }
+            quote!(#name)
         }
         RemillSemanticsExpression::And { left, right } => {
             let left = expression_to_rust(left)?;
             let right = expression_to_rust(right)?;
-            quote! {
-                #left & #right
-            }
+            quote!(#left & #right)
         }
         RemillSemanticsExpression::EnumConstantRef { name } => {
             let name = format_ident!("{name}");
-            quote! {
-                #name
-            }
+            quote!(#name)
         }
         RemillSemanticsExpression::IntegerInt { value } => {
-            quote! {
-                #value
-            }
+            quote!(#value)
         }
         RemillSemanticsExpression::IntegerUInt { value } => {
-            quote! {
-                #value
-            }
+            quote!(#value)
         }
         RemillSemanticsExpression::LessThan { left, right } => {
             let left = expression_to_rust(left)?;
             let right = expression_to_rust(right)?;
-            quote! {
-                #left < #right
-            }
+            quote!(#left < #right)
         }
         RemillSemanticsExpression::GreaterThanEq { left, right } => {
             let left = expression_to_rust(left)?;
             let right = expression_to_rust(right)?;
-            quote! {
-                #left >= #right
-            }
+            quote!(#left >= #right)
         }
         RemillSemanticsExpression::LessThanEq { left, right } => {
             let left = expression_to_rust(left)?;
             let right = expression_to_rust(right)?;
-            quote! {
-                #left <= #right
-            }
+            quote!(#left <= #right)
         }
         RemillSemanticsExpression::GreaterThan { left, right } => {
             let left = expression_to_rust(left)?;
             let right = expression_to_rust(right)?;
-            quote! {
-                #left >= #right
-            }
+            quote!(#left >= #right)
         }
         RemillSemanticsExpression::DotMember { inner, name } => {
             let inner = expression_to_rust(inner.as_ref())?;
             let name = format_ident!("{name}");
-            quote! {
-                #inner.#name
-            }
+            quote!(#inner.#name)
         }
         RemillSemanticsExpression::ArrayIndex { array, index } => {
             let array = expression_to_rust(array.as_ref())?;
             let index = expression_to_rust(index.as_ref())?;
-            quote! {
-                #array[#index]
-            }
+            quote!(#array[#index])
         }
         RemillSemanticsExpression::LongUInt { value } => {
-            quote! {
-                #value
-            }
+            quote!(#value)
         }
         RemillSemanticsExpression::Div { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left / #right
-            }
+            quote!(#left / #right)
         }
         RemillSemanticsExpression::LongLongUInt { value } => {
-            quote! {
-                #value
-            }
+            quote!(#value)
         }
         RemillSemanticsExpression::DefaultInitFloatArray { len } => {
-            quote! {
-                [0f32;#len]
-            }
+            quote!([0f32;#len])
         }
         RemillSemanticsExpression::RightShift { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left >> #right
-            }
+            quote!(#left >> #right)
         }
         RemillSemanticsExpression::LeftShift { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left << #right
-            }
+            quote!(#left << #right)
         }
         RemillSemanticsExpression::Eq { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left == #right
-            }
+            quote!(#left == #right)
         }
         RemillSemanticsExpression::Bool { value } => {
-            quote! {
-                #value
-            }
+            quote!(#value)
         }
         RemillSemanticsExpression::Mul { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left * #right
-            }
+            quote!(#left * #right)
         }
         RemillSemanticsExpression::Add { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left + #right
-            }
+            quote!(#left + #right)
         }
         RemillSemanticsExpression::Sub { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left - #right
-            }
+            quote!(#left - #right)
         }
         RemillSemanticsExpression::Sizeof { arg_type } => {
             let type_ = match arg_type.qual_type.as_str() {
@@ -355,147 +320,107 @@ fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::T
                 "In<unsigned long>" => quote!(std::ffi::c_ulong),
                 other => todo!("{other:?}")
             };
-            quote! {
-                std::mem::size_of::<#type_>()
-            }
+            quote!(std::mem::size_of::<#type_>())
         }
         RemillSemanticsExpression::Neg { inner } => {
             let inner = expression_to_rust(inner)?;
-            quote! {
-                -(#inner)
-            }
+            quote!((-(#inner)))
         }
         RemillSemanticsExpression::Dec { inner } => {
             let inner = expression_to_rust(inner)?;
-            quote! {
-                (#inner) -= 1;
-            }
+            quote!(((#inner) -= 1))
         }
         RemillSemanticsExpression::BoolNeg { inner } => {
             let inner = expression_to_rust(inner)?;
-            quote! {
-                !(#inner)
-            }
+            quote!(!(#inner))
         }
         RemillSemanticsExpression::BoolAnd { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left && #right
-            }
+            quote!(#left && #right)
         }
         RemillSemanticsExpression::DefaultInitUint32Array { len } => {
-            quote! {
-                [0u32;#len]
-            }
+            quote!([0u32;#len])
         }
         RemillSemanticsExpression::BitNeg { inner } => {
             let inner = expression_to_rust(inner)?;
-            quote! {
-                !(#inner)
-            }
+            quote!(!(#inner))
         }
         RemillSemanticsExpression::FloatLiteral { value } => {
             let ident = format!("{value}f32");
-            quote! {
-                #ident
-            }
+            quote!(#ident)
         }
         RemillSemanticsExpression::UnknownConsructExpr => {
             return None
         }
         RemillSemanticsExpression::DefaultInitUint16Array { len } => {
-            quote! {
-                [0u16;#len]
-            }
+            quote!([0u16;#len])
         }
         RemillSemanticsExpression::DefaultInitUint8Array { len } => {
-            quote! {
-                [0u8;#len]
-            }
+            quote!([0u8;#len])
         }
         RemillSemanticsExpression::DefaultDoubleArray { len } => {
-            quote! {
-                [0f64;#len]
-            }
+            quote!([0f64;#len])
         }
         RemillSemanticsExpression::U32 { value } => {
             let ident = format!("{value}u32");
-            quote! {
-                #ident
-            }
+            quote!(#ident)
         }
         RemillSemanticsExpression::DoubleLiteral { value } => {
             let ident = format!("{value}f64");
-            quote! {
-                #ident
-            }
+            quote!(#ident)
         }
         RemillSemanticsExpression::Mod { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left % #right
-            }
+            quote!(#left % #right)
         }
         RemillSemanticsExpression::BitOr { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left | #right
-            }
+            quote!(#left | #right)
         }
         RemillSemanticsExpression::NotEq { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left != #right
-            }
+            quote!(#left != #right)
         }
         RemillSemanticsExpression::FunctionRef { name } => {
             let name = format_ident!("{name}");
-            quote! {
-                #name
-            }
+            quote!(#name)
         }
         RemillSemanticsExpression::DefaultInitUnionArray { len } => {
             let len = *len;
-            quote! {
-                [_;#len]
-            }
+            quote!([_;#len])
         }
         RemillSemanticsExpression::BoolOr { left, right } => {
             let left = expression_to_rust(left.as_ref())?;
             let right = expression_to_rust(right.as_ref())?;
-            quote! {
-                #left || #right
-            }
+            quote!(#left || #right)
         }
         RemillSemanticsExpression::Lambda { statements } => {
             let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
-            quote! {
+            quote! (
                 (||{
                     #statement_tokens
                 })
-            }
+            )
         }
         RemillSemanticsExpression::Conditional { condition, true_case, false_case } => {
             let condition = expression_to_rust(condition)?;
             let if_tokens: proc_macro2::TokenStream = expression_to_rust(true_case)?;
             let else_tokens: proc_macro2::TokenStream = expression_to_rust(false_case)?;
-            quote! {
+            quote!(
                 (if(#condition) {
                     #if_tokens
                 } else {
                     #else_tokens
                 })
-            }
+            )
         }
         RemillSemanticsExpression::Address { inner } => {
             let inner = expression_to_rust(inner)?;
-            quote! {
-                &(#inner)
-            }
+            quote! (&(#inner))
         }
     })
 }
