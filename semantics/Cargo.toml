@@ -7,4 +7,7 @@ edition = "2021"
 
 [dependencies]
 xed-enum = { path = "../xed-enum" }
+remill-semantics-parser = { path = "../remill-semantics-parser" }
+wrapper-common = { path = "../wrapper-common" }
+xed-wrapper = { path = "../xed-wrapper" }
 bumpalo = "3.12"

@@ -12,6 +12,7 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
         for variant in enum_.variants {
             let mut fields = vec![];
             let mut field_names = vec![];
+            let mut single = false;
             for (i,field) in variant.fields.into_iter().enumerate() {
                 let type_tokens = field.ty.to_token_stream();
                 if let Some(ident) = &field.ident {
@@ -33,8 +34,9 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
                     assert_eq!(i, 0);
                     // let number_ident = format_ident!("{}",i);
                     field_names.push(quote! {
-                        0
+                        _0
                     });
+                    single ^= true;
                 }
             }
             let visit_ident = format_ident!("visit_{}", variant.ident);
@@ -45,9 +47,15 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
             let variant_name = format_ident!("{}", variant.ident);
             let field_names_clone = field_names.clone();
             let enum_name = format_ident!("{}", enum_def.ident);
-            match_cases.push(quote! {
-                #enum_name::#variant_name { #(#field_names),* } => self.#visit_ident(#(#field_names_clone),*),
-            });
+            if single {
+                match_cases.push(quote! {
+                    #enum_name::#variant_name( #(#field_names)* ) => self.#visit_ident(#(#field_names_clone),*),
+                });
+            }else {
+                match_cases.push(quote! {
+                    #enum_name::#variant_name { #(#field_names),* } => self.#visit_ident(#(#field_names_clone),*),
+                });
+            }
         }
         let enum_visitor_name = format_ident!("{}Visitor", enum_def.ident);
         let enum_name = format_ident!("{}", enum_def.ident);

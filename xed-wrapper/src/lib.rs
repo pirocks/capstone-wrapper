@@ -51,7 +51,7 @@ impl VariantName {
 pub enum FieldType {
     Mem(OperandWidth),
     Reg(RegisterType),
-    Imm,
+    Imm(OperandWidth),
     RelBR,
     Ptr,
     AGen,
@@ -94,7 +94,7 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                 let variant_fields: &mut HashMap<usize, Field> = &mut res.entry(instruction_name)
                     .or_insert_with(||TopLevelInstruction{ iclass: xed_inst_iclass(instruction_table_elem), variants: Default::default() })
                     .variants
-                    .entry(variant_name)
+                    .entry(variant_name.clone())
                     .or_insert_with(||Variant{ operands: Default::default(), iform: iform_i })
                     .operands;
                 let number_of_operands = xed_inst_noperands(instruction_table_elem);
@@ -180,7 +180,7 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                                 }
                             }
                             OperandName::IMM0 | OperandName::IMM1 => {
-                                FieldType::Imm
+                                FieldType::Imm(operand_width.unwrap())
                             }
                             OperandName::RELBR => {
                                 FieldType::RelBR

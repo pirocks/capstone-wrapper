@@ -1,6 +1,6 @@
 use xed_enum::AAA;
 
-use crate::x86_machine::{ByteValue, QWordValue, WordValue, X86MachineState, X86Mode};
+use crate::x86_machine::{SemanticsBuilder, X86MachineState};
 
 ///Operation
 //            IF 64-Bit Mode
@@ -20,28 +20,24 @@ use crate::x86_machine::{ByteValue, QWordValue, WordValue, X86MachineState, X86M
 //            FI;
 //
 
-impl X86MachineState {
+impl X86MachineState<'_> {
     //for making xed enum_defs xed has all the tables that are needed
     pub fn apply_iform_aaa(&mut self, iform_aaa: AAA) {
         match iform_aaa {
             AAA::AAA {} => {
-                match self.mode {
-                    X86Mode::Real | X86Mode::Protected => {
-
-                        let original_rax = self.a(self.rax);
-                        let original_ax = self.a(WordValue::LowerBits(original_rax));
-                        let original_al = self.a(ByteValue::LowerBits(original_rax));
-                        let x106 = self.a(WordValue::Constant(0x106));
-                        let nine = self.a(WordValue::Constant(9));
-                        let one = self.a(WordValue::Constant(1));
-                        let lower = ;
-                        self.a(QWordValue::WriteLowerBits { prev: original_rax, lower:  });
-                        todo!()
-                    }
-                    X86Mode::_64Bit => {
-                        self.undefined_instruction_exception();
-                    }
-                }
+                let mut semantics = SemanticsBuilder::new();
+                let mut semantics = semantics.undefined_exception_if_64_bit();
+                let condition = semantics.less(semantics.constant(9), semantics.al() & semantics.constant(0)) |
+                    semantics.equal(semantics.af(), semantics.constant(true));
+                semantics.emit_conditional(condition, |mut semantics| {
+                    semantics.set_ax(semantics.ax() + semantics.constant(0x106));
+                    semantics.set_af(semantics.constant(true));
+                    semantics.set_cf(semantics.constant(true));
+                }, |mut semantics| {
+                    semantics.set_af(semantics.constant(false));
+                    semantics.set_cf(semantics.constant(false));
+                });
+                semantics.set_al(semantics.al() & semantics.constant(0));//todo is this a zero?
             }
         }
     }

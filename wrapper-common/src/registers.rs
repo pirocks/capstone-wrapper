@@ -1566,7 +1566,18 @@ impl RegisterType {
             RegisterType::SingleSegmentBase(_) => todo!("SingleSegmentBase"),
             RegisterType::SingleSpecial(_) => format_ident!("RegSpecial"),
             RegisterType::SingleFloatControl(_) => format_ident!("RegFloatControl"),
-            RegisterType::Multiple(_) => format_ident!("Register"),
+            RegisterType::Multiple(multiple) => {
+                if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP] {
+                    format_ident!("GeneralReg3264")
+                } else if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP, RegisterType::AllGP16WithRIP, RegisterType::AllGP8]{
+                    format_ident!("GeneralReg")
+                } else if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP, RegisterType::AllGP16WithRIP] {
+                    format_ident!("GeneralReg163264")
+                } else {
+                    dbg!(multiple);
+                    panic!();
+                }
+            },
         }
     }
 }

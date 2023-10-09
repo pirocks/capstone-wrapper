@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use std::ops::Range;
+use std::ops::{Add, BitAnd, BitOr, Range};
 use bumpalo::Bump;
+use wrapper_common::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
 
 pub struct MemorySpace<'arena> {
     //todo use a proper sparse vec for whole memory space
@@ -33,6 +34,14 @@ pub enum BoolValue<'arena> {
     }
 }
 
+impl BitOr<BoolValue<'static>> for BoolValue<'static> {
+    type Output = BoolValue<'static>;
+
+    fn bitor(self, rhs: BoolValue<'_>) -> Self::Output {
+        todo!()
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ByteValue<'arena>{
     Constant(u8),
@@ -52,6 +61,15 @@ pub enum ByteValue<'arena>{
     }
 }
 
+impl BitAnd for ByteValue<'static> {
+    type Output = ByteValue<'static>;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        todo!()
+    }
+}
+
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum WordValue<'arena> {
     Constant(u16),
@@ -69,6 +87,24 @@ pub enum WordValue<'arena> {
         true_case: &'arena WordValue<'arena>,
         false_case: &'arena WordValue<'arena>
     }
+}
+
+impl Add<WordValue<'static>> for WordValue<'static> {
+    type Output = WordValue<'static>;
+
+    fn add(self, rhs: WordValue<'static>) -> Self::Output {
+        todo!()
+    }
+}
+
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum DWordValue<'arena> {
+    Constant(u32),
+    And {
+        left: &'arena DWordValue<'arena>,
+        right: &'arena DWordValue<'arena>,
+    },
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -147,10 +183,128 @@ impl<'arena> X86MachineState<'arena> {
     }
 
     pub fn a<T>(&self, to_alloc: T) -> &'arena T{
-        self.bumpalo.alloc(to_alloc)
+        todo!()/*self.bumpalo.alloc(to_alloc)*/
     }
 
     pub fn undefined_instruction_exception(&mut self) {
         self.pending_exception = true;
+    }
+}
+
+
+pub struct SemanticsBuilder{
+
+}
+
+impl SemanticsBuilder {
+
+    pub fn new() -> Self{
+        todo!()
+    }
+
+    pub fn undefined_exception_if_64_bit(&self) -> SemanticsBuilder32{
+        todo!()
+    }
+
+    //64 bit registers:
+
+    pub(crate) fn rax(&self) -> QWordValue<'static> {
+        todo!()
+    }
+
+    pub(crate) fn get_reg_64(&self, reg: Reg64WithRIP) -> QWordValue<'static> {
+        todo!()
+    }
+}
+
+impl SemanticBuilderCommon for SemanticsBuilder{
+
+}
+
+pub struct SemanticsBuilder32{
+
+}
+
+impl SemanticsBuilder32 {
+
+
+
+    pub fn emit_conditional(&self, condition: BoolValue<'static>, true_case: impl FnOnce(SemanticsBuilder32), false_case: impl FnOnce(SemanticsBuilder32)){
+        todo!()
+    }
+}
+
+impl SemanticBuilderCommon for SemanticsBuilder32{
+
+}
+
+
+pub trait SemanticBuilderCommon{
+    fn constant<NumIn, Out>(&self, num_in: NumIn) -> Out{
+        todo!()
+    }
+
+    //flags:
+    fn af(&self) -> BoolValue<'static> {
+        todo!()
+    }
+
+    fn set_af(&self, flag: BoolValue<'static>) {
+        todo!()
+    }
+
+    fn cf(&self) -> BoolValue<'static> {
+        todo!()
+    }
+
+    fn set_cf(&self, flag: BoolValue<'static>) {
+        todo!()
+    }
+
+    // 8 bit regs:
+    fn ah(&self) -> ByteValue<'static> {
+        todo!()
+    }
+
+    fn al(&self) -> ByteValue<'static> {
+        todo!()
+    }
+
+    fn set_al(&self, val: ByteValue<'static>) {
+        todo!()
+    }
+
+    // 16 bit regs:
+    fn ax(&self) -> WordValue<'static> {
+        todo!()
+    }
+
+    fn set_ax(&self, val: WordValue<'static>)  {
+        todo!()
+    }
+
+    // generic regs:
+
+    fn get_reg_8(&self, reg: Reg8) -> ByteValue<'static> {
+        todo!()
+    }
+
+    fn get_reg_16(&self, reg: Reg16WithRIP) -> WordValue<'static> {
+        todo!()
+    }
+
+    fn get_reg_32(&self, reg: Reg32WithRIP) -> DWordValue<'static> {
+        todo!()
+    }
+
+
+    //comparison
+
+    fn less<T>(&self, left: T, right: T) -> BoolValue<'static>{
+        todo!()
+    }
+
+    fn equal<T>(&self, left: T, right: T) -> BoolValue<'static>{
+        todo!()
     }
 }

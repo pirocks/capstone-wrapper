@@ -1,7 +1,9 @@
 use itertools::Itertools;
+use proc_macro2::Ident;
 use quote::{format_ident, quote};
 
 use xed_wrapper::{FieldType, Variant, xed_data};
+use xed_wrapper::operand_width::OperandWidth;
 
 #[proc_macro]
 pub fn top_level_instruction_enum(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -25,6 +27,16 @@ pub fn top_level_instruction_enum(_: proc_macro::TokenStream) -> proc_macro::Tok
     proc_macro::TokenStream::from(res)
 }
 
+fn imm_width_to_indent(width: OperandWidth) -> Ident{
+    match width {
+        OperandWidth::B => format_ident!("Imm8"),
+        OperandWidth::W => format_ident!("Imm16"),
+        OperandWidth::D => format_ident!("Imm32"),
+        OperandWidth::Z | OperandWidth::V => format_ident!("Immediate"),
+        width => todo!("{width:?}")
+    }
+}
+
 #[proc_macro]
 pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let data = xed_data();
@@ -42,7 +54,9 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 variant_types.last_mut().unwrap().push(match &variant_type.field_type {
                     FieldType::Mem(_) => format_ident!("MemoryOperands"),
                     FieldType::Reg(reg) => reg.type_to_rust_type(),
-                    FieldType::Imm => format_ident!("Immediate"),
+                    FieldType::Imm(imm) => {
+                        imm_width_to_indent(*imm)
+                    },
                     FieldType::RelBR => format_ident!("RelativeBr"),
                     FieldType::Ptr => format_ident!("Immediate"),
                     FieldType::AGen => format_ident!("MemoryOperands")
@@ -63,6 +77,7 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
     proc_macro::TokenStream::from(quote! {
         use wrapper_common::registers::*;
         use xed_wrapper::operands::*;
+        use wrapper_common::memory_operand::*;
         #(#enums)*
     })
 }
@@ -99,13 +114,20 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     FieldType::Reg(register_type) => {
                         let reg_type = register_type.type_to_rust_type();
                         current_variants.push(quote! {
-                                    let reg = xed_decoded_inst_get_reg(xed,#operand_name);
-                                    #reg_type::try_new(reg).unwrap()
-                                });
+                            let reg = xed_decoded_inst_get_reg(xed,#operand_name);
+                            #reg_type::try_new(reg).unwrap()
+                        });
                     }
-                    FieldType::Imm | FieldType::Ptr => {
+                    FieldType::Ptr => {
                         current_variants.push(quote! {
                             Immediate::from_xed(xed, #second_immediate)
+                        });
+                        second_immediate = true;
+                    }
+                    FieldType::Imm(width)  => {
+                        let type_ = imm_width_to_indent(*width);
+                        current_variants.push(quote! {
+                            #type_::from_xed(xed, #second_immediate)
                         });
                         second_immediate = true;
                     }

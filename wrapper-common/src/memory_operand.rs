@@ -60,40 +60,80 @@ impl X86Scale {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub enum GeneralRegister {
+pub enum GeneralReg {
     Reg64(Reg64WithRIP),
     Reg32(Reg32WithRIP),
     Reg16(Reg16WithRIP),
     Reg8(Reg8),
 }
 
-impl GeneralRegister{
+impl GeneralReg {
     pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
         use xed_sys::*;
         let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
         Some(match class {
-            XED_REG_CLASS_GPR8 => GeneralRegister::Reg8(Reg8::try_new(xed)?),
-            XED_REG_CLASS_GPR16 => GeneralRegister::Reg16(Reg16WithRIP::try_new(xed)?),
-            XED_REG_CLASS_GPR32 => GeneralRegister::Reg32(Reg32WithRIP::try_new(xed)?),
-            XED_REG_CLASS_GPR64 => GeneralRegister::Reg64(Reg64WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR8 => GeneralReg::Reg8(Reg8::try_new(xed)?),
+            XED_REG_CLASS_GPR16 => GeneralReg::Reg16(Reg16WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR32 => GeneralReg::Reg32(Reg32WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR64 => GeneralReg::Reg64(Reg64WithRIP::try_new(xed)?),
+            _ => return None
+        })
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum GeneralReg3264 {
+    Reg64(Reg64WithRIP),
+    Reg32(Reg32WithRIP),
+}
+
+impl GeneralReg3264{
+    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+        use xed_sys::*;
+        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
+        Some(match class {
+            XED_REG_CLASS_GPR32 => Self::Reg32(Reg32WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR64 => Self::Reg64(Reg64WithRIP::try_new(xed)?),
             _ => return None
         })
     }
 }
 
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum GeneralReg163264 {
+    Reg64(Reg64WithRIP),
+    Reg32(Reg32WithRIP),
+    Reg16(Reg16WithRIP),
+}
+
+impl GeneralReg163264{
+    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+        use xed_sys::*;
+        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
+        Some(match class {
+            XED_REG_CLASS_GPR16 => Self::Reg16(Reg16WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR32 => Self::Reg32(Reg32WithRIP::try_new(xed)?),
+            XED_REG_CLASS_GPR64 => Self::Reg64(Reg64WithRIP::try_new(xed)?),
+            _ => return None
+        })
+    }
+}
+
+
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct MemoryOperand {
-    pub base: GeneralRegister,
+    pub base: GeneralReg,
     pub scale: X86Scale,
-    pub index: Option<GeneralRegister>,
+    pub index: Option<GeneralReg>,
     pub offset: ImmediateOperand,
 }
 
 impl MemoryOperand {
     pub fn base64(reg: Reg64WithRIP) -> MemoryOperand {
         Self{
-            base: GeneralRegister::Reg64(reg),
+            base: GeneralReg::Reg64(reg),
             scale: X86Scale::One,
             index: None,
             offset: ImmediateOperand::Imm32(0),
