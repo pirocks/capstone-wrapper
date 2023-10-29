@@ -1,14 +1,15 @@
-pub mod tokenize;
 pub mod parser;
+pub mod tokenize;
 
 #[cfg(test)]
 pub mod test {
     use crate::parser::Tokens;
-    use crate::tokenize::{Lexer, remove_whitespace};
+    use crate::tokenize::{remove_whitespace, Lexer};
 
     #[test]
     pub fn test() {
-        let ses = [r#"
+        let ses = [
+            r#"
         updateMap(RSMap,
 convToRegKeys(R2) |-> extractMInt( addMInt( (#ifMInt eqMInt(getFlag("CF", RSMap), mi(1,1)) #then addMInt( concatenateMInt( mi(1, 0), getParentValue(R1, RSMap)), mi(65, 1)) #else concatenateMInt( mi(1, 0), getParentValue(R1, RSMap)) #fi), concatenateMInt( mi(1, 0), getParentValue(R2, RSMap))), 1, 65)
 
@@ -26,7 +27,7 @@ convToRegKeys(R2) |-> extractMInt( addMInt( (#ifMInt eqMInt(getFlag("CF", RSMap)
 )
         "#,
             r#"updateMap(RSMap, ("RIP" |-> addMInt({RSMap["RIP"]}:>MInt, handleImmediateWithSignExtend(Imm32, 32, 64))))"#,
-        r#"updateMap(RSMap,
+            r#"updateMap(RSMap,
 convToRegKeys(R2) |-> xorMInt( getParentValue(R2, RSMap), getParentValue(R1, RSMap))
 
 "CF" |-> mi(1, 0)
@@ -41,9 +42,10 @@ convToRegKeys(R2) |-> xorMInt( getParentValue(R2, RSMap), getParentValue(R1, RSM
 
 "OF" |-> mi(1, 0)
 )"#,
-        r#"updateMap(RSMap,
+            r#"updateMap(RSMap,
 convToRegKeys(R3) |-> concatenateMInt( add_double(extractMInt( getParentValue(R2, RSMap), 0, 64), extractMInt( getParentValue(R1, RSMap), 0, 64)), concatenateMInt( add_double(extractMInt( getParentValue(R2, RSMap), 64, 128), extractMInt( getParentValue(R1, RSMap), 64, 128)), concatenateMInt( add_double(extractMInt( getParentValue(R2, RSMap), 128, 192), extractMInt( getParentValue(R1, RSMap), 128, 192)), add_double(extractMInt( getParentValue(R2, RSMap), 192, 256), extractMInt( getParentValue(R1, RSMap), 192, 256)))))
-)"#,r#"
+)"#,
+            r#"
 updateMap(RSMap,
 convToRegKeys(R3) |-> andMInt( extractMInt( lshrMInt( concatenateMInt( mi(448, 0), Mem64), uvalueMInt(concatenateMInt( mi(504, 0), extractMInt( getParentValue(R1, RSMap), 56, 64)))), 448, 512), negMInt( extractMInt( shiftLeftMInt( lshrMInt( mi(512, 18446744073709551615), uvalueMInt(concatenateMInt( mi(504, 0), extractMInt( getParentValue(R1, RSMap), 48, 56)))), uvalueMInt(concatenateMInt( mi(504, 0), extractMInt( getParentValue(R1, RSMap), 48, 56)))), 448, 512)))
 
@@ -60,13 +62,13 @@ convToRegKeys(R3) |-> andMInt( extractMInt( lshrMInt( concatenateMInt( mi(448, 0
 "OF" |-> mi(1, 0)
       )
 "#,
-        r#"updateMap(RSMap,
+            r#"updateMap(RSMap,
 convToRegKeys(R4) |-> concatenateMInt( mi(128, 0), extractMInt( lshrMInt( concatenateMInt( extractMInt( getParentValue(R3, RSMap), 128, 256), extractMInt( getParentValue(R2, RSMap), 128, 256)), uvalueMInt(shiftLeftMInt( concatenateMInt( mi(248, 0), handleImmediateWithSignExtend(Imm8, 8, 8)), uvalueMInt(mi(256, 3))))), 128, 256))
-)"#];
+)"#,
+        ];
         for s in ses {
             let tokens = remove_whitespace(Lexer::new(s.to_string()).tokens());
             dbg!(Tokens::new(tokens).parse_expression());
         }
     }
 }
-

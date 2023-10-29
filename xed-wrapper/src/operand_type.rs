@@ -1,4 +1,8 @@
-use xed_sys::{xed_operand_type_enum_t, XED_OPERAND_TYPE_IMM, XED_OPERAND_TYPE_IMM_CONST, XED_OPERAND_TYPE_NT_LOOKUP_FN, XED_OPERAND_TYPE_NT_LOOKUP_FN2, XED_OPERAND_TYPE_NT_LOOKUP_FN4, XED_OPERAND_TYPE_REG};
+use xed_sys::{
+    xed_operand_type_enum_t, XED_OPERAND_TYPE_IMM, XED_OPERAND_TYPE_IMM_CONST,
+    XED_OPERAND_TYPE_NT_LOOKUP_FN, XED_OPERAND_TYPE_NT_LOOKUP_FN2, XED_OPERAND_TYPE_NT_LOOKUP_FN4,
+    XED_OPERAND_TYPE_REG,
+};
 
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
@@ -20,7 +24,7 @@ impl XedOperandType {
             XED_OPERAND_TYPE_NT_LOOKUP_FN2 => Self::NT_LOOKUP_FN2,
             XED_OPERAND_TYPE_NT_LOOKUP_FN4 => Self::NT_LOOKUP_FN4,
             XED_OPERAND_TYPE_REG => Self::REG,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }

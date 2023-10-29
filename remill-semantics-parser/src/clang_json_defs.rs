@@ -1,6 +1,6 @@
 use derive_visitor::Drive;
-use serde::{Deserialize, Deserializer, Serialize};
 use serde::de::Error;
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
@@ -344,7 +344,6 @@ pub(crate) struct Base {
     type_: Option<ASTType>,
 }
 
-
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub(crate) enum CastKind {
@@ -413,7 +412,6 @@ pub(crate) enum CastKind {
     ZeroToOCLOpaqueType,
     AddressSpaceConversion,
     IntToOCLSampler,
-
 }
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
@@ -433,7 +431,6 @@ pub(crate) enum StorageClass {
     #[serde(rename = "static")]
     Static,
 }
-
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
@@ -468,7 +465,6 @@ pub(crate) enum Access {
     Protected,
 }
 
-
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub(crate) enum ExplicitlyDefaulted {
@@ -485,7 +481,6 @@ pub(crate) struct Empty {
     #[drive(skip)]
     id: u64,
 }
-
 
 #[derive(Serialize, Deserialize, Drive, Clone, Debug)]
 #[serde(deny_unknown_fields)]
@@ -955,7 +950,7 @@ pub(crate) enum ASTNode {
     },
     Empty {
         #[drive(skip)]
-        id: String
+        id: String,
     },
     UsingDecl {
         loc: Loc,
@@ -2811,8 +2806,8 @@ pub(crate) enum ASTNode {
 }
 
 fn from_hex<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(deserializer)?;
     u64::from_str_radix(&s[2..], 16).map_err(D::Error::custom)

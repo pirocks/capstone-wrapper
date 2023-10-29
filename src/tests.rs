@@ -1,17 +1,13 @@
 use std::arch::asm;
 use std::ffi::c_void;
 
-use crate::{disassemble, function_end_guard};
 use crate::utils::get_function_bytes;
+use crate::{disassemble, function_end_guard};
 
 #[no_mangle]
 fn sample_assembly() {
     unsafe {
-        asm!(
-        "mov rax, rcx",
-        "shl r8w, 1",
-        "add rax, rbx",
-        );
+        asm!("mov rax, rcx", "shl r8w, 1", "add rax, rbx",);
         function_end_guard!();
     }
 }

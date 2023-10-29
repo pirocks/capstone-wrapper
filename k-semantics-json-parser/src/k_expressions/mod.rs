@@ -1,8 +1,7 @@
 #![allow(non_snake_case)]
 
-
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TopLevel {
@@ -26,20 +25,18 @@ pub struct KFlatModule {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "node")]
 pub enum KSort {
-    KSort {
-        name: String
-    }
+    KSort { name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "node")]
 pub enum KProductionItems {
     KTerminal {
-        value: String
+        value: String,
     },
     KNonTerminal {
         // value: Option<String>,
-        sort: KSort
+        sort: KSort,
     },
     KRegexTerminal {
         precedeRegex: String,
@@ -69,10 +66,10 @@ pub enum KExpression {
         lhs: Box<KExpression>,
         rhs: Box<KExpression>,
     },
-    KSequence{
+    KSequence {
         arity: usize,
-        items: Vec<KExpression>
-    }
+        items: Vec<KExpression>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -86,16 +83,14 @@ pub struct Att {
 #[serde(tag = "node")]
 #[serde(deny_unknown_fields)]
 pub enum KAtt {
-    KAtt {
-        att: HashMap<String, String>
-    }
+    KAtt { att: HashMap<String, String> },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Assoc{
+pub enum Assoc {
     Left,
     Right,
-    NonAssoc
+    NonAssoc,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -115,19 +110,18 @@ pub enum KSentence {
     },
     KSyntaxSort {
         sort: KSort,
-        att: KAtt
+        att: KAtt,
     },
     KRule {
         body: KExpression,
         requires: KExpression,
         ensures: KExpression,
-        att: KAtt
+        att: KAtt,
     },
     KSyntaxAssociativity {
         assoc: Assoc,
         tags: Vec<String>,
-        att: KAtt
-
+        att: KAtt,
     },
     KSyntaxPriority {
         priorities: Vec<Vec<String>>,
@@ -136,39 +130,37 @@ pub enum KSentence {
     KContext {
         body: KExpression,
         requires: KExpression,
-        att: KAtt
+        att: KAtt,
     },
     KBubble {
         sentenceType: String,
         contents: String,
-        att: KAtt
+        att: KAtt,
     },
 }
 
-pub fn has_execinstr_label_expr(expr: &KExpression) -> bool{
+pub fn has_execinstr_label_expr(expr: &KExpression) -> bool {
     match expr {
         KExpression::KApply { label, args, .. } => {
             if label.as_str() == "execinstr" {
-                return true
+                return true;
             }
             for arg in args {
-                if has_execinstr_label_expr(arg){
-                    return true
+                if has_execinstr_label_expr(arg) {
+                    return true;
                 }
             }
             false
         }
-        KExpression::KVariable { .. } => {
-            false
+        KExpression::KVariable { .. } => false,
+        KExpression::KToken { .. } => false,
+        KExpression::KRewrite { lhs, rhs } => {
+            has_execinstr_label_expr(lhs) || has_execinstr_label_expr(rhs)
         }
-        KExpression::KToken { .. } => {
-            false
-        }
-        KExpression::KRewrite { lhs, rhs } => has_execinstr_label_expr(lhs) || has_execinstr_label_expr(rhs),
-        KExpression::KSequence {  items, .. } => {
+        KExpression::KSequence { items, .. } => {
             for x in items {
-                if has_execinstr_label_expr(x){
-                    return true
+                if has_execinstr_label_expr(x) {
+                    return true;
                 }
             }
             false
@@ -176,26 +168,29 @@ pub fn has_execinstr_label_expr(expr: &KExpression) -> bool{
     }
 }
 
-pub fn has_execinstr_label(sentence: &KSentence) -> bool{
+pub fn has_execinstr_label(sentence: &KSentence) -> bool {
     match sentence {
-        KSentence::KProduction { .. } => {
-            false
-        }
+        KSentence::KProduction { .. } => false,
         KSentence::KModuleComment { .. } => false,
         KSentence::KSyntaxSort { .. } => false,
-        KSentence::KRule { body, requires, ensures, .. } => {
-            has_execinstr_label_expr(body) || has_execinstr_label_expr(requires) || has_execinstr_label_expr(ensures)
+        KSentence::KRule {
+            body,
+            requires,
+            ensures,
+            ..
+        } => {
+            has_execinstr_label_expr(body)
+                || has_execinstr_label_expr(requires)
+                || has_execinstr_label_expr(ensures)
         }
         KSentence::KSyntaxAssociativity { .. } => false,
         KSentence::KSyntaxPriority { .. } => false,
         KSentence::KContext { body, requires, .. } => {
             has_execinstr_label_expr(body) || has_execinstr_label_expr(requires)
         }
-        KSentence::KBubble { .. } => false
+        KSentence::KBubble { .. } => false,
     }
 }
 
-
 #[cfg(test)]
 pub mod test;
-

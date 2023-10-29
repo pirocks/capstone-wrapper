@@ -28,7 +28,7 @@ impl InstructionEncoding {
         if let Some(operands) = operands {
             for operand in operands {
                 if let InstructionElement::Operand {
-                    idx:_,
+                    idx: _,
                     r#type,
                     width,
                     xtype,
@@ -39,23 +39,28 @@ impl InstructionEncoding {
                     r,
                     w,
                     ..
-                } = operand {
+                } = operand
+                {
                     let supressed = suppressed == &Some("1".to_string());
                     if supressed {
                         continue;
                     }
                     // let operand_index = OperandIndex::from_str(idx)?;
-                    let duplicate = operands_res.insert(OperandIndex(NonZeroU8::new((operands_res.len() + 1) as u8).unwrap()),
-                                                        OperandType::new(
-                                                            r#type,
-                                                            xtype.as_ref(),
-                                                            val.as_ref(),
-                                                            memory_prefix.as_ref(),
-                                                            width.as_ref(),
-                                                            vsib.as_ref(),
-                                                            r.as_ref(),
-                                                            w.as_ref(),
-                                                        )?).is_some();
+                    let duplicate = operands_res
+                        .insert(
+                            OperandIndex(NonZeroU8::new((operands_res.len() + 1) as u8).unwrap()),
+                            OperandType::new(
+                                r#type,
+                                xtype.as_ref(),
+                                val.as_ref(),
+                                memory_prefix.as_ref(),
+                                width.as_ref(),
+                                vsib.as_ref(),
+                                r.as_ref(),
+                                w.as_ref(),
+                            )?,
+                        )
+                        .is_some();
                     if duplicate {
                         return Err(FromRawError::MultipleOperandsWithSameIndex);
                     }
@@ -67,12 +72,10 @@ impl InstructionEncoding {
             operands: operands_res,
             bcast: match bcast {
                 None => None,
-                Some(bcast) => {
-                    match NonZeroU8::new(u8::from_str(bcast.as_str()).unwrap()) {
-                        Some(x) => Some(x),
-                        None => None,
-                    }
-                }
+                Some(bcast) => match NonZeroU8::new(u8::from_str(bcast.as_str()).unwrap()) {
+                    Some(x) => Some(x),
+                    None => None,
+                },
             },
         })
     }
@@ -100,16 +103,23 @@ pub struct Instructions {
 impl Instructions {
     pub fn new(raw: Root) -> Result<Self, FromRawError> {
         let mut instructions_res = HashMap::new();
-        let Root { date: _, extensions } = raw;
+        let Root {
+            date: _,
+            extensions,
+        } = raw;
         for extension in extensions {
-            let Extension { name: _, instructions } = extension;
+            let Extension {
+                name: _,
+                instructions,
+            } = extension;
             if let Some(instructions) = instructions {
                 for instruction in instructions {
                     let instruction_name = InstructionName::new(&instruction.iclass);
                     instructions_res
                         .entry(instruction_name)
                         .or_insert(Instruction { encodings: vec![] })
-                        .encodings.push(InstructionEncoding::new(&instruction)?)
+                        .encodings
+                        .push(InstructionEncoding::new(&instruction)?)
                 }
             }
         }
@@ -118,4 +128,3 @@ impl Instructions {
         })
     }
 }
-

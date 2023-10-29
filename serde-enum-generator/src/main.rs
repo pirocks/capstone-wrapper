@@ -6,10 +6,7 @@ use serde_json::Value;
 
 fn extract_all_objects_impl<'a>(object: &'a Value, out: &mut Vec<&'a Value>) {
     match object {
-        Value::Null |
-        Value::Bool(_) |
-        Value::Number(_) |
-        Value::String(_) => {}
+        Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => {}
         Value::Array(arr) => {
             for val in arr {
                 extract_all_objects_impl(val, out)
@@ -36,13 +33,16 @@ fn unique_field_combinations<'a>(objects: &[&'a Value]) -> HashSet<BTreeSet<&'a 
         let mut fields = BTreeSet::new();
         for field in val.as_object().unwrap().keys() {
             fields.insert(field.as_str());
-        };
+        }
         res.insert(fields);
     }
     res
 }
 
-fn classify_objects_by_discriminant<'a>(objects: &[&'a Value], discriminant: impl Into<String>) -> HashMap<&'a str, Vec<&'a Value>> {
+fn classify_objects_by_discriminant<'a>(
+    objects: &[&'a Value],
+    discriminant: impl Into<String>,
+) -> HashMap<&'a str, Vec<&'a Value>> {
     let discriminant = discriminant.into();
     let mut res: HashMap<&str, Vec<&Value>> = HashMap::new();
     for object in objects {
@@ -51,11 +51,12 @@ fn classify_objects_by_discriminant<'a>(objects: &[&'a Value], discriminant: imp
             Some(x) => x,
             None => continue,
         };
-        res.entry(discriminant_value.as_str().unwrap()).or_default().push(object);
+        res.entry(discriminant_value.as_str().unwrap())
+            .or_default()
+            .push(object);
     }
     res
 }
-
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FieldType {
@@ -94,10 +95,12 @@ fn fields_and_types(objects: &[&Value], discriminant: impl Into<String>) -> Vec<
                 Value::Object(_) => Some(FieldType::Obj),
                 Value::Array(_) => Some(FieldType::Array),
             };
-            let field = fields.entry(field_name.to_string()).or_insert(FieldInternal {
-                field_type,
-                count: 0,
-            });
+            let field = fields
+                .entry(field_name.to_string())
+                .or_insert(FieldInternal {
+                    field_type,
+                    count: 0,
+                });
             field.count += 1;
             if field.field_type != field_type {
                 field.field_type = None;
@@ -117,7 +120,10 @@ fn fields_and_types(objects: &[&Value], discriminant: impl Into<String>) -> Vec<
     fields_final
 }
 
-fn fields_and_types_from_classified_objects<'a>(classified: &HashMap<&'a str, Vec<&'a Value>>, discriminant: impl Into<String>) -> HashMap<&'a str, Vec<Field>> {
+fn fields_and_types_from_classified_objects<'a>(
+    classified: &HashMap<&'a str, Vec<&'a Value>>,
+    discriminant: impl Into<String>,
+) -> HashMap<&'a str, Vec<Field>> {
     let mut res = HashMap::new();
     let discriminant = discriminant.into();
     for (name, values) in classified {
@@ -150,7 +156,7 @@ fn type_override(str: impl AsRef<str>) -> Option<String> {
         "nonOdrUseReason" => Some("NonOdrUseReason".to_string()),
         "castKind" => Some("CastKind".to_string()),
         "type" => Some("ASTType".to_string()),
-        _ => None
+        _ => None,
     }
 }
 
@@ -159,28 +165,16 @@ fn single_variant_serde_decl(name: &str, fields: &[Field]) -> String {
     for field in fields {
         let field_name = field.name.to_string();
         let field_type_str = match field.field_type {
-            None => {
-                "!"
-            }
-            Some(FieldType::String) => {
-                "String"
-            }
-            Some(FieldType::Obj) => {
-                "Box<Self>"
-            }
-            Some(FieldType::Array) => {
-                "Vec<Self>"
-            }
-            Some(FieldType::Bool) => {
-                "bool"
-            }
-            Some(FieldType::Number) => {
-                "i64"
-            }
+            None => "!",
+            Some(FieldType::String) => "String",
+            Some(FieldType::Obj) => "Box<Self>",
+            Some(FieldType::Array) => "Vec<Self>",
+            Some(FieldType::Bool) => "bool",
+            Some(FieldType::Number) => "i64",
         };
         let field_type_str = match type_override(&field_name) {
             None => field_type_str.to_string(),
-            Some(x) => x
+            Some(x) => x,
         };
         let field_type_str = if field.optional {
             format!("Option<{field_type_str}>")
@@ -192,19 +186,27 @@ fn single_variant_serde_decl(name: &str, fields: &[Field]) -> String {
                 fields_strs.push(format!("{field_name} : {field_type_str}"));
             }
             Some(renamed) => {
-                fields_strs.push(format!("\
+                fields_strs.push(format!(
+                    "\
                 #[serde(rename = \"{field_name}\")]
-                {renamed} : {field_type_str}"));
+                {renamed} : {field_type_str}"
+                ));
             }
         }
     }
-    format!("{name} {{
+    format!(
+        "{name} {{
 {}
-    }}", fields_strs.join(","))
+    }}",
+        fields_strs.join(",")
+    )
 }
 
 fn to_serde_decl(fields_and_types: &HashMap<&str, Vec<Field>>) -> String {
-    let variants: Vec<String> = fields_and_types.iter().map(|(name, fields)| single_variant_serde_decl(name, fields.as_slice())).collect();
+    let variants: Vec<String> = fields_and_types
+        .iter()
+        .map(|(name, fields)| single_variant_serde_decl(name, fields.as_slice()))
+        .collect();
     variants.join(",\n")
 }
 

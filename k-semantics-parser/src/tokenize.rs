@@ -28,9 +28,7 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn new(data: String) -> Self {
-        Self {
-            data,
-        }
+        Self { data }
     }
 
     /*fn tokenize(s: &str) -> Result<Option<(Token,&str)>, _>{
@@ -97,8 +95,8 @@ impl Lexer {
 }
 
 pub fn remove_whitespace(input: Vec<Token>) -> Vec<Token> {
-    input.into_iter().filter(|token|!matches!(token, Token::Whitespace)).collect()
+    input
+        .into_iter()
+        .filter(|token| !matches!(token, Token::Whitespace))
+        .collect()
 }
-
-
-

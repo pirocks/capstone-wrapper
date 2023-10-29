@@ -55,12 +55,14 @@ impl Register8 {
             X86_REG_R14B => Register8::R14B,
             X86_REG_R15B => Register8::R15B,
             _ => {
-                panic!("Capstone should never give us an unknown register id: {}", register_id.0)
+                panic!(
+                    "Capstone should never give us an unknown register id: {}",
+                    register_id.0
+                )
             }
         }
     }
 }
-
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Register16 {
@@ -102,7 +104,10 @@ impl Register16 {
             X86_REG_R14W => Register16::R14W,
             X86_REG_R15W => Register16::R15W,
             _ => {
-                panic!("Capstone should never give us an unknown register id: {}", register_id.0)
+                panic!(
+                    "Capstone should never give us an unknown register id: {}",
+                    register_id.0
+                )
             }
         }
     }
@@ -169,7 +174,10 @@ impl Register32 {
             X86_REG_R14D => Register32::R14D,
             X86_REG_R15D => Register32::R15D,
             _ => {
-                panic!("Capstone should never give us an unknown register id: {}", register_id.0)
+                panic!(
+                    "Capstone should never give us an unknown register id: {}",
+                    register_id.0
+                )
             }
         }
     }
@@ -236,7 +244,10 @@ impl Register64 {
             X86_REG_R14 => Register64::R14,
             X86_REG_R15 => Register64::R15,
             _ => {
-                panic!("Capstone should never give us an unknown register id: {}", register_id.0)
+                panic!(
+                    "Capstone should never give us an unknown register id: {}",
+                    register_id.0
+                )
             }
         }
     }
@@ -275,18 +286,10 @@ pub enum GeneralRegister {
 impl GeneralRegister {
     pub fn new(register_id: RegId, operand_size: OperandSize) -> Self {
         match operand_size {
-            OperandSize::QuadWord => {
-                GeneralRegister::Register64(Register64::new(register_id))
-            }
-            OperandSize::DoubleWord => {
-                GeneralRegister::Register32(Register32::new(register_id))
-            }
-            OperandSize::Word => {
-                GeneralRegister::Register16(Register16::new(register_id))
-            }
-            OperandSize::HalfWord => {
-                GeneralRegister::Register8(Register8::new(register_id))
-            }
+            OperandSize::QuadWord => GeneralRegister::Register64(Register64::new(register_id)),
+            OperandSize::DoubleWord => GeneralRegister::Register32(Register32::new(register_id)),
+            OperandSize::Word => GeneralRegister::Register16(Register16::new(register_id)),
+            OperandSize::HalfWord => GeneralRegister::Register8(Register8::new(register_id)),
         }
     }
 }
@@ -318,15 +321,9 @@ impl GeneralRegisterWordAndBigger {
 
     pub fn widen_register(&self) -> Register64 {
         match self {
-            GeneralRegisterWordAndBigger::Register64(register64) => {
-                *register64
-            }
-            GeneralRegisterWordAndBigger::Register32(register32) => {
-                register32.widen_register()
-            }
-            GeneralRegisterWordAndBigger::Register16(register16) => {
-                register16.widen_register()
-            }
+            GeneralRegisterWordAndBigger::Register64(register64) => *register64,
+            GeneralRegisterWordAndBigger::Register32(register32) => register32.widen_register(),
+            GeneralRegisterWordAndBigger::Register16(register16) => register16.widen_register(),
         }
     }
 }

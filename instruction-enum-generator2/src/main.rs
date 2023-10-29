@@ -1,5 +1,5 @@
-use std::io::Cursor;
 use itertools::Itertools;
+use std::io::Cursor;
 
 use reqwest::blocking;
 use serde_xml_rs::from_reader;
@@ -9,10 +9,12 @@ use wrapper_common::instructions::Instructions;
 
 fn get_bytes_from_network() -> anyhow::Result<Vec<u8>> {
     let request_builder = blocking::Client::builder().timeout(None);
-    let request = request_builder.build()?.get("https://uops.info/instructions.xml").send()?;
+    let request = request_builder
+        .build()?
+        .get("https://uops.info/instructions.xml")
+        .send()?;
     Ok(request.bytes()?.iter().cloned().collect_vec())
 }
-
 
 fn main() -> anyhow::Result<()> {
     // let xml_bytes = get_bytes_from_network()?;

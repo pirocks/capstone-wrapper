@@ -1,11 +1,13 @@
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 use capstone::arch::x86::X86Operand;
 use capstone::RegId;
+use enum_iterator::Sequence;
 use proc_macro2::Ident;
 use quote::format_ident;
 use serde::{Deserialize, Serialize};
 use xed_sys::*;
+use crate::operand_width::XedOperandWidth;
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegMMX {
@@ -30,12 +32,16 @@ impl RegMMX {
             XED_REG_MMX5 => RegMMX::MM5,
             XED_REG_MMX6 => RegMMX::MM6,
             XED_REG_MMX7 => RegMMX::MM7,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegXMM {
     XMM0,
     XMM1,
@@ -107,7 +113,7 @@ impl RegXMM {
             XED_REG_XMM29 => RegXMM::XMM29,
             XED_REG_XMM30 => RegXMM::XMM30,
             XED_REG_XMM31 => RegXMM::XMM31,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -147,6 +153,10 @@ impl RegXMM {
             RegXMM::XMM31 => "RegXMM::XMM31".to_string(),
             RegXMM::XMM32 => "RegXMM::XMM32".to_string(),
         }
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
@@ -222,10 +232,9 @@ impl RegYMM {
             XED_REG_YMM29 => RegYMM::YMM29,
             XED_REG_YMM30 => RegYMM::YMM30,
             XED_REG_YMM31 => RegYMM::YMM31,
-            _ => return None
+            _ => return None,
         })
     }
-
 
     pub fn to_declaration_string(&self) -> String {
         match self {
@@ -264,9 +273,13 @@ impl RegYMM {
             RegYMM::YMM32 => "RegYMM::YMM32".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegZMM {
     ZMM0,
     ZMM1,
@@ -338,7 +351,7 @@ impl RegZMM {
             XED_REG_ZMM29 => RegZMM::ZMM29,
             XED_REG_ZMM30 => RegZMM::ZMM30,
             XED_REG_ZMM31 => RegZMM::ZMM31,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -379,6 +392,10 @@ impl RegZMM {
             RegZMM::ZMM32 => "RegZMM::ZMM32".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -404,12 +421,16 @@ impl RegTMM {
             XED_REG_TMM5 => RegTMM::TMM5,
             XED_REG_TMM6 => RegTMM::TMM6,
             XED_REG_TMM7 => RegTMM::TMM7,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq,Ord, PartialOrd, Serialize, Deserialize)]
 pub enum RegMask {
     K0,
     K1,
@@ -432,7 +453,7 @@ impl RegMask {
             XED_REG_K5 => RegMask::K5,
             XED_REG_K6 => RegMask::K6,
             XED_REG_K7 => RegMask::K7,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -448,9 +469,13 @@ impl RegMask {
             RegMask::K7 => "RegMask::K7".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize, Sequence)]
 pub enum Reg64WithRIP {
     RAX,
     RBX,
@@ -491,10 +516,9 @@ impl Reg64WithRIP {
             XED_REG_R14 => Self::R14,
             XED_REG_R15 => Self::R15,
             XED_REG_RIP => Self::RIP,
-            _ => return None
+            _ => return None,
         })
     }
-
 
     pub fn try_unwrap_reg64_without_rip(&self) -> Option<Reg64WithoutRIP> {
         match self {
@@ -518,7 +542,6 @@ impl Reg64WithRIP {
         }
     }
 
-
     pub fn to_declaration_string(&self) -> String {
         match self {
             Reg64WithRIP::RAX => "Reg64WithRIP::RAX".to_string(),
@@ -538,6 +561,28 @@ impl Reg64WithRIP {
             Reg64WithRIP::R14 => "Reg64WithRIP::R14".to_string(),
             Reg64WithRIP::R15 => "Reg64WithRIP::R15".to_string(),
             Reg64WithRIP::RIP => "Reg64WithRIP::RIP".to_string(),
+        }
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::RAX => XED_REG_RAX,
+            Self::RBX => XED_REG_RBX,
+            Self::RCX => XED_REG_RCX,
+            Self::RDX => XED_REG_RDX,
+            Self::RSI => XED_REG_RSI,
+            Self::RDI => XED_REG_RDI,
+            Self::RBP => XED_REG_RBP,
+            Self::RSP => XED_REG_RSP,
+            Self::R8 => XED_REG_R8,
+            Self::R9 => XED_REG_R9,
+            Self::R10 => XED_REG_R10,
+            Self::R11 => XED_REG_R11,
+            Self::R12 => XED_REG_R12,
+            Self::R13 => XED_REG_R13,
+            Self::R14 => XED_REG_R14,
+            Self::R15 => XED_REG_R15,
+            Self::RIP => XED_REG_RIP,
         }
     }
 }
@@ -581,12 +626,33 @@ impl Reg64WithoutRIP {
             XED_REG_R13 => Self::R13,
             XED_REG_R14 => Self::R14,
             XED_REG_R15 => Self::R15,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::RAX => XED_REG_RAX,
+            Self::RBX => XED_REG_RBX,
+            Self::RCX => XED_REG_RCX,
+            Self::RDX => XED_REG_RDX,
+            Self::RSI => XED_REG_RSI,
+            Self::RDI => XED_REG_RDI,
+            Self::RBP => XED_REG_RBP,
+            Self::RSP => XED_REG_RSP,
+            Self::R8 => XED_REG_R8,
+            Self::R9 => XED_REG_R9,
+            Self::R10 => XED_REG_R10,
+            Self::R11 => XED_REG_R11,
+            Self::R12 => XED_REG_R12,
+            Self::R13 => XED_REG_R13,
+            Self::R14 => XED_REG_R14,
+            Self::R15 => XED_REG_R15,
+        }
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize, Sequence)]
 pub enum Reg32WithRIP {
     EAX,
     EBX,
@@ -627,10 +693,9 @@ impl Reg32WithRIP {
             XED_REG_R14D => Self::R14D,
             XED_REG_R15D => Self::R15D,
             XED_REG_EIP => Self::EIP,
-            _ => return None
+            _ => return None,
         })
     }
-
 
     pub fn try_unwrap_reg32_without_rip(&self) -> Option<Reg32WithoutRIP> {
         match self {
@@ -675,9 +740,31 @@ impl Reg32WithRIP {
             Reg32WithRIP::EIP => "Reg32WithRIP::EIP".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::EAX => XED_REG_EAX,
+            Self::EBX => XED_REG_EBX,
+            Self::ECX => XED_REG_ECX,
+            Self::EDX => XED_REG_EDX,
+            Self::ESI => XED_REG_ESI,
+            Self::EDI => XED_REG_EDI,
+            Self::EBP => XED_REG_EBP,
+            Self::ESP => XED_REG_ESP,
+            Self::R8D => XED_REG_R8D,
+            Self::R9D => XED_REG_R9D,
+            Self::R10D => XED_REG_R10D,
+            Self::R11D => XED_REG_R11D,
+            Self::R12D => XED_REG_R12D,
+            Self::R13D => XED_REG_R13D,
+            Self::R14D => XED_REG_R14D,
+            Self::R15D => XED_REG_R15D,
+            Self::EIP => XED_REG_EIP,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize, Sequence)]
 pub enum Reg32WithoutRIP {
     EAX,
     EBX,
@@ -716,13 +803,16 @@ impl Reg32WithoutRIP {
             XED_REG_R13D => Self::R13D,
             XED_REG_R14D => Self::R14D,
             XED_REG_R15D => Self::R15D,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
-
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq,Ord, PartialOrd, Serialize, Deserialize, Sequence)]
 pub enum Reg16WithRIP {
     AX,
     BX,
@@ -763,7 +853,7 @@ impl Reg16WithRIP {
             XED_REG_R14W => Self::R14W,
             XED_REG_R15W => Self::R15W,
             XED_REG_IP => Self::IP,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -789,7 +879,6 @@ impl Reg16WithRIP {
         }
     }
 
-
     pub fn to_declaration_string(&self) -> String {
         match self {
             Reg16WithRIP::AX => "Reg16WithRIP::AX".to_string(),
@@ -811,9 +900,31 @@ impl Reg16WithRIP {
             Reg16WithRIP::IP => "Reg16WithRIP::IP".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::AX => XED_REG_AX,
+            Self::BX => XED_REG_BX,
+            Self::CX => XED_REG_CX,
+            Self::DX => XED_REG_DX,
+            Self::SI => XED_REG_SI,
+            Self::DI => XED_REG_DI,
+            Self::BP => XED_REG_BP,
+            Self::SP => XED_REG_SP,
+            Self::R8W => XED_REG_R8W,
+            Self::R9W => XED_REG_R9W,
+            Self::R10W => XED_REG_R10W,
+            Self::R11W => XED_REG_R11W,
+            Self::R12W => XED_REG_R12W,
+            Self::R13W => XED_REG_R13W,
+            Self::R14W => XED_REG_R14W,
+            Self::R15W => XED_REG_R15W,
+            Self::IP => XED_REG_IP,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize, Sequence)]
 pub enum Reg16WithoutRIP {
     AX,
     BX,
@@ -852,13 +963,12 @@ impl Reg16WithoutRIP {
             XED_REG_R13W => Self::R13W,
             XED_REG_R14W => Self::R14W,
             XED_REG_R15W => Self::R15W,
-            _ => return None
+            _ => return None,
         })
     }
 }
 
-
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize, Sequence)]
 pub enum Reg8 {
     AL,
     AH,
@@ -905,7 +1015,7 @@ impl Reg8 {
             XED_REG_R13B => Self::R13B,
             XED_REG_R14B => Self::R14B,
             XED_REG_R15B => Self::R15B,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -933,9 +1043,34 @@ impl Reg8 {
             Reg8::R15B => "Reg8::R15B".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::AL => XED_REG_AL,
+            Self::AH => XED_REG_AH,
+            Self::BL => XED_REG_BL,
+            Self::BH => XED_REG_BH,
+            Self::CL => XED_REG_CL,
+            Self::CH => XED_REG_CH,
+            Self::DL => XED_REG_DL,
+            Self::DH => XED_REG_DH,
+            Self::SIL => XED_REG_SIL,
+            Self::DIL => XED_REG_DIL,
+            Self::BPL => XED_REG_BPL,
+            Self::SPL => XED_REG_SPL,
+            Self::R8B => XED_REG_R8B,
+            Self::R9B => XED_REG_R9B,
+            Self::R10B => XED_REG_R10B,
+            Self::R11B => XED_REG_R11B,
+            Self::R12B => XED_REG_R12B,
+            Self::R13B => XED_REG_R13B,
+            Self::R14B => XED_REG_R14B,
+            Self::R15B => XED_REG_R15B,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegFloat {
     ST0,
     ST1,
@@ -958,12 +1093,16 @@ impl RegFloat {
             XED_REG_ST5 => Self::ST5,
             XED_REG_ST6 => Self::ST6,
             XED_REG_ST7 => Self::ST7,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq,Ord, PartialOrd, Serialize, Deserialize)]
 pub enum RegFloatControl {
     X87CONTROL,
     X87STATUS,
@@ -982,7 +1121,7 @@ impl RegFloatControl {
             XED_REG_X87POP => Self::X87POP,
             XED_REG_X87PUSH => Self::X87PUSH,
             XED_REG_X87POP2 => Self::X87POP2,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -996,8 +1135,11 @@ impl RegFloatControl {
             RegFloatControl::X87POP2 => "RegFloatControl::X87POP2".to_string(),
         }
     }
-}
 
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
+}
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegBnd {
@@ -1014,8 +1156,12 @@ impl RegBnd {
             XED_REG_BND1 => Self::BND1,
             XED_REG_BND2 => Self::BND2,
             XED_REG_BND3 => Self::BND3,
-            _ => return None
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
     }
 }
 
@@ -1030,12 +1176,12 @@ impl RegBndConfig {
         Some(match reg {
             XED_REG_BNDCFGU => Self::BNDCFGU,
             XED_REG_BNDSTATUS => Self::BNDSTATUS,
-            _ => return None
+            _ => return None,
         })
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegSpecial {
     GDTR,
     LDTR,
@@ -1047,7 +1193,6 @@ pub enum RegSpecial {
     UIF,
     SSP,
 }
-
 
 impl RegSpecial {
     pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
@@ -1061,7 +1206,7 @@ impl RegSpecial {
             XED_REG_MSRS => Self::MSRS,
             XED_REG_UIF => Self::UIF,
             XED_REG_SSP => Self::SSP,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -1078,9 +1223,13 @@ impl RegSpecial {
             RegSpecial::SSP => "RegSpecial::SSP".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegControl {
     //several of these exist in encoding but may not actually exist
     CR0,
@@ -1120,7 +1269,7 @@ impl RegControl {
             XED_REG_CR13 => Self::CR13,
             XED_REG_CR14 => Self::CR14,
             XED_REG_CR15 => Self::CR15,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -1144,9 +1293,13 @@ impl RegControl {
             RegControl::CR15 => "RegControl::CR15".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegControlExtra {
     EFER,
     XCR0,
@@ -1159,7 +1312,7 @@ impl RegControlExtra {
         Some(match reg {
             XED_REG_XCR0 => Self::XCR0,
             XED_REG_MXCSR => Self::MXCSR,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -1173,7 +1326,8 @@ impl RegControlExtra {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
+#[derive(Sequence)]
 pub enum RegSegment {
     CS,
     DS,
@@ -1192,7 +1346,7 @@ impl RegSegment {
             XED_REG_ES => Self::ES,
             XED_REG_FS => Self::FS,
             XED_REG_GS => Self::GS,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -1206,9 +1360,20 @@ impl RegSegment {
             RegSegment::GS => "RegSegment::GS".to_string(),
         }
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        match self {
+            Self::CS => XED_REG_CS,
+            Self::DS => XED_REG_DS,
+            Self::SS => XED_REG_SS,
+            Self::ES => XED_REG_ES,
+            Self::FS => XED_REG_FS,
+            Self::GS => XED_REG_GS,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd,Serialize, Deserialize)]
 pub enum RegSegmentBase {
     FSBase,
     GSBase,
@@ -1219,18 +1384,17 @@ impl RegSegmentBase {
         Some(match reg {
             XED_REG_FSBASE => Self::FSBase,
             XED_REG_GSBASE => Self::GSBase,
-            _ => return None
+            _ => return None,
         })
     }
 
     pub fn to_declaration_string(&self) -> String {
         match self {
             RegSegmentBase::FSBase => "RegSegmentBase::FSBase".to_string(),
-            RegSegmentBase::GSBase => "RegSegmentBase::GSBase".to_string()
+            RegSegmentBase::GSBase => "RegSegmentBase::GSBase".to_string(),
         }
     }
 }
-
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RegDebug {
@@ -1259,72 +1423,338 @@ impl RegDebug {
             _ => return None,
         })
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t {
+        todo!("self:?")
+    }
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub enum OperandWidth{
+    _8,
+    _16,
+    _32,
+    _64,
+    _80,
+    _94,
+    _108,
+    _112,
+    _128,
+    _224,
+    _256,
+    _384,
+    _512,
+    _4096,
+    _Tile
+}
+
+impl OperandWidth{
+    pub fn width_for_mem(width: XedOperandWidth) -> HashSet<Self>{
+        [match width {
+            XedOperandWidth::MEM32REAL => Self::_32,
+            XedOperandWidth::M64INT => Self::_64,
+            XedOperandWidth::MEM32INT => Self::_32,
+            XedOperandWidth::MEM16INT => Self::_16,
+            XedOperandWidth::M64REAL => Self::_64,
+            XedOperandWidth::MEM80REAL => Self::_80,
+            XedOperandWidth::MEM80DEC => Self::_80,
+            XedOperandWidth::MEM14 => Self::_112,
+            XedOperandWidth::MEM16 => Self::_16,
+            XedOperandWidth::MEM28 => Self::_224,
+            XedOperandWidth::MEM94 => Self::_94,
+            XedOperandWidth::MEM108 => Self::_108,
+            XedOperandWidth::B => Self::_8,
+            XedOperandWidth::D => Self::_16,
+            XedOperandWidth::A16 => Self::_16,
+            XedOperandWidth::A32 => Self::_32,
+            XedOperandWidth::Q => Self::_64,
+            XedOperandWidth::DQ => Self::_128,
+            XedOperandWidth::QQ => Self::_256,
+            XedOperandWidth::V => return [Self::_8, Self::_16, Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::P2 => return [Self::_16, Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::P => return [Self::_16, Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::PS => return [Self::_128, Self::_256, Self::_512].into_iter().collect(),
+            XedOperandWidth::PD => return [Self::_128, Self::_256, Self::_512].into_iter().collect(),
+            XedOperandWidth::XUD => return [Self::_128, Self::_256, Self::_512].into_iter().collect(),
+            XedOperandWidth::XUQ => return [Self::_128, Self::_256, Self::_512].into_iter().collect(),
+            XedOperandWidth::Z => return [Self::_16, Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::Y => return [Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::W => Self::_16,
+            XedOperandWidth::MFPXENV => Self::_512,
+            XedOperandWidth::MPREFETCH => Self::_8,
+            XedOperandWidth::S64 => return [Self::_16, Self::_64].into_iter().collect(),
+            XedOperandWidth::S => return [Self::_16, Self::_32].into_iter().collect(),
+            XedOperandWidth::SS => Self::_32,
+            XedOperandWidth::SD => Self::_64,
+            XedOperandWidth::MXSAVE => Self::_4096,
+            XedOperandWidth::BND32 => Self::_32,
+            XedOperandWidth::BND64 => Self::_64,
+            XedOperandWidth::ZD => Self::_512,
+            XedOperandWidth::M384 => Self::_384,
+            XedOperandWidth::WRD => Self::_16,
+            XedOperandWidth::PTR => Self::_Tile,
+            XedOperandWidth::VV => Self::_128,
+            width => todo!("{width:?}")
+        }].into_iter().collect()
+    }
+
+    pub fn width_for_imm(width: XedOperandWidth) -> HashSet<Self>{
+        [match width {
+            XedOperandWidth::B => Self::_8,
+            XedOperandWidth::Z => return [Self::_8, Self::_16, Self::_32].into_iter().collect(),
+            XedOperandWidth::V => return [Self::_8, Self::_16, Self::_32, Self::_64].into_iter().collect(),
+            XedOperandWidth::W => Self::_16,
+            XedOperandWidth::D => Self::_32,
+            width => todo!("{width:?}")
+        }].into_iter().collect()
+    }
+
+    pub fn to_xed_width_bits(&self) -> usize{
+        match self {
+            OperandWidth::_8 => 8,
+            OperandWidth::_16 => 16,
+            OperandWidth::_32 => 32,
+            OperandWidth::_64 => 64,
+            OperandWidth::_80 => 80,
+            OperandWidth::_94 => 94,
+            OperandWidth::_108 => 108,
+            OperandWidth::_112 => 112,
+            OperandWidth::_128 => 128,
+            OperandWidth::_224 => 224,
+            OperandWidth::_256 => 256,
+            OperandWidth::_384 => 384,
+            OperandWidth::_512 => 512,
+            OperandWidth::_4096 => 4096,
+            OperandWidth::_Tile => 8192
+        }
+    }
+
+    pub fn to_string(&self) -> String{
+        match self {
+            OperandWidth::_8 => "_8".to_string(),
+            OperandWidth::_16 => "_16".to_string(),
+            OperandWidth::_32 => "_32".to_string(),
+            OperandWidth::_64 => "_64".to_string(),
+            OperandWidth::_80 => "_80".to_string(),
+            OperandWidth::_94 => "_94".to_string(),
+            OperandWidth::_108 => "_108".to_string(),
+            OperandWidth::_112 => "_112".to_string(),
+            OperandWidth::_128 => "_128".to_string(),
+            OperandWidth::_224 => "_224".to_string(),
+            OperandWidth::_256 => "_256".to_string(),
+            OperandWidth::_384 => "_384".to_string(),
+            OperandWidth::_512 => "_512".to_string(),
+            OperandWidth::_4096 => "_4096".to_string(),
+            OperandWidth::_Tile => "_Tile".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum RegisterType {
     AllMmx,
     AllXmm16,
     AllXmm32,
-    SomeXmm(HashSet<RegXMM>),
+    SomeXmm(BTreeSet<RegXMM>),
     SingleXmm(RegXMM),
     AllYmm16,
     AllYmm32,
     AllZmm32,
-    SomeZmm(HashSet<RegZMM>),
+    SomeZmm(BTreeSet<RegZMM>),
     AllTmm,
     AllMask,
-    SomeMask(HashSet<RegMask>),
+    SomeMask(BTreeSet<RegMask>),
     AllGP64WithoutRIP,
     AllGP64WithRIP,
     SingleGP64(Reg64WithRIP),
     AllGP32WithoutRIP,
     AllGP32WithRIP,
-    SomeGP32(HashSet<Reg32WithRIP>),
+    SomeGP32(BTreeSet<Reg32WithRIP>),
     SingleGP32(Reg32WithRIP),
     AllGP16WithoutRIP,
     AllGP16WithRIP,
-    SomeGP16(HashSet<Reg16WithRIP>),
+    SomeGP16(BTreeSet<Reg16WithRIP>),
     SingleGP16(Reg16WithRIP),
     AllGP8,
-    SomeGP8(HashSet<Reg8>),
+    SomeGP8(BTreeSet<Reg8>),
     SingleGP8(Reg8),
     AllFloat,
     SingleFloat(RegFloat),
     AllBnd,
     AllSegment,
     SingleSegment(RegSegment),
-    SomeSegment(HashSet<RegSegment>),
+    SomeSegment(BTreeSet<RegSegment>),
     AllDebug,
-    SomeControl(HashSet<RegControl>),
+    SomeControl(BTreeSet<RegControl>),
     AllControl,
     SingleControl(RegControl),
-    SomeControlExtra(HashSet<RegControlExtra>),
+    SomeControlExtra(BTreeSet<RegControlExtra>),
     SingleSegmentBase(RegSegmentBase),
     SingleSpecial(RegSpecial),
     SingleFloatControl(RegFloatControl),
-    Multiple(Vec<RegisterType>),
+    Multiple(BTreeSet<RegisterType>),
 }
 
 impl RegisterType {
+    pub fn field_as_width(&self, width: OperandWidth) -> Self {
+        match self {
+            RegisterType::Multiple(multiple) => {
+                let mut res = None;
+                for elem in multiple {
+                    if elem.widths().contains(&width){
+                        assert!(res.is_none());
+                        res = Some(elem);
+                    }
+                }
+                return res.unwrap().clone();
+            }
+            other => other.clone()
+        }
+    }
+
+    pub fn widths(&self) -> HashSet<OperandWidth>{
+        [match self {
+            RegisterType::AllMmx => {
+                OperandWidth::_128
+            }
+            RegisterType::AllXmm16 => {
+                OperandWidth::_128
+            }
+            RegisterType::AllXmm32 => {
+                OperandWidth::_128
+            }
+            RegisterType::SomeXmm(_) => {
+                OperandWidth::_128
+            }
+            RegisterType::SingleXmm(_) => {
+                OperandWidth::_128
+            }
+            RegisterType::AllYmm16 => {
+                OperandWidth::_256
+            }
+            RegisterType::AllYmm32 => {
+                OperandWidth::_256
+            }
+            RegisterType::AllZmm32 => {
+                OperandWidth::_512
+            }
+            RegisterType::SomeZmm(_) => {
+                OperandWidth::_512
+            }
+            RegisterType::AllTmm => {
+                todo!()
+            }
+            RegisterType::AllMask => {
+                OperandWidth::_64
+            }
+            RegisterType::SomeMask(_) => {
+                todo!()
+            }
+            RegisterType::AllGP64WithoutRIP => {
+                OperandWidth::_64
+            }
+            RegisterType::AllGP64WithRIP => {
+                OperandWidth::_64
+            }
+            RegisterType::SingleGP64(_) => {
+                OperandWidth::_64
+            }
+            RegisterType::AllGP32WithoutRIP => {
+                OperandWidth::_32
+            }
+            RegisterType::AllGP32WithRIP => {
+                OperandWidth::_32
+            }
+            RegisterType::SomeGP32(_) => {
+                OperandWidth::_32
+            }
+            RegisterType::SingleGP32(_) => {
+                OperandWidth::_32
+            }
+            RegisterType::AllGP16WithoutRIP => {
+                OperandWidth::_16
+            }
+            RegisterType::AllGP16WithRIP => {
+                OperandWidth::_16
+            }
+            RegisterType::SomeGP16(_) => {
+                OperandWidth::_16
+            }
+            RegisterType::SingleGP16(_) => {
+                OperandWidth::_16
+            }
+            RegisterType::AllGP8 => {
+                OperandWidth::_8
+            }
+            RegisterType::SomeGP8(_) => {
+                OperandWidth::_8
+            }
+            RegisterType::SingleGP8(_) => {
+                OperandWidth::_8
+            }
+            RegisterType::AllFloat => {
+                OperandWidth::_80
+            }
+            RegisterType::SingleFloat(_) => {
+                todo!()
+            }
+            RegisterType::AllBnd => {
+                todo!()
+            }
+            RegisterType::AllSegment => {
+                todo!()
+            }
+            RegisterType::SingleSegment(_) => {
+                todo!()
+            }
+            RegisterType::SomeSegment(_) => {
+                todo!()
+            }
+            RegisterType::AllDebug => {
+                todo!()
+            }
+            RegisterType::SomeControl(_) => {
+                todo!()
+            }
+            RegisterType::AllControl => {
+                todo!()
+            }
+            RegisterType::SingleControl(_) => {
+                todo!()
+            }
+            RegisterType::SomeControlExtra(_) => {
+                todo!()
+            }
+            RegisterType::SingleSegmentBase(_) => {
+                todo!()
+            }
+            RegisterType::SingleSpecial(_) => {
+                todo!()
+            }
+            RegisterType::SingleFloatControl(_) => {
+                todo!()
+            }
+            RegisterType::Multiple(multiple) => {
+                return multiple.iter().flat_map(|reg|reg.widths()).collect()
+            }
+        }].into_iter().collect()
+    }
+
     pub fn is_of_type(&self, reg: &Register) -> bool {
         match self {
-            RegisterType::AllMmx => {
-                match reg {
-                    Register::Mmx(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::AllMmx => match reg {
+                Register::Mmx(_) => true,
+                _ => false,
+            },
             RegisterType::AllXmm16 => {
                 todo!()
             }
-            RegisterType::AllXmm32 => {
-                match reg {
-                    Register::Xmm(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::AllXmm32 => match reg {
+                Register::Xmm(_) => true,
+                _ => false,
+            },
             RegisterType::SomeXmm(_) => {
                 todo!()
             }
@@ -1334,167 +1764,125 @@ impl RegisterType {
             RegisterType::AllYmm16 => {
                 todo!()
             }
-            RegisterType::AllYmm32 => {
-                match reg {
-                    Register::Ymm(_) => true,
-                    _ => false
-                }
-            }
-            RegisterType::AllZmm32 => {
-                match reg {
-                    Register::Zmm(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::AllYmm32 => match reg {
+                Register::Ymm(_) => true,
+                _ => false,
+            },
+            RegisterType::AllZmm32 => match reg {
+                Register::Zmm(_) => true,
+                _ => false,
+            },
             RegisterType::SomeZmm(_) => {
                 todo!()
             }
-            RegisterType::AllTmm => {
-                match reg {
-                    Register::Tmm(_) => true,
-                    _ => false
-                }
-            }
-            RegisterType::AllMask => {
-                match reg {
-                    Register::Mask(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::AllTmm => match reg {
+                Register::Tmm(_) => true,
+                _ => false,
+            },
+            RegisterType::AllMask => match reg {
+                Register::Mask(_) => true,
+                _ => false,
+            },
             RegisterType::SomeMask(_) => {
                 todo!()
             }
-            RegisterType::AllGP64WithoutRIP => {
-                match reg {
-                    Register::GP64(reg) => {
-                        if let Reg64WithRIP::RIP = reg {
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    _ => {
+            RegisterType::AllGP64WithoutRIP => match reg {
+                Register::GP64(reg) => {
+                    if let Reg64WithRIP::RIP = reg {
                         false
+                    } else {
+                        true
                     }
                 }
-            }
+                _ => false,
+            },
             RegisterType::AllGP64WithRIP => {
                 todo!()
             }
-            RegisterType::SingleGP64(single_gp64) => {
-                match reg {
-                    Register::GP64(gp64) => gp64 == single_gp64,
-                    _ => false
-                }
-            }
-            RegisterType::AllGP32WithoutRIP => {
-                match reg {
-                    Register::GP32(reg) => {
-                        if let Reg32WithRIP::EIP = reg {
-                            false
-                        } else {
-                            true
-                        }
+            RegisterType::SingleGP64(single_gp64) => match reg {
+                Register::GP64(gp64) => gp64 == single_gp64,
+                _ => false,
+            },
+            RegisterType::AllGP32WithoutRIP => match reg {
+                Register::GP32(reg) => {
+                    if let Reg32WithRIP::EIP = reg {
+                        false
+                    } else {
+                        true
                     }
-                    _ => false
                 }
-            }
-            RegisterType::AllGP32WithRIP => {
-                match reg {
-                    Register::GP32(_) => true,
-                    _ => false
-                }
-            }
+                _ => false,
+            },
+            RegisterType::AllGP32WithRIP => match reg {
+                Register::GP32(_) => true,
+                _ => false,
+            },
             RegisterType::SomeGP32(_) => {
                 todo!()
             }
-            RegisterType::SingleGP32(single_gp32) => {
-                match reg {
-                    Register::GP32(gp32) => gp32 == single_gp32,
-                    _ => false
-                }
-            }
+            RegisterType::SingleGP32(single_gp32) => match reg {
+                Register::GP32(gp32) => gp32 == single_gp32,
+                _ => false,
+            },
             RegisterType::AllGP16WithRIP => {
                 todo!()
             }
-            RegisterType::AllGP16WithoutRIP => {
-                match reg {
-                    Register::GP16(gp16) => {
-                        if let Reg16WithRIP::IP = gp16 {
-                            false
-                        } else {
-                            true
-                        }
+            RegisterType::AllGP16WithoutRIP => match reg {
+                Register::GP16(gp16) => {
+                    if let Reg16WithRIP::IP = gp16 {
+                        false
+                    } else {
+                        true
                     }
-                    _ => false
                 }
-            }
+                _ => false,
+            },
             RegisterType::SomeGP16(_) => {
                 todo!()
             }
-            RegisterType::SingleGP16(single_reg16) => {
-                match reg {
-                    Register::GP16(gp16) => gp16 == single_reg16,
-                    _ => false
-                }
-            }
-            RegisterType::AllGP8 => {
-                match reg {
-                    Register::GP8(_) => true,
-                    _ => false
-                }
-            }
-            RegisterType::SomeGP8(regs) => {
-                match reg {
-                    Register::GP8(gp8) => regs.contains(&gp8),
-                    _ => false
-                }
-            }
-            RegisterType::SingleGP8(single_gp8) => {
-                match reg {
-                    Register::GP8(gp8) => gp8 == single_gp8,
-                    _ => false
-                }
-            }
-            RegisterType::AllFloat => {
-                match reg {
-                    Register::Float(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::SingleGP16(single_reg16) => match reg {
+                Register::GP16(gp16) => gp16 == single_reg16,
+                _ => false,
+            },
+            RegisterType::AllGP8 => match reg {
+                Register::GP8(_) => true,
+                _ => false,
+            },
+            RegisterType::SomeGP8(regs) => match reg {
+                Register::GP8(gp8) => regs.contains(&gp8),
+                _ => false,
+            },
+            RegisterType::SingleGP8(single_gp8) => match reg {
+                Register::GP8(gp8) => gp8 == single_gp8,
+                _ => false,
+            },
+            RegisterType::AllFloat => match reg {
+                Register::Float(_) => true,
+                _ => false,
+            },
             RegisterType::SingleFloat(_) => {
                 todo!()
             }
-            RegisterType::AllBnd => {
-                match reg {
-                    Register::Bnd(_) => true,
-                    _ => false
-                }
-            }
-            RegisterType::AllSegment => {
-                match reg {
-                    Register::Segment(_) => true,
-                    _ => false
-                }
-            }
-            RegisterType::SingleSegment(_seg) => {
-                match reg {
-                    Register::Segment(_) => todo!(),
-                    _ => false
-                }
-            }
-            RegisterType::SomeSegment(_some_segs) => {
-                match reg {
-                    Register::Segment(_) => todo!(),
-                    _ => false
-                }
-            }
-            RegisterType::AllDebug => {
-                match reg {
-                    Register::Debug(_) => true,
-                    _ => false
-                }
-            }
+            RegisterType::AllBnd => match reg {
+                Register::Bnd(_) => true,
+                _ => false,
+            },
+            RegisterType::AllSegment => match reg {
+                Register::Segment(_) => true,
+                _ => false,
+            },
+            RegisterType::SingleSegment(_seg) => match reg {
+                Register::Segment(_) => todo!(),
+                _ => false,
+            },
+            RegisterType::SomeSegment(_some_segs) => match reg {
+                Register::Segment(_) => todo!(),
+                _ => false,
+            },
+            RegisterType::AllDebug => match reg {
+                Register::Debug(_) => true,
+                _ => false,
+            },
             RegisterType::SomeControl(_) => {
                 todo!()
             }
@@ -1521,9 +1909,6 @@ impl RegisterType {
             }
         }
     }
-}
-
-impl RegisterType {
     pub fn type_to_rust_type(&self) -> Ident {
         match self {
             RegisterType::AllMmx => format_ident!("RegMMX"),
@@ -1567,17 +1952,30 @@ impl RegisterType {
             RegisterType::SingleSpecial(_) => format_ident!("RegSpecial"),
             RegisterType::SingleFloatControl(_) => format_ident!("RegFloatControl"),
             RegisterType::Multiple(multiple) => {
-                if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP] {
+                if multiple == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP].into_iter().collect()
+                {
                     format_ident!("GeneralReg3264")
-                } else if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP, RegisterType::AllGP16WithRIP, RegisterType::AllGP8]{
+                } else if multiple == &[
+                    RegisterType::AllGP64WithRIP,
+                    RegisterType::AllGP32WithRIP,
+                    RegisterType::AllGP16WithRIP,
+                    RegisterType::AllGP8,
+                ].into_iter().collect()
+                {
                     format_ident!("GeneralReg")
-                } else if multiple.as_slice() == &[RegisterType::AllGP64WithRIP, RegisterType::AllGP32WithRIP, RegisterType::AllGP16WithRIP] {
+                } else if multiple
+                    == &[
+                    RegisterType::AllGP64WithRIP,
+                    RegisterType::AllGP32WithRIP,
+                    RegisterType::AllGP16WithRIP,
+                ].into_iter().collect()
+                {
                     format_ident!("GeneralReg163264")
                 } else {
                     dbg!(multiple);
                     panic!();
                 }
-            },
+            }
         }
     }
 }
@@ -1604,7 +2002,6 @@ pub enum Register {
     ControlExtra(RegControlExtra),
     Segment(()),
 }
-
 
 impl Register {
     pub fn try_new(reg: xed_reg_enum_t) -> Option<Self> {
@@ -1637,7 +2034,7 @@ impl Register {
             XED_REG_CLASS_XMM => Register::Xmm(RegXMM::try_new(reg)?),
             XED_REG_CLASS_YMM => Register::Ymm(RegYMM::try_new(reg)?),
             XED_REG_CLASS_ZMM => Register::Zmm(RegZMM::try_new(reg)?),
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -1695,24 +2092,22 @@ impl Register {
 
     pub fn unwrap_reg64withoutrip(&self) -> Reg64WithoutRIP {
         match self {
-            Register::GP64(reg64) => {
-                reg64.try_unwrap_reg64_without_rip().unwrap()
-            }
-            _ => panic!()
+            Register::GP64(reg64) => reg64.try_unwrap_reg64_without_rip().unwrap(),
+            _ => panic!(),
         }
     }
 
     pub fn unwrap_reg32withoutrip(&self) -> Reg32WithoutRIP {
         match self {
             Register::GP32(gp32) => gp32.try_unwrap_reg32_without_rip().unwrap(),
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
     pub fn unwrap_reg16withoutrip(&self) -> Reg16WithoutRIP {
         match self {
             Register::GP16(gp16) => gp16.try_unwrap_reg16_without_rip().unwrap(),
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -1738,78 +2133,38 @@ impl Register {
             X86_REG_INVALID => {
                 todo!()
             }
-            X86_REG_AH => {
-                Self::GP8(Reg8::AH)
-            }
-            X86_REG_AL => {
-                Self::GP8(Reg8::AL)
-            }
-            X86_REG_AX => {
-                Self::GP16(Reg16WithRIP::AX)
-            }
-            X86_REG_BH => {
-                Self::GP8(Reg8::BH)
-            }
-            X86_REG_BL => {
-                Self::GP8(Reg8::BL)
-            }
-            X86_REG_BP => {
-                Self::GP16(Reg16WithRIP::BP)
-            }
+            X86_REG_AH => Self::GP8(Reg8::AH),
+            X86_REG_AL => Self::GP8(Reg8::AL),
+            X86_REG_AX => Self::GP16(Reg16WithRIP::AX),
+            X86_REG_BH => Self::GP8(Reg8::BH),
+            X86_REG_BL => Self::GP8(Reg8::BL),
+            X86_REG_BP => Self::GP16(Reg16WithRIP::BP),
             X86_REG_BPL => {
                 todo!()
             }
-            X86_REG_BX => {
-                Self::GP16(Reg16WithRIP::BX)
-            }
-            X86_REG_CH => {
-                Self::GP8(Reg8::CH)
-            }
-            X86_REG_CL => {
-                Self::GP8(Reg8::CL)
-            }
+            X86_REG_BX => Self::GP16(Reg16WithRIP::BX),
+            X86_REG_CH => Self::GP8(Reg8::CH),
+            X86_REG_CL => Self::GP8(Reg8::CL),
             X86_REG_CS => {
                 todo!()
             }
-            X86_REG_CX => {
-                Self::GP16(Reg16WithRIP::CX)
-            }
-            X86_REG_DH => {
-                Self::GP8(Reg8::DH)
-            }
-            X86_REG_DI => {
-                Self::GP16(Reg16WithRIP::DI)
-            }
+            X86_REG_CX => Self::GP16(Reg16WithRIP::CX),
+            X86_REG_DH => Self::GP8(Reg8::DH),
+            X86_REG_DI => Self::GP16(Reg16WithRIP::DI),
             X86_REG_DIL => {
                 todo!()
             }
-            X86_REG_DL => {
-                Self::GP8(Reg8::DL)
-            }
+            X86_REG_DL => Self::GP8(Reg8::DL),
             X86_REG_DS => {
                 todo!()
             }
-            X86_REG_DX => {
-                Self::GP16(Reg16WithRIP::DX)
-            }
-            X86_REG_EAX => {
-                Self::GP32(Reg32WithRIP::EAX)
-            }
-            X86_REG_EBP => {
-                Self::GP32(Reg32WithRIP::EBP)
-            }
-            X86_REG_EBX => {
-                Self::GP32(Reg32WithRIP::EBX)
-            }
-            X86_REG_ECX => {
-                Self::GP32(Reg32WithRIP::ECX)
-            }
-            X86_REG_EDI => {
-                Self::GP32(Reg32WithRIP::EDI)
-            }
-            X86_REG_EDX => {
-                Self::GP32(Reg32WithRIP::EDX)
-            }
+            X86_REG_DX => Self::GP16(Reg16WithRIP::DX),
+            X86_REG_EAX => Self::GP32(Reg32WithRIP::EAX),
+            X86_REG_EBP => Self::GP32(Reg32WithRIP::EBP),
+            X86_REG_EBX => Self::GP32(Reg32WithRIP::EBX),
+            X86_REG_ECX => Self::GP32(Reg32WithRIP::ECX),
+            X86_REG_EDI => Self::GP32(Reg32WithRIP::EDI),
+            X86_REG_EDX => Self::GP32(Reg32WithRIP::EDX),
             X86_REG_EFLAGS => {
                 todo!()
             }
@@ -1840,36 +2195,18 @@ impl Register {
             X86_REG_IP => {
                 todo!()
             }
-            X86_REG_RAX => {
-                Self::GP64(Reg64WithRIP::RAX)
-            }
-            X86_REG_RBP => {
-                Self::GP64(Reg64WithRIP::RBP)
-            }
-            X86_REG_RBX => {
-                Self::GP64(Reg64WithRIP::RBX)
-            }
-            X86_REG_RCX => {
-                Self::GP64(Reg64WithRIP::RCX)
-            }
-            X86_REG_RDI => {
-                Self::GP64(Reg64WithRIP::RDI)
-            }
-            X86_REG_RDX => {
-                Self::GP64(Reg64WithRIP::RDX)
-            }
-            X86_REG_RIP => {
-                Self::GP64(Reg64WithRIP::RIP)
-            }
+            X86_REG_RAX => Self::GP64(Reg64WithRIP::RAX),
+            X86_REG_RBP => Self::GP64(Reg64WithRIP::RBP),
+            X86_REG_RBX => Self::GP64(Reg64WithRIP::RBX),
+            X86_REG_RCX => Self::GP64(Reg64WithRIP::RCX),
+            X86_REG_RDI => Self::GP64(Reg64WithRIP::RDI),
+            X86_REG_RDX => Self::GP64(Reg64WithRIP::RDX),
+            X86_REG_RIP => Self::GP64(Reg64WithRIP::RIP),
             X86_REG_RIZ => {
                 todo!()
             }
-            X86_REG_RSI => {
-                Self::GP64(Reg64WithRIP::RSI)
-            }
-            X86_REG_RSP => {
-                Self::GP64(Reg64WithRIP::RSP)
-            }
+            X86_REG_RSI => Self::GP64(Reg64WithRIP::RSI),
+            X86_REG_RSP => Self::GP64(Reg64WithRIP::RSP),
             X86_REG_SI => {
                 todo!()
             }
@@ -1885,78 +2222,30 @@ impl Register {
             X86_REG_SS => {
                 todo!()
             }
-            X86_REG_CR0 => {
-                Self::Control(RegControl::CR0)
-            }
-            X86_REG_CR1 => {
-                Self::Control(RegControl::CR1)
-            }
-            X86_REG_CR2 => {
-                Self::Control(RegControl::CR2)
-            }
-            X86_REG_CR3 => {
-                Self::Control(RegControl::CR3)
-            }
-            X86_REG_CR4 => {
-                Self::Control(RegControl::CR4)
-            }
-            X86_REG_CR5 => {
-                Self::Control(RegControl::CR5)
-            }
-            X86_REG_CR6 => {
-                Self::Control(RegControl::CR6)
-            }
-            X86_REG_CR7 => {
-                Self::Control(RegControl::CR7)
-            }
-            X86_REG_CR8 => {
-                Self::Control(RegControl::CR8)
-            }
-            X86_REG_CR9 => {
-                Self::Control(RegControl::CR9)
-            }
-            X86_REG_CR10 => {
-                Self::Control(RegControl::CR10)
-            }
-            X86_REG_CR11 => {
-                Self::Control(RegControl::CR11)
-            }
-            X86_REG_CR12 => {
-                Self::Control(RegControl::CR12)
-            }
-            X86_REG_CR13 => {
-                Self::Control(RegControl::CR13)
-            }
-            X86_REG_CR14 => {
-                Self::Control(RegControl::CR14)
-            }
-            X86_REG_CR15 => {
-                Self::Control(RegControl::CR15)
-            }
-            X86_REG_DR0 => {
-                Self::Debug(RegDebug::DR0)
-            }
-            X86_REG_DR1 => {
-                Self::Debug(RegDebug::DR1)
-            }
-            X86_REG_DR2 => {
-                Self::Debug(RegDebug::DR2)
-            }
-            X86_REG_DR3 => {
-                Self::Debug(RegDebug::DR3)
-            }
-            X86_REG_DR4 => {
-                Self::Debug(RegDebug::DR4)
-            }
-            X86_REG_DR5 => {
-                Self::Debug(RegDebug::DR5)
-            }
-            X86_REG_DR6 => {
-                Self::Debug(RegDebug::DR6)
-            }
-            X86_REG_DR7 => {
-                Self::Debug(RegDebug::DR7)
-            }
+            X86_REG_CR0 => Self::Control(RegControl::CR0),
+            X86_REG_CR1 => Self::Control(RegControl::CR1),
+            X86_REG_CR2 => Self::Control(RegControl::CR2),
+            X86_REG_CR3 => Self::Control(RegControl::CR3),
+            X86_REG_CR4 => Self::Control(RegControl::CR4),
+            X86_REG_CR5 => Self::Control(RegControl::CR5),
+            X86_REG_CR6 => Self::Control(RegControl::CR6),
+            X86_REG_CR7 => Self::Control(RegControl::CR7),
+            X86_REG_CR8 => Self::Control(RegControl::CR8),
+            X86_REG_CR9 => Self::Control(RegControl::CR9),
+            X86_REG_CR10 => Self::Control(RegControl::CR10),
+            X86_REG_CR11 => Self::Control(RegControl::CR11),
+            X86_REG_CR12 => Self::Control(RegControl::CR12),
+            X86_REG_CR13 => Self::Control(RegControl::CR13),
+            X86_REG_CR14 => Self::Control(RegControl::CR14),
+            X86_REG_CR15 => Self::Control(RegControl::CR15),
+            X86_REG_DR0 => Self::Debug(RegDebug::DR0),
+            X86_REG_DR1 => Self::Debug(RegDebug::DR1),
+            X86_REG_DR2 => Self::Debug(RegDebug::DR2),
+            X86_REG_DR3 => Self::Debug(RegDebug::DR3),
+            X86_REG_DR4 => Self::Debug(RegDebug::DR4),
+            X86_REG_DR5 => Self::Debug(RegDebug::DR5),
+            X86_REG_DR6 => Self::Debug(RegDebug::DR6),
+            X86_REG_DR7 => Self::Debug(RegDebug::DR7),
             X86_REG_DR8 => {
                 todo!()
             }
@@ -2005,54 +2294,22 @@ impl Register {
             X86_REG_FP7 => {
                 todo!()
             }
-            X86_REG_K0 => {
-                Self::Mask(RegMask::K0)
-            }
-            X86_REG_K1 => {
-                Self::Mask(RegMask::K1)
-            }
-            X86_REG_K2 => {
-                Self::Mask(RegMask::K2)
-            }
-            X86_REG_K3 => {
-                Self::Mask(RegMask::K3)
-            }
-            X86_REG_K4 => {
-                Self::Mask(RegMask::K4)
-            }
-            X86_REG_K5 => {
-                Self::Mask(RegMask::K5)
-            }
-            X86_REG_K6 => {
-                Self::Mask(RegMask::K6)
-            }
-            X86_REG_K7 => {
-                Self::Mask(RegMask::K7)
-            }
-            X86_REG_MM0 => {
-                Self::Mmx(RegMMX::MM0)
-            }
-            X86_REG_MM1 => {
-                Self::Mmx(RegMMX::MM1)
-            }
-            X86_REG_MM2 => {
-                Self::Mmx(RegMMX::MM2)
-            }
-            X86_REG_MM3 => {
-                Self::Mmx(RegMMX::MM3)
-            }
-            X86_REG_MM4 => {
-                Self::Mmx(RegMMX::MM4)
-            }
-            X86_REG_MM5 => {
-                Self::Mmx(RegMMX::MM5)
-            }
-            X86_REG_MM6 => {
-                Self::Mmx(RegMMX::MM6)
-            }
-            X86_REG_MM7 => {
-                Self::Mmx(RegMMX::MM7)
-            }
+            X86_REG_K0 => Self::Mask(RegMask::K0),
+            X86_REG_K1 => Self::Mask(RegMask::K1),
+            X86_REG_K2 => Self::Mask(RegMask::K2),
+            X86_REG_K3 => Self::Mask(RegMask::K3),
+            X86_REG_K4 => Self::Mask(RegMask::K4),
+            X86_REG_K5 => Self::Mask(RegMask::K5),
+            X86_REG_K6 => Self::Mask(RegMask::K6),
+            X86_REG_K7 => Self::Mask(RegMask::K7),
+            X86_REG_MM0 => Self::Mmx(RegMMX::MM0),
+            X86_REG_MM1 => Self::Mmx(RegMMX::MM1),
+            X86_REG_MM2 => Self::Mmx(RegMMX::MM2),
+            X86_REG_MM3 => Self::Mmx(RegMMX::MM3),
+            X86_REG_MM4 => Self::Mmx(RegMMX::MM4),
+            X86_REG_MM5 => Self::Mmx(RegMMX::MM5),
+            X86_REG_MM6 => Self::Mmx(RegMMX::MM6),
+            X86_REG_MM7 => Self::Mmx(RegMMX::MM7),
             X86_REG_R8 => {
                 todo!()
             }
@@ -2077,318 +2334,110 @@ impl Register {
             X86_REG_R15 => {
                 todo!()
             }
-            X86_REG_ST0 => {
-                Self::Float(RegFloat::ST0)
-            }
-            X86_REG_ST1 => {
-                Self::Float(RegFloat::ST1)
-            }
-            X86_REG_ST2 => {
-                Self::Float(RegFloat::ST2)
-            }
-            X86_REG_ST3 => {
-                Self::Float(RegFloat::ST3)
-            }
-            X86_REG_ST4 => {
-                Self::Float(RegFloat::ST4)
-            }
-            X86_REG_ST5 => {
-                Self::Float(RegFloat::ST5)
-            }
-            X86_REG_ST6 => {
-                Self::Float(RegFloat::ST6)
-            }
-            X86_REG_ST7 => {
-                Self::Float(RegFloat::ST7)
-            }
-            X86_REG_XMM0 => {
-                Self::Xmm(RegXMM::XMM0)
-            }
-            X86_REG_XMM1 => {
-                Self::Xmm(RegXMM::XMM1)
-            }
-            X86_REG_XMM2 => {
-                Self::Xmm(RegXMM::XMM2)
-            }
-            X86_REG_XMM3 => {
-                Self::Xmm(RegXMM::XMM3)
-            }
-            X86_REG_XMM4 => {
-                Self::Xmm(RegXMM::XMM4)
-            }
-            X86_REG_XMM5 => {
-                Self::Xmm(RegXMM::XMM5)
-            }
-            X86_REG_XMM6 => {
-                Self::Xmm(RegXMM::XMM6)
-            }
-            X86_REG_XMM7 => {
-                Self::Xmm(RegXMM::XMM7)
-            }
-            X86_REG_XMM8 => {
-                Self::Xmm(RegXMM::XMM8)
-            }
-            X86_REG_XMM9 => {
-                Self::Xmm(RegXMM::XMM9)
-            }
-            X86_REG_XMM10 => {
-                Self::Xmm(RegXMM::XMM10)
-            }
-            X86_REG_XMM11 => {
-                Self::Xmm(RegXMM::XMM11)
-            }
-            X86_REG_XMM12 => {
-                Self::Xmm(RegXMM::XMM12)
-            }
-            X86_REG_XMM13 => {
-                Self::Xmm(RegXMM::XMM13)
-            }
-            X86_REG_XMM14 => {
-                Self::Xmm(RegXMM::XMM14)
-            }
-            X86_REG_XMM15 => {
-                Self::Xmm(RegXMM::XMM15)
-            }
-            X86_REG_XMM16 => {
-                Self::Xmm(RegXMM::XMM16)
-            }
-            X86_REG_XMM17 => {
-                Self::Xmm(RegXMM::XMM17)
-            }
-            X86_REG_XMM18 => {
-                Self::Xmm(RegXMM::XMM18)
-            }
-            X86_REG_XMM19 => {
-                Self::Xmm(RegXMM::XMM19)
-            }
-            X86_REG_XMM20 => {
-                Self::Xmm(RegXMM::XMM20)
-            }
-            X86_REG_XMM21 => {
-                Self::Xmm(RegXMM::XMM21)
-            }
-            X86_REG_XMM22 => {
-                Self::Xmm(RegXMM::XMM22)
-            }
-            X86_REG_XMM23 => {
-                Self::Xmm(RegXMM::XMM23)
-            }
-            X86_REG_XMM24 => {
-                Self::Xmm(RegXMM::XMM24)
-            }
-            X86_REG_XMM25 => {
-                Self::Xmm(RegXMM::XMM25)
-            }
-            X86_REG_XMM26 => {
-                Self::Xmm(RegXMM::XMM26)
-            }
-            X86_REG_XMM27 => {
-                Self::Xmm(RegXMM::XMM27)
-            }
-            X86_REG_XMM28 => {
-                Self::Xmm(RegXMM::XMM28)
-            }
-            X86_REG_XMM29 => {
-                Self::Xmm(RegXMM::XMM29)
-            }
-            X86_REG_XMM30 => {
-                Self::Xmm(RegXMM::XMM30)
-            }
-            X86_REG_XMM31 => {
-                Self::Xmm(RegXMM::XMM31)
-            }
-            X86_REG_YMM0 => {
-                Self::Ymm(RegYMM::YMM0)
-            }
-            X86_REG_YMM1 => {
-                Self::Ymm(RegYMM::YMM1)
-            }
-            X86_REG_YMM2 => {
-                Self::Ymm(RegYMM::YMM2)
-            }
-            X86_REG_YMM3 => {
-                Self::Ymm(RegYMM::YMM3)
-            }
-            X86_REG_YMM4 => {
-                Self::Ymm(RegYMM::YMM4)
-            }
-            X86_REG_YMM5 => {
-                Self::Ymm(RegYMM::YMM5)
-            }
-            X86_REG_YMM6 => {
-                Self::Ymm(RegYMM::YMM6)
-            }
-            X86_REG_YMM7 => {
-                Self::Ymm(RegYMM::YMM7)
-            }
-            X86_REG_YMM8 => {
-                Self::Ymm(RegYMM::YMM8)
-            }
-            X86_REG_YMM9 => {
-                Self::Ymm(RegYMM::YMM9)
-            }
-            X86_REG_YMM10 => {
-                Self::Ymm(RegYMM::YMM10)
-            }
-            X86_REG_YMM11 => {
-                Self::Ymm(RegYMM::YMM11)
-            }
-            X86_REG_YMM12 => {
-                Self::Ymm(RegYMM::YMM12)
-            }
-            X86_REG_YMM13 => {
-                Self::Ymm(RegYMM::YMM13)
-            }
-            X86_REG_YMM14 => {
-                Self::Ymm(RegYMM::YMM14)
-            }
-            X86_REG_YMM15 => {
-                Self::Ymm(RegYMM::YMM15)
-            }
-            X86_REG_YMM16 => {
-                Self::Ymm(RegYMM::YMM16)
-            }
-            X86_REG_YMM17 => {
-                Self::Ymm(RegYMM::YMM17)
-            }
-            X86_REG_YMM18 => {
-                Self::Ymm(RegYMM::YMM18)
-            }
-            X86_REG_YMM19 => {
-                Self::Ymm(RegYMM::YMM19)
-            }
-            X86_REG_YMM20 => {
-                Self::Ymm(RegYMM::YMM20)
-            }
-            X86_REG_YMM21 => {
-                Self::Ymm(RegYMM::YMM21)
-            }
-            X86_REG_YMM22 => {
-                Self::Ymm(RegYMM::YMM22)
-            }
-            X86_REG_YMM23 => {
-                Self::Ymm(RegYMM::YMM23)
-            }
-            X86_REG_YMM24 => {
-                Self::Ymm(RegYMM::YMM24)
-            }
-            X86_REG_YMM25 => {
-                Self::Ymm(RegYMM::YMM25)
-            }
-            X86_REG_YMM26 => {
-                Self::Ymm(RegYMM::YMM26)
-            }
-            X86_REG_YMM27 => {
-                Self::Ymm(RegYMM::YMM27)
-            }
-            X86_REG_YMM28 => {
-                Self::Ymm(RegYMM::YMM28)
-            }
-            X86_REG_YMM29 => {
-                Self::Ymm(RegYMM::YMM29)
-            }
-            X86_REG_YMM30 => {
-                Self::Ymm(RegYMM::YMM30)
-            }
-            X86_REG_YMM31 => {
-                Self::Ymm(RegYMM::YMM31)
-            }
-            X86_REG_ZMM0 => {
-                Self::Zmm(RegZMM::ZMM0)
-            }
-            X86_REG_ZMM1 => {
-                Self::Zmm(RegZMM::ZMM1)
-            }
-            X86_REG_ZMM2 => {
-                Self::Zmm(RegZMM::ZMM2)
-            }
-            X86_REG_ZMM3 => {
-                Self::Zmm(RegZMM::ZMM3)
-            }
-            X86_REG_ZMM4 => {
-                Self::Zmm(RegZMM::ZMM4)
-            }
-            X86_REG_ZMM5 => {
-                Self::Zmm(RegZMM::ZMM5)
-            }
-            X86_REG_ZMM6 => {
-                Self::Zmm(RegZMM::ZMM6)
-            }
-            X86_REG_ZMM7 => {
-                Self::Zmm(RegZMM::ZMM7)
-            }
-            X86_REG_ZMM8 => {
-                Self::Zmm(RegZMM::ZMM8)
-            }
-            X86_REG_ZMM9 => {
-                Self::Zmm(RegZMM::ZMM9)
-            }
-            X86_REG_ZMM10 => {
-                Self::Zmm(RegZMM::ZMM10)
-            }
-            X86_REG_ZMM11 => {
-                Self::Zmm(RegZMM::ZMM11)
-            }
-            X86_REG_ZMM12 => {
-                Self::Zmm(RegZMM::ZMM12)
-            }
-            X86_REG_ZMM13 => {
-                Self::Zmm(RegZMM::ZMM13)
-            }
-            X86_REG_ZMM14 => {
-                Self::Zmm(RegZMM::ZMM14)
-            }
-            X86_REG_ZMM15 => {
-                Self::Zmm(RegZMM::ZMM15)
-            }
-            X86_REG_ZMM16 => {
-                Self::Zmm(RegZMM::ZMM16)
-            }
-            X86_REG_ZMM17 => {
-                Self::Zmm(RegZMM::ZMM17)
-            }
-            X86_REG_ZMM18 => {
-                Self::Zmm(RegZMM::ZMM18)
-            }
-            X86_REG_ZMM19 => {
-                Self::Zmm(RegZMM::ZMM19)
-            }
-            X86_REG_ZMM20 => {
-                Self::Zmm(RegZMM::ZMM20)
-            }
-            X86_REG_ZMM21 => {
-                Self::Zmm(RegZMM::ZMM21)
-            }
-            X86_REG_ZMM22 => {
-                Self::Zmm(RegZMM::ZMM22)
-            }
-            X86_REG_ZMM23 => {
-                Self::Zmm(RegZMM::ZMM23)
-            }
-            X86_REG_ZMM24 => {
-                Self::Zmm(RegZMM::ZMM24)
-            }
-            X86_REG_ZMM25 => {
-                Self::Zmm(RegZMM::ZMM25)
-            }
-            X86_REG_ZMM26 => {
-                Self::Zmm(RegZMM::ZMM26)
-            }
-            X86_REG_ZMM27 => {
-                Self::Zmm(RegZMM::ZMM27)
-            }
-            X86_REG_ZMM28 => {
-                Self::Zmm(RegZMM::ZMM28)
-            }
-            X86_REG_ZMM29 => {
-                Self::Zmm(RegZMM::ZMM29)
-            }
-            X86_REG_ZMM30 => {
-                Self::Zmm(RegZMM::ZMM30)
-            }
-            X86_REG_ZMM31 => {
-                Self::Zmm(RegZMM::ZMM31)
-            }
+            X86_REG_ST0 => Self::Float(RegFloat::ST0),
+            X86_REG_ST1 => Self::Float(RegFloat::ST1),
+            X86_REG_ST2 => Self::Float(RegFloat::ST2),
+            X86_REG_ST3 => Self::Float(RegFloat::ST3),
+            X86_REG_ST4 => Self::Float(RegFloat::ST4),
+            X86_REG_ST5 => Self::Float(RegFloat::ST5),
+            X86_REG_ST6 => Self::Float(RegFloat::ST6),
+            X86_REG_ST7 => Self::Float(RegFloat::ST7),
+            X86_REG_XMM0 => Self::Xmm(RegXMM::XMM0),
+            X86_REG_XMM1 => Self::Xmm(RegXMM::XMM1),
+            X86_REG_XMM2 => Self::Xmm(RegXMM::XMM2),
+            X86_REG_XMM3 => Self::Xmm(RegXMM::XMM3),
+            X86_REG_XMM4 => Self::Xmm(RegXMM::XMM4),
+            X86_REG_XMM5 => Self::Xmm(RegXMM::XMM5),
+            X86_REG_XMM6 => Self::Xmm(RegXMM::XMM6),
+            X86_REG_XMM7 => Self::Xmm(RegXMM::XMM7),
+            X86_REG_XMM8 => Self::Xmm(RegXMM::XMM8),
+            X86_REG_XMM9 => Self::Xmm(RegXMM::XMM9),
+            X86_REG_XMM10 => Self::Xmm(RegXMM::XMM10),
+            X86_REG_XMM11 => Self::Xmm(RegXMM::XMM11),
+            X86_REG_XMM12 => Self::Xmm(RegXMM::XMM12),
+            X86_REG_XMM13 => Self::Xmm(RegXMM::XMM13),
+            X86_REG_XMM14 => Self::Xmm(RegXMM::XMM14),
+            X86_REG_XMM15 => Self::Xmm(RegXMM::XMM15),
+            X86_REG_XMM16 => Self::Xmm(RegXMM::XMM16),
+            X86_REG_XMM17 => Self::Xmm(RegXMM::XMM17),
+            X86_REG_XMM18 => Self::Xmm(RegXMM::XMM18),
+            X86_REG_XMM19 => Self::Xmm(RegXMM::XMM19),
+            X86_REG_XMM20 => Self::Xmm(RegXMM::XMM20),
+            X86_REG_XMM21 => Self::Xmm(RegXMM::XMM21),
+            X86_REG_XMM22 => Self::Xmm(RegXMM::XMM22),
+            X86_REG_XMM23 => Self::Xmm(RegXMM::XMM23),
+            X86_REG_XMM24 => Self::Xmm(RegXMM::XMM24),
+            X86_REG_XMM25 => Self::Xmm(RegXMM::XMM25),
+            X86_REG_XMM26 => Self::Xmm(RegXMM::XMM26),
+            X86_REG_XMM27 => Self::Xmm(RegXMM::XMM27),
+            X86_REG_XMM28 => Self::Xmm(RegXMM::XMM28),
+            X86_REG_XMM29 => Self::Xmm(RegXMM::XMM29),
+            X86_REG_XMM30 => Self::Xmm(RegXMM::XMM30),
+            X86_REG_XMM31 => Self::Xmm(RegXMM::XMM31),
+            X86_REG_YMM0 => Self::Ymm(RegYMM::YMM0),
+            X86_REG_YMM1 => Self::Ymm(RegYMM::YMM1),
+            X86_REG_YMM2 => Self::Ymm(RegYMM::YMM2),
+            X86_REG_YMM3 => Self::Ymm(RegYMM::YMM3),
+            X86_REG_YMM4 => Self::Ymm(RegYMM::YMM4),
+            X86_REG_YMM5 => Self::Ymm(RegYMM::YMM5),
+            X86_REG_YMM6 => Self::Ymm(RegYMM::YMM6),
+            X86_REG_YMM7 => Self::Ymm(RegYMM::YMM7),
+            X86_REG_YMM8 => Self::Ymm(RegYMM::YMM8),
+            X86_REG_YMM9 => Self::Ymm(RegYMM::YMM9),
+            X86_REG_YMM10 => Self::Ymm(RegYMM::YMM10),
+            X86_REG_YMM11 => Self::Ymm(RegYMM::YMM11),
+            X86_REG_YMM12 => Self::Ymm(RegYMM::YMM12),
+            X86_REG_YMM13 => Self::Ymm(RegYMM::YMM13),
+            X86_REG_YMM14 => Self::Ymm(RegYMM::YMM14),
+            X86_REG_YMM15 => Self::Ymm(RegYMM::YMM15),
+            X86_REG_YMM16 => Self::Ymm(RegYMM::YMM16),
+            X86_REG_YMM17 => Self::Ymm(RegYMM::YMM17),
+            X86_REG_YMM18 => Self::Ymm(RegYMM::YMM18),
+            X86_REG_YMM19 => Self::Ymm(RegYMM::YMM19),
+            X86_REG_YMM20 => Self::Ymm(RegYMM::YMM20),
+            X86_REG_YMM21 => Self::Ymm(RegYMM::YMM21),
+            X86_REG_YMM22 => Self::Ymm(RegYMM::YMM22),
+            X86_REG_YMM23 => Self::Ymm(RegYMM::YMM23),
+            X86_REG_YMM24 => Self::Ymm(RegYMM::YMM24),
+            X86_REG_YMM25 => Self::Ymm(RegYMM::YMM25),
+            X86_REG_YMM26 => Self::Ymm(RegYMM::YMM26),
+            X86_REG_YMM27 => Self::Ymm(RegYMM::YMM27),
+            X86_REG_YMM28 => Self::Ymm(RegYMM::YMM28),
+            X86_REG_YMM29 => Self::Ymm(RegYMM::YMM29),
+            X86_REG_YMM30 => Self::Ymm(RegYMM::YMM30),
+            X86_REG_YMM31 => Self::Ymm(RegYMM::YMM31),
+            X86_REG_ZMM0 => Self::Zmm(RegZMM::ZMM0),
+            X86_REG_ZMM1 => Self::Zmm(RegZMM::ZMM1),
+            X86_REG_ZMM2 => Self::Zmm(RegZMM::ZMM2),
+            X86_REG_ZMM3 => Self::Zmm(RegZMM::ZMM3),
+            X86_REG_ZMM4 => Self::Zmm(RegZMM::ZMM4),
+            X86_REG_ZMM5 => Self::Zmm(RegZMM::ZMM5),
+            X86_REG_ZMM6 => Self::Zmm(RegZMM::ZMM6),
+            X86_REG_ZMM7 => Self::Zmm(RegZMM::ZMM7),
+            X86_REG_ZMM8 => Self::Zmm(RegZMM::ZMM8),
+            X86_REG_ZMM9 => Self::Zmm(RegZMM::ZMM9),
+            X86_REG_ZMM10 => Self::Zmm(RegZMM::ZMM10),
+            X86_REG_ZMM11 => Self::Zmm(RegZMM::ZMM11),
+            X86_REG_ZMM12 => Self::Zmm(RegZMM::ZMM12),
+            X86_REG_ZMM13 => Self::Zmm(RegZMM::ZMM13),
+            X86_REG_ZMM14 => Self::Zmm(RegZMM::ZMM14),
+            X86_REG_ZMM15 => Self::Zmm(RegZMM::ZMM15),
+            X86_REG_ZMM16 => Self::Zmm(RegZMM::ZMM16),
+            X86_REG_ZMM17 => Self::Zmm(RegZMM::ZMM17),
+            X86_REG_ZMM18 => Self::Zmm(RegZMM::ZMM18),
+            X86_REG_ZMM19 => Self::Zmm(RegZMM::ZMM19),
+            X86_REG_ZMM20 => Self::Zmm(RegZMM::ZMM20),
+            X86_REG_ZMM21 => Self::Zmm(RegZMM::ZMM21),
+            X86_REG_ZMM22 => Self::Zmm(RegZMM::ZMM22),
+            X86_REG_ZMM23 => Self::Zmm(RegZMM::ZMM23),
+            X86_REG_ZMM24 => Self::Zmm(RegZMM::ZMM24),
+            X86_REG_ZMM25 => Self::Zmm(RegZMM::ZMM25),
+            X86_REG_ZMM26 => Self::Zmm(RegZMM::ZMM26),
+            X86_REG_ZMM27 => Self::Zmm(RegZMM::ZMM27),
+            X86_REG_ZMM28 => Self::Zmm(RegZMM::ZMM28),
+            X86_REG_ZMM29 => Self::Zmm(RegZMM::ZMM29),
+            X86_REG_ZMM30 => Self::Zmm(RegZMM::ZMM30),
+            X86_REG_ZMM31 => Self::Zmm(RegZMM::ZMM31),
             X86_REG_R8B => {
                 todo!()
             }
@@ -2437,30 +2486,14 @@ impl Register {
             X86_REG_R15D => {
                 todo!()
             }
-            X86_REG_R8W => {
-                Self::GP16(Reg16WithRIP::R8W)
-            }
-            X86_REG_R9W => {
-                Self::GP16(Reg16WithRIP::R9W)
-            }
-            X86_REG_R10W => {
-                Self::GP16(Reg16WithRIP::R10W)
-            }
-            X86_REG_R11W => {
-                Self::GP16(Reg16WithRIP::R11W)
-            }
-            X86_REG_R12W => {
-                Self::GP16(Reg16WithRIP::R12W)
-            }
-            X86_REG_R13W => {
-                Self::GP16(Reg16WithRIP::R13W)
-            }
-            X86_REG_R14W => {
-                Self::GP16(Reg16WithRIP::R14W)
-            }
-            X86_REG_R15W => {
-                Self::GP16(Reg16WithRIP::R15W)
-            }
+            X86_REG_R8W => Self::GP16(Reg16WithRIP::R8W),
+            X86_REG_R9W => Self::GP16(Reg16WithRIP::R9W),
+            X86_REG_R10W => Self::GP16(Reg16WithRIP::R10W),
+            X86_REG_R11W => Self::GP16(Reg16WithRIP::R11W),
+            X86_REG_R12W => Self::GP16(Reg16WithRIP::R12W),
+            X86_REG_R13W => Self::GP16(Reg16WithRIP::R13W),
+            X86_REG_R14W => Self::GP16(Reg16WithRIP::R14W),
+            X86_REG_R15W => Self::GP16(Reg16WithRIP::R15W),
             X86_REG_BND0 => {
                 todo!()
             }

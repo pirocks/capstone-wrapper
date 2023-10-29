@@ -9,7 +9,6 @@ use thiserror::Error;
 #[repr(transparent)]
 pub struct OperandIndex(pub NonZeroU8);
 
-
 #[derive(Error, Debug)]
 pub enum OperandIndexError {
     #[error(transparent)]
@@ -22,8 +21,8 @@ impl FromStr for OperandIndex {
     type Err = OperandIndexError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(OperandIndex(NonZeroU8::new(u8::from_str(s)?).ok_or(OperandIndexError::IndexIsZero)?))
+        Ok(OperandIndex(
+            NonZeroU8::new(u8::from_str(s)?).ok_or(OperandIndexError::IndexIsZero)?,
+        ))
     }
 }
-
-

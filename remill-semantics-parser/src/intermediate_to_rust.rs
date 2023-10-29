@@ -1,24 +1,35 @@
 use itertools::Itertools;
 use quote::{format_ident, quote};
 
-use crate::function_def_to_intermediate::{RemillSemanticsExpression, RemillSemanticsParsed, RemillSemanticsStatement};
+use crate::function_def_to_intermediate::{
+    RemillSemanticsExpression, RemillSemanticsParsed, RemillSemanticsStatement,
+};
 
 pub fn to_rust(semantics: &RemillSemanticsParsed) -> Option<proc_macro2::TokenStream> {
-    let RemillSemanticsParsed { name, template_params: _, params, statements } = semantics;
+    let RemillSemanticsParsed {
+        name,
+        template_params: _,
+        params,
+        statements,
+    } = semantics;
 
     let name = format_ident!("{name}");
     let mut statement_tokens = vec![];
     for statement in statements {
         statement_tokens.push(statement_to_rust(statement));
     }
-    let params = params.iter().map(|param| {
-        let param = format_ident!("{param}");
-        quote! {
-            #param: Input
-        }
-    }).collect_vec();
+    let params = params
+        .iter()
+        .map(|param| {
+            let param = format_ident!("{param}");
+            quote! {
+                #param: Input
+            }
+        })
+        .collect_vec();
 
-    let statement_tokens: proc_macro2::TokenStream = statement_tokens.into_iter().collect::<Option<_>>()?;
+    let statement_tokens: proc_macro2::TokenStream =
+        statement_tokens.into_iter().collect::<Option<_>>()?;
     let stream = quote! {
         pub fn #name(#(#params,)*) -> MemoryRes {
             #statement_tokens
@@ -26,7 +37,6 @@ pub fn to_rust(semantics: &RemillSemanticsParsed) -> Option<proc_macro2::TokenSt
     };
     Some(stream)
 }
-
 
 pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_macro2::TokenStream> {
     Some(match statement {
@@ -37,7 +47,10 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                 let #name = (#expression);
             }
         }
-        RemillSemanticsStatement::VarAssign { expression, variable } => {
+        RemillSemanticsStatement::VarAssign {
+            expression,
+            variable,
+        } => {
             let variable = format_ident!("{variable}");
             let expression: proc_macro2::TokenStream = expression_to_rust(expression)?;
             quote! {
@@ -49,7 +62,8 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
             for statement in statements {
                 statement_tokens.push(statement_to_rust(statement));
             }
-            let statement_tokens: proc_macro2::TokenStream = statement_tokens.into_iter().collect::<Option<_>>()?;
+            let statement_tokens: proc_macro2::TokenStream =
+                statement_tokens.into_iter().collect::<Option<_>>()?;
             quote! {
                 #statement_tokens
             }
@@ -89,12 +103,21 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
             init_decl,
             condition,
             increment,
-            for_statements
+            for_statements,
         } => {
-            let init_statements: proc_macro2::TokenStream = init_decl.iter().map(|init| statement_to_rust(init)).collect::<Option<_>>()?;
+            let init_statements: proc_macro2::TokenStream = init_decl
+                .iter()
+                .map(|init| statement_to_rust(init))
+                .collect::<Option<_>>()?;
             let condition = expression_to_rust(condition)?;
-            let for_statements: proc_macro2::TokenStream = for_statements.iter().map(|init| statement_to_rust(init)).collect::<Option<_>>()?;
-            let increment: proc_macro2::TokenStream = increment.iter().map(|init| statement_to_rust(init)).collect::<Option<_>>()?;
+            let for_statements: proc_macro2::TokenStream = for_statements
+                .iter()
+                .map(|init| statement_to_rust(init))
+                .collect::<Option<_>>()?;
+            let increment: proc_macro2::TokenStream = increment
+                .iter()
+                .map(|init| statement_to_rust(init))
+                .collect::<Option<_>>()?;
             quote! {
                 #init_statements;
                 while(#condition){
@@ -103,10 +126,20 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                 };
             }
         }
-        RemillSemanticsStatement::IfElse { condition, if_body, else_body } => {
+        RemillSemanticsStatement::IfElse {
+            condition,
+            if_body,
+            else_body,
+        } => {
             let condition = expression_to_rust(condition)?;
-            let if_tokens: proc_macro2::TokenStream = if_body.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
-            let else_tokens: proc_macro2::TokenStream = else_body.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
+            let if_tokens: proc_macro2::TokenStream = if_body
+                .iter()
+                .map(|statement| statement_to_rust(statement))
+                .collect::<Option<_>>()?;
+            let else_tokens: proc_macro2::TokenStream = else_body
+                .iter()
+                .map(|statement| statement_to_rust(statement))
+                .collect::<Option<_>>()?;
             quote! {
                 if(#condition) {
                     #if_tokens
@@ -117,30 +150,37 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
         }
         RemillSemanticsStatement::If { condition, if_body } => {
             let condition = expression_to_rust(condition)?;
-            let statement_tokens: proc_macro2::TokenStream = if_body.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
+            let statement_tokens: proc_macro2::TokenStream = if_body
+                .iter()
+                .map(|statement| statement_to_rust(statement))
+                .collect::<Option<_>>()?;
             quote! {
                 if(#condition) {
                     #statement_tokens
                 }
             }
         }
-        RemillSemanticsStatement::VarMinusEqual { expression, variable_lvalue } => {
+        RemillSemanticsStatement::VarMinusEqual {
+            expression,
+            variable_lvalue,
+        } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
                 #variable_lvalue -= #expression;
             }
         }
-        RemillSemanticsStatement::VarPlusEqual { expression, variable_lvalue } => {
+        RemillSemanticsStatement::VarPlusEqual {
+            expression,
+            variable_lvalue,
+        } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
                 #variable_lvalue += #expression;
             }
         }
-        RemillSemanticsStatement::SwitchStatement { .. } => {
-            return None
-        }
+        RemillSemanticsStatement::SwitchStatement { .. } => return None,
         RemillSemanticsStatement::CaseStatement { .. } => {
             todo!()
         }
@@ -150,7 +190,10 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
         RemillSemanticsStatement::BreakStatement { .. } => {
             todo!()
         }
-        RemillSemanticsStatement::WhileStatement { condition, statements } => {
+        RemillSemanticsStatement::WhileStatement {
+            condition,
+            statements,
+        } => {
             /*let condition = expression_to_rust(condition)?;
             let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
             quote! {
@@ -158,9 +201,12 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                     #statement_tokens
                 };
             }*/
-            return None
+            return None;
         }
-        RemillSemanticsStatement::DoWhile { condition, statements } => {
+        RemillSemanticsStatement::DoWhile {
+            condition,
+            statements,
+        } => {
             /*let condition = expression_to_rust(condition)?;
             let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
             quote! {
@@ -169,16 +215,22 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                     #condition
                 }{};
             }*/
-            return None
+            return None;
         }
-        RemillSemanticsStatement::VarMulEqual { expression, variable_lvalue } => {
+        RemillSemanticsStatement::VarMulEqual {
+            expression,
+            variable_lvalue,
+        } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
                 #variable_lvalue *= #expression;
             }
         }
-        RemillSemanticsStatement::VarOrEqual { expression, variable_lvalue } => {
+        RemillSemanticsStatement::VarOrEqual {
+            expression,
+            variable_lvalue,
+        } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
@@ -191,7 +243,10 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
                 #expression;
             }
         }
-        RemillSemanticsStatement::VarDivEqual { expression, variable_lvalue } => {
+        RemillSemanticsStatement::VarDivEqual {
+            expression,
+            variable_lvalue,
+        } => {
             let variable_lvalue = expression_to_rust(variable_lvalue)?;
             let expression = expression_to_rust(expression)?;
             quote! {
@@ -203,13 +258,19 @@ pub fn statement_to_rust(statement: &RemillSemanticsStatement) -> Option<proc_ma
 
 fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::TokenStream> {
     Some(match expr {
-        RemillSemanticsExpression::Call { function_name, args } => {
+        RemillSemanticsExpression::Call {
+            function_name,
+            args,
+        } => {
             let mut function_name = function_name.replace("\"", "_quote_");
             if function_name == "" {
                 function_name = "empty".to_string();
             }
             let function_name = format_ident!("{function_name}");
-            let args = args.iter().map(|arg| expression_to_rust(arg)).collect::<Option<Vec<_>>>()?;
+            let args = args
+                .iter()
+                .map(|arg| expression_to_rust(arg))
+                .collect::<Option<Vec<_>>>()?;
             quote!((#function_name(#(#args),*)))
         }
         RemillSemanticsExpression::VariableRef { name } => {
@@ -316,9 +377,9 @@ fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::T
                 "uint64_t" => quote!(u64),
                 "unsigned short" => quote!(std::ffi::c_ushort),
                 "unsigned long" => quote!(std::ffi::c_ulong),
-                "union bcd_digit_pair_t[9]" => quote!([bcd_digit_pair_t;9]),
+                "union bcd_digit_pair_t[9]" => quote!([bcd_digit_pair_t; 9]),
                 "In<unsigned long>" => quote!(std::ffi::c_ulong),
-                other => todo!("{other:?}")
+                other => todo!("{other:?}"),
             };
             quote!(std::mem::size_of::<#type_>())
         }
@@ -350,9 +411,7 @@ fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::T
             let ident = format!("{value}f32");
             quote!(#ident)
         }
-        RemillSemanticsExpression::UnknownConsructExpr => {
-            return None
-        }
+        RemillSemanticsExpression::UnknownConsructExpr => return None,
         RemillSemanticsExpression::DefaultInitUint16Array { len } => {
             quote!([0u16;#len])
         }
@@ -399,14 +458,21 @@ fn expression_to_rust(expr: &RemillSemanticsExpression) -> Option<proc_macro2::T
             quote!(#left || #right)
         }
         RemillSemanticsExpression::Lambda { statements } => {
-            let statement_tokens: proc_macro2::TokenStream = statements.iter().map(|statement| statement_to_rust(statement)).collect::<Option<_>>()?;
+            let statement_tokens: proc_macro2::TokenStream = statements
+                .iter()
+                .map(|statement| statement_to_rust(statement))
+                .collect::<Option<_>>()?;
             quote! (
                 (||{
                     #statement_tokens
                 })
             )
         }
-        RemillSemanticsExpression::Conditional { condition, true_case, false_case } => {
+        RemillSemanticsExpression::Conditional {
+            condition,
+            true_case,
+            false_case,
+        } => {
             let condition = expression_to_rust(condition)?;
             let if_tokens: proc_macro2::TokenStream = expression_to_rust(true_case)?;
             let else_tokens: proc_macro2::TokenStream = expression_to_rust(false_case)?;

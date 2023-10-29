@@ -2,7 +2,10 @@ use capstone::arch::x86::{X86InsnDetail, X86OperandType};
 use capstone::prelude::DetailsArchInsn;
 use itertools::Itertools;
 
-use crate::memory_operand::{MemoryOperand, MemoryOperandOrRegister16, MemoryOperandOrRegister32, MemoryOperandOrRegister64, MemoryOperandOrRegister8};
+use crate::memory_operand::{
+    MemoryOperand, MemoryOperandOrRegister16, MemoryOperandOrRegister32, MemoryOperandOrRegister64,
+    MemoryOperandOrRegister8,
+};
 use crate::registers::{OperandSize, Register16, Register32, Register64, Register8};
 
 //https://www.felixcloutier.com/x86/mov
@@ -62,7 +65,10 @@ impl MovInstruction {
                             OperandSize::QuadWord => {
                                 let dst = Register64::new(*dst_reg_id);
                                 let src = Register64::new(*src_reg_id);
-                                MovInstruction::R64Rm64 { src: MemoryOperandOrRegister64::Reg(src), dst: dst }
+                                MovInstruction::R64Rm64 {
+                                    src: MemoryOperandOrRegister64::Reg(src),
+                                    dst: dst,
+                                }
                             }
                             OperandSize::DoubleWord => {
                                 todo!()
@@ -83,7 +89,9 @@ impl MovInstruction {
                         match src_operand_size {
                             OperandSize::QuadWord => {
                                 let dst = Register64::new(*dst_reg_id);
-                                let src = MemoryOperandOrRegister64::Mem(MemoryOperand::from_mem(src_mem));
+                                let src = MemoryOperandOrRegister64::Mem(MemoryOperand::from_mem(
+                                    src_mem,
+                                ));
                                 MovInstruction::R64Rm64 { src, dst }
                             }
                             OperandSize::DoubleWord => {
@@ -105,37 +113,35 @@ impl MovInstruction {
             X86OperandType::Imm(_) => {
                 todo!()
             }
-            X86OperandType::Mem(mem) => {
-                match dst_operand_size {
-                    OperandSize::QuadWord => {
-                        let dst = MemoryOperandOrRegister64::Mem(MemoryOperand::from_mem(mem));
-                        match &src_operand.op_type {
-                            X86OperandType::Reg(reg_id) => {
-                                let src = Register64::new(*reg_id);
-                                MovInstruction::Rm64R64 { src, dst }
-                            }
-                            X86OperandType::Imm(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Mem(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Invalid => {
-                                todo!()
-                            }
+            X86OperandType::Mem(mem) => match dst_operand_size {
+                OperandSize::QuadWord => {
+                    let dst = MemoryOperandOrRegister64::Mem(MemoryOperand::from_mem(mem));
+                    match &src_operand.op_type {
+                        X86OperandType::Reg(reg_id) => {
+                            let src = Register64::new(*reg_id);
+                            MovInstruction::Rm64R64 { src, dst }
+                        }
+                        X86OperandType::Imm(_) => {
+                            todo!()
+                        }
+                        X86OperandType::Mem(_) => {
+                            todo!()
+                        }
+                        X86OperandType::Invalid => {
+                            todo!()
                         }
                     }
-                    OperandSize::DoubleWord => {
-                        todo!()
-                    }
-                    OperandSize::Word => {
-                        todo!()
-                    }
-                    OperandSize::HalfWord => {
-                        todo!()
-                    }
                 }
-            }
+                OperandSize::DoubleWord => {
+                    todo!()
+                }
+                OperandSize::Word => {
+                    todo!()
+                }
+                OperandSize::HalfWord => {
+                    todo!()
+                }
+            },
             X86OperandType::Invalid => {
                 todo!()
             }

@@ -1,16 +1,15 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
 use clap::Parser;
 use k_semantics_json_parser::k_expressions::{KSentence, TopLevel};
 use k_semantics_json_parser::k_to_raw;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::PathBuf;
 
 #[derive(Parser)]
-pub struct Opts{
+pub struct Opts {
     path: PathBuf,
-    module_name: String
+    module_name: String,
 }
-
 
 fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
@@ -22,8 +21,12 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn minimize_file(json_file_path: PathBuf, module_name: String) -> anyhow::Result<String> {
-    let mut top_level: TopLevel = serde_json::from_reader(BufReader::new(File::open(json_file_path)?))?;
-    top_level.term.modules.retain(|module| module.name == module_name);
+    let mut top_level: TopLevel =
+        serde_json::from_reader(BufReader::new(File::open(json_file_path)?))?;
+    top_level
+        .term
+        .modules
+        .retain(|module| module.name == module_name);
     for module in top_level.term.modules.iter_mut() {
         module.localSentences.retain(|sentence| {
             if let KSentence::KRule { .. } = sentence {

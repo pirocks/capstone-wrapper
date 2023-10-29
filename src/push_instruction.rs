@@ -1,24 +1,24 @@
+use crate::memory_operand::MemoryOperand;
+use crate::registers::{GeneralRegisterWordAndBigger, OperandSize, SegmentRegister};
+use crate::ImmediateOperand;
 use capstone::arch::x86::{X86InsnDetail, X86OperandType};
 use capstone::prelude::DetailsArchInsn;
 use itertools::Itertools;
-use crate::{ImmediateOperand};
-use crate::memory_operand::MemoryOperand;
-use crate::registers::{GeneralRegisterWordAndBigger, OperandSize, SegmentRegister};
 
 //https://www.felixcloutier.com/x86/push
 #[derive(Debug, Eq, PartialEq)]
 pub enum PushInstruction {
     MemoryOperand {
-        memory_operand: MemoryOperand
+        memory_operand: MemoryOperand,
     },
     Register {
-        register: GeneralRegisterWordAndBigger
+        register: GeneralRegisterWordAndBigger,
     },
     Imm {
-        imm: ImmediateOperand
+        imm: ImmediateOperand,
     },
     PushSegment {
-        segment_register: SegmentRegister
+        segment_register: SegmentRegister,
     },
 }
 

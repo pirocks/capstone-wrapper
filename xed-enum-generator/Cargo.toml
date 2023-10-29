@@ -14,5 +14,6 @@ itertools = "0.10"
 wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
 enum-visitor = { path = "../enum-visitor" }
+enum-iterator = "1.4.1"
 [lib]
 proc-macro = true

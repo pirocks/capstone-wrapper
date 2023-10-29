@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::add_instruction::AddInstruction;
 use crate::condition_code_flag::JumpConditionCode;
-use crate::jcc_instruction::{JCCInstruction};
+use crate::jcc_instruction::JCCInstruction;
 use crate::mov_instruction::MovInstruction;
 use crate::push_instruction::PushInstruction;
 use crate::ret_instruction::RetInstruction;
@@ -31,7 +31,9 @@ pub enum ImmediateOperand {
 
 impl ImmediateOperand {
     pub fn from_capstone_displacement(capstone_displacement: i64) -> ImmediateOperand {
-        let res: i32 = capstone_displacement.try_into().expect("But x86 doesn't have 64 bit displacements?");
+        let res: i32 = capstone_displacement
+            .try_into()
+            .expect("But x86 doesn't have 64 bit displacements?");
         ImmediateOperand::Imm32(res)
     }
 }
@@ -99,15 +101,15 @@ pub mod condition_code_flag {
     }
 }
 
-pub mod push_instruction;
-pub mod mov_instruction;
-pub mod shl_instruction;
 pub mod add_instruction;
-pub mod sub_instruction;
-pub mod setb_instruction;
-pub mod test_instruction;
 pub mod jcc_instruction;
+pub mod mov_instruction;
+pub mod push_instruction;
 pub mod ret_instruction;
+pub mod setb_instruction;
+pub mod shl_instruction;
+pub mod sub_instruction;
+pub mod test_instruction;
 pub mod utils;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -131,50 +133,62 @@ pub fn disassemble(bytes: &[u8], address: u64) -> Result<Vec<X86Instruction>, Di
         .detail(true)
         .build()
         .expect("Shouldn't fail to instantiate capstone.");
-    let instructions = capstone.disasm_all(bytes, address).map_err(|_| DisassembleError::FailedToDisassemble)?;
-    instructions.iter().map(|instruction| {
-        let instruction_type = X86Insn::from(instruction.id().0);
-        let details = capstone.insn_detail(instruction).map_err(|_| DisassembleError::FailedToDisassemble)?;
-        let arch_detail = details.arch_detail();
-        let x86_detail = arch_detail.x86().ok_or(DisassembleError::FailedToDisassemble)?;
-        Ok(match instruction_type {
-            X86Insn::X86_INS_PUSH => {
-                X86Instruction::Push(PushInstruction::from_detail(x86_detail))
-            }
-            X86Insn::X86_INS_MOV => {
-                X86Instruction::Mov(MovInstruction::from_detail(x86_detail))
-            }
-            X86Insn::X86_INS_SHL => {
-                X86Instruction::Shl(ShlInstruction::from_details(x86_detail))
-            }
-            X86Insn::X86_INS_SUB => {
-                X86Instruction::Sub(SubInstruction::from_details(x86_detail))
-            }
-            X86Insn::X86_INS_ADD => {
-                X86Instruction::Add(AddInstruction::from_details(x86_detail))
-            }
-            X86Insn::X86_INS_SETB => {
-                X86Instruction::SetB(SetBInstruction::from_details(x86_detail))
-            }
-            X86Insn::X86_INS_TEST => {
-                X86Instruction::Test(TestInstruction::from_details(x86_detail))
-            }
-            X86Insn::X86_INS_JBE => {
-                X86Instruction::JCC(JCCInstruction::from_details(instruction, x86_detail, JumpConditionCode::BE))
-            }
-            X86Insn::X86_INS_JNE => {
-                X86Instruction::JCC(JCCInstruction::from_details(instruction, x86_detail, JumpConditionCode::NE))
-            }
-            X86Insn::X86_INS_RET => {
-                X86Instruction::Ret(RetInstruction::from_details(x86_detail))
-            }
-            _ => {
-                todo!("Unimplemented instruction id: {}", instruction.id().0)
-            }
+    let instructions = capstone
+        .disasm_all(bytes, address)
+        .map_err(|_| DisassembleError::FailedToDisassemble)?;
+    instructions
+        .iter()
+        .map(|instruction| {
+            let instruction_type = X86Insn::from(instruction.id().0);
+            let details = capstone
+                .insn_detail(instruction)
+                .map_err(|_| DisassembleError::FailedToDisassemble)?;
+            let arch_detail = details.arch_detail();
+            let x86_detail = arch_detail
+                .x86()
+                .ok_or(DisassembleError::FailedToDisassemble)?;
+            Ok(match instruction_type {
+                X86Insn::X86_INS_PUSH => {
+                    X86Instruction::Push(PushInstruction::from_detail(x86_detail))
+                }
+                X86Insn::X86_INS_MOV => {
+                    X86Instruction::Mov(MovInstruction::from_detail(x86_detail))
+                }
+                X86Insn::X86_INS_SHL => {
+                    X86Instruction::Shl(ShlInstruction::from_details(x86_detail))
+                }
+                X86Insn::X86_INS_SUB => {
+                    X86Instruction::Sub(SubInstruction::from_details(x86_detail))
+                }
+                X86Insn::X86_INS_ADD => {
+                    X86Instruction::Add(AddInstruction::from_details(x86_detail))
+                }
+                X86Insn::X86_INS_SETB => {
+                    X86Instruction::SetB(SetBInstruction::from_details(x86_detail))
+                }
+                X86Insn::X86_INS_TEST => {
+                    X86Instruction::Test(TestInstruction::from_details(x86_detail))
+                }
+                X86Insn::X86_INS_JBE => X86Instruction::JCC(JCCInstruction::from_details(
+                    instruction,
+                    x86_detail,
+                    JumpConditionCode::BE,
+                )),
+                X86Insn::X86_INS_JNE => X86Instruction::JCC(JCCInstruction::from_details(
+                    instruction,
+                    x86_detail,
+                    JumpConditionCode::NE,
+                )),
+                X86Insn::X86_INS_RET => {
+                    X86Instruction::Ret(RetInstruction::from_details(x86_detail))
+                }
+                _ => {
+                    todo!("Unimplemented instruction id: {}", instruction.id().0)
+                }
+            })
         })
-    }).collect::<Result<Vec<_>, _>>()
+        .collect::<Result<Vec<_>, _>>()
 }
-
 
 #[cfg(test)]
 mod tests;

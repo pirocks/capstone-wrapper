@@ -5,23 +5,21 @@ use itertools::Itertools;
 
 use wrapper_common::operand_type::OperandType;
 
-use crate::InstructionDescriptor;
 use crate::k_expressions::KExpression;
 use crate::k_to_raw::extract_register_expression::ExpressionDiffData;
 use crate::k_to_raw::utils::{extract_apply_args, extract_apply_label};
 use crate::raw::{OperandIdx, RawExpression};
+use crate::InstructionDescriptor;
 
-pub mod utils;
-pub(crate) mod strip_dots;
 pub mod extract_register_expression;
-
+pub(crate) mod strip_dots;
+pub mod utils;
 
 #[derive(Debug)]
 pub enum InstructionDefinition {
     Definition(RawExpression),
     ReferToOtherRule {},
 }
-
 
 #[derive(Debug)]
 pub enum OperandKind {
@@ -42,17 +40,21 @@ pub struct OperandNames {
 impl OperandNames {
     pub fn new(desc: &InstructionDescriptor) -> Self {
         Self {
-            kinds: desc.operands.iter().map(|op| match op {
-                OperandType::Mem(_) => OperandKind::Mem,
-                OperandType::Reg(_) => OperandKind::Reg,
-                OperandType::Imm(_) => OperandKind::Imm,
-                OperandType::ImmSpecific(_) => OperandKind::Imm,
-                OperandType::Flags(_) => todo!(),
-                OperandType::Agen(_) => todo!(),
-                OperandType::Rel8 => OperandKind::Imm,
-                OperandType::Rel16 => OperandKind::Imm,
-                OperandType::Rel32 => OperandKind::Imm,
-            }).collect(),
+            kinds: desc
+                .operands
+                .iter()
+                .map(|op| match op {
+                    OperandType::Mem(_) => OperandKind::Mem,
+                    OperandType::Reg(_) => OperandKind::Reg,
+                    OperandType::Imm(_) => OperandKind::Imm,
+                    OperandType::ImmSpecific(_) => OperandKind::Imm,
+                    OperandType::Flags(_) => todo!(),
+                    OperandType::Agen(_) => todo!(),
+                    OperandType::Rel8 => OperandKind::Imm,
+                    OperandType::Rel16 => OperandKind::Imm,
+                    OperandType::Rel32 => OperandKind::Imm,
+                })
+                .collect(),
             operands_original: HashMap::new(),
             memory_operand_rename_index: 0,
             register_operand_rename_index: 0,
@@ -69,53 +71,79 @@ impl OperandNames {
         let name = name.into();
         match self.operands_renamed.get(&name) {
             Some(x) => Some(*x),
-            None => {
-                match self.operands_original.get(&name).cloned() {
-                    None => {
-                        match name.as_str() {
-                            "R1" => {
-                                assert_matches!(&self.kinds[0],OperandKind::Reg);
-                                return Some(OperandIdx(0));
-                            }
-                            "R2" => {
-                                assert_matches!(&self.kinds[1],OperandKind::Reg);
-                                return Some(OperandIdx(1));
-                            }
-                            "R3" => {
-                                assert_matches!(&self.kinds[2],OperandKind::Reg);
-                                return Some(OperandIdx(2));
-                            }
-                            "Imm8" => {
-                                assert_eq!(self.kinds.iter().filter(|k| matches!(k, OperandKind::Imm)).count(), 1);
-                                return Some(OperandIdx(self.kinds.iter().find_position(|k| matches!(k, OperandKind::Mem)).unwrap().0 as u8));
-                            }
-                            "MemOff" => {
-                                assert_eq!(self.kinds.iter().filter(|k| matches!(k, OperandKind::Mem)).count(), 1);
-                                return Some(OperandIdx(self.kinds.iter().find_position(|k| matches!(k, OperandKind::Mem)).unwrap().0 as u8));
-                            }
-                            "CF" | "PF" | "AF" | "ZF" | "SF" | "OF" => {
-                                return None;
-                            }
-                            "RAX" | "RIP" => {
-                                return None;
-                            }
-                            name => {
-                                todo!("{name}")
-                            }
-                        }
+            None => match self.operands_original.get(&name).cloned() {
+                None => match name.as_str() {
+                    "R1" => {
+                        assert_matches!(&self.kinds[0], OperandKind::Reg);
+                        return Some(OperandIdx(0));
                     }
-                    Some(op_idx) => {
-                        return Some(op_idx);
+                    "R2" => {
+                        assert_matches!(&self.kinds[1], OperandKind::Reg);
+                        return Some(OperandIdx(1));
                     }
+                    "R3" => {
+                        assert_matches!(&self.kinds[2], OperandKind::Reg);
+                        return Some(OperandIdx(2));
+                    }
+                    "Imm8" => {
+                        assert_eq!(
+                            self.kinds
+                                .iter()
+                                .filter(|k| matches!(k, OperandKind::Imm))
+                                .count(),
+                            1
+                        );
+                        return Some(OperandIdx(
+                            self.kinds
+                                .iter()
+                                .find_position(|k| matches!(k, OperandKind::Mem))
+                                .unwrap()
+                                .0 as u8,
+                        ));
+                    }
+                    "MemOff" => {
+                        assert_eq!(
+                            self.kinds
+                                .iter()
+                                .filter(|k| matches!(k, OperandKind::Mem))
+                                .count(),
+                            1
+                        );
+                        return Some(OperandIdx(
+                            self.kinds
+                                .iter()
+                                .find_position(|k| matches!(k, OperandKind::Mem))
+                                .unwrap()
+                                .0 as u8,
+                        ));
+                    }
+                    "CF" | "PF" | "AF" | "ZF" | "SF" | "OF" => {
+                        return None;
+                    }
+                    "RAX" | "RIP" => {
+                        return None;
+                    }
+                    name => {
+                        todo!("{name}")
+                    }
+                },
+                Some(op_idx) => {
+                    return Some(op_idx);
                 }
-            }
+            },
         }
     }
 
     pub fn sink_new_memory_operand(&mut self, new_memory_name: impl Into<String>) {
         let new_memory_name = new_memory_name.into();
-        let op_idx = self.memory_operand_rename_index + self.kinds[self.memory_operand_rename_index..].iter().find_position(|x| matches!(x,OperandKind::Mem)).unwrap().0;
-        self.operands_renamed.insert(new_memory_name, OperandIdx(op_idx as u8));
+        let op_idx = self.memory_operand_rename_index
+            + self.kinds[self.memory_operand_rename_index..]
+                .iter()
+                .find_position(|x| matches!(x, OperandKind::Mem))
+                .unwrap()
+                .0;
+        self.operands_renamed
+            .insert(new_memory_name, OperandIdx(op_idx as u8));
         self.memory_operand_rename_index = op_idx;
     }
 }
@@ -123,18 +151,10 @@ impl OperandNames {
 #[derive(Debug)]
 pub enum RuleData {
     DefinitionOnly(RuleOperandsData),
-    MemLoadAndNextDefinition {
-        load_expression: RawExpression,
-    },
-    MemStoreAndNextDefinition {
-        store_expression: RawExpression,
-    },
-    RegState {
-        expression: ExpressionDiffData
-    },
-    SideEffectingExpression {
-        expression: RawExpression
-    },
+    MemLoadAndNextDefinition { load_expression: RawExpression },
+    MemStoreAndNextDefinition { store_expression: RawExpression },
+    RegState { expression: ExpressionDiffData },
+    SideEffectingExpression { expression: RawExpression },
 }
 
 #[derive(Clone, Debug)]
@@ -158,7 +178,11 @@ pub struct RawOperand {
     pub op_idx: OperandIdx,
 }
 
-pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Option<RawOperandType>, raw_operands: &mut Vec<RawOperand>) {
+pub fn recursive_operand_extract(
+    operand_list: &KExpression,
+    current_type: Option<RawOperandType>,
+    raw_operands: &mut Vec<RawOperand>,
+) {
     match operand_list {
         KExpression::KApply { label, args, .. } => {
             if label.as_str() == "#SemanticCastToR8" {
@@ -173,14 +197,26 @@ pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Optio
             } else if label.as_str() == ".List{\"operandlist\"}" {
                 return;
             } else if label.as_str() == "memOffset" {
-                return recursive_operand_extract(&args[0], Some(RawOperandType::Mem), raw_operands);
+                return recursive_operand_extract(
+                    &args[0],
+                    Some(RawOperandType::Mem),
+                    raw_operands,
+                );
             } else if label.as_str() == "#SemanticCastToMInt" {
                 assert_matches!(current_type, Some(RawOperandType::Mem));
                 return recursive_operand_extract(&args[0], current_type, raw_operands);
             } else if label.as_str() == "#SemanticCastToXmm" {
-                return recursive_operand_extract(&args[0], Some(RawOperandType::XMM), raw_operands);
+                return recursive_operand_extract(
+                    &args[0],
+                    Some(RawOperandType::XMM),
+                    raw_operands,
+                );
             } else if label.as_str() == "#SemanticCastToR64" {
-                return recursive_operand_extract(&args[0], Some(RawOperandType::R64), raw_operands);
+                return recursive_operand_extract(
+                    &args[0],
+                    Some(RawOperandType::R64),
+                    raw_operands,
+                );
             } else if label.as_str() == "#SemanticCastToMemOffset" {
                 assert_eq!(args.len(), 1);
                 return recursive_operand_extract(&args[0], current_type, raw_operands);
@@ -189,10 +225,12 @@ pub fn recursive_operand_extract(operand_list: &KExpression, current_type: Optio
             dbg!(args);
             todo!()
         }
-        KExpression::KVariable { name, .. } => {
-            raw_operands.push(RawOperand { raw_operand_type: current_type, name: name.to_string(), op_idx: OperandIdx(raw_operands.len() as u8) })
-        }
-        _ => panic!()
+        KExpression::KVariable { name, .. } => raw_operands.push(RawOperand {
+            raw_operand_type: current_type,
+            name: name.to_string(),
+            op_idx: OperandIdx(raw_operands.len() as u8),
+        }),
+        _ => panic!(),
     }
 }
 
@@ -202,11 +240,11 @@ pub struct LoadExpression {}
 pub enum RuleAtom {
     RulesDecl(RuleOperandsData),
     LoadExpression {
-        expr: KExpression
+        expr: KExpression,
     },
     MemLoadValue(String),
     StoreExpression {
-        expr: KExpression
+        expr: KExpression,
     },
     MemoryLoadValueAndLoadFromMemory {
         mem_load_value_name: String,
@@ -220,7 +258,9 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
     match semantic_rule_decl {
         KExpression::KRewrite { lhs, rhs } => {
             match lhs.as_ref() {
-                KExpression::KApply { label:_, args:_, .. } => {
+                KExpression::KApply {
+                    label: _, args: _, ..
+                } => {
                     // assert_eq!(label.as_str(), "execinstr");
                     // assert_eq!(args.len(), 1);
                     // let args = extract_apply_args(&args[0], "___X86-SYNTAX");
@@ -237,15 +277,27 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                 }
                 KExpression::KSequence { items, .. } => {
                     assert_eq!(items.len(), 2);
-                    assert_eq!(extract_apply_label(&items[0]), "#SemanticCastToMemLoadValue");
+                    assert_eq!(
+                        extract_apply_label(&items[0]),
+                        "#SemanticCastToMemLoadValue"
+                    );
                     assert_eq!(extract_apply_label(&items[1]), "execinstr");
-                    let without_semantic_cast = &extract_apply_args(&items[0], "#SemanticCastToMemLoadValue")[0];
+                    let without_semantic_cast =
+                        &extract_apply_args(&items[0], "#SemanticCastToMemLoadValue")[0];
                     assert_eq!(extract_apply_label(without_semantic_cast), "memLoadValue");
-                    let without_mem_load_value = &extract_apply_args(without_semantic_cast, "memLoadValue")[0];
-                    let variable = &extract_apply_args(without_mem_load_value, "#SemanticCastToMInt")[0];
-                    if let KExpression::KVariable { name, originalName: _ } = variable {
+                    let without_mem_load_value =
+                        &extract_apply_args(without_semantic_cast, "memLoadValue")[0];
+                    let variable =
+                        &extract_apply_args(without_mem_load_value, "#SemanticCastToMInt")[0];
+                    if let KExpression::KVariable {
+                        name,
+                        originalName: _,
+                    } = variable
+                    {
                         res.push(RuleAtom::MemLoadValue(name.to_string()));
-                    } else { todo!() }
+                    } else {
+                        todo!()
+                    }
                 }
                 _ => {
                     dbg!(lhs);
@@ -262,7 +314,9 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                 }
                 KExpression::KApply { label, .. } => {
                     if label.as_str() == "storeToMemory" {
-                        res.push(RuleAtom::StoreExpression { expr: rhs.as_ref().clone() })
+                        res.push(RuleAtom::StoreExpression {
+                            expr: rhs.as_ref().clone(),
+                        })
                     } else {
                         todo!()
                     }
@@ -273,9 +327,13 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
 
                         if let KExpression::KApply { label, .. } = &items[0] {
                             if label.as_str() == "loadFromMemory" {
-                                res.push(RuleAtom::LoadExpression { expr: items[0].clone() });
+                                res.push(RuleAtom::LoadExpression {
+                                    expr: items[0].clone(),
+                                });
                             } else if label.as_str() == "storeToMemory" {
-                                res.push(RuleAtom::StoreExpression { expr: items[0].clone() })
+                                res.push(RuleAtom::StoreExpression {
+                                    expr: items[0].clone(),
+                                })
                             } else {
                                 todo!("{label}")
                             }
@@ -288,7 +346,9 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
                             } else {
                                 res.push(RuleAtom::Expression(items[1].clone()));
                             }
-                        } else { todo!() }
+                        } else {
+                            todo!()
+                        }
                     }
                 }
             };
@@ -297,4 +357,3 @@ pub fn extract_rule_data_from_k_rule(semantic_rule_decl: &KExpression) -> Vec<Ru
     }
     res
 }
-

@@ -53,16 +53,19 @@ fn main() -> anyhow::Result<()> {
     let mut instruction_operations = HashMap::new();
     let regex = Regex::new("(Intel C/C\\+\\+ Compiler Intrinsic Equivalent)|(Flags Affected)|(Protected Mode Exceptions)|(SIMD Floating-Point Exceptions)|(C/C\\+\\+ Compiler Intrinsic Equivalent)|(FPU Flags Affected)|(Numeric Exceptions)").unwrap();
     for (instr, instr_content) in instruction_contents {
-        if let Some((_, after_operation)) = try_split(instr_content.as_str(),"Operation\n"){
+        if let Some((_, after_operation)) = try_split(instr_content.as_str(), "Operation\n") {
             let operation = split_regex(after_operation, &regex).0;
             instruction_operations.insert(instr, Some(operation.to_string()));
-        }else {
+        } else {
             instruction_operations.insert(instr, None);
         }
     }
 
     for (instruction, instruction_content) in instruction_operations {
-        fs::write(format!("instruction_{}.txt",instruction.0.replace("/", "_")), instruction_content.unwrap_or("".to_string()))?;
+        fs::write(
+            format!("instruction_{}.txt", instruction.0.replace("/", "_")),
+            instruction_content.unwrap_or("".to_string()),
+        )?;
     }
 
     fs::write("debug.txt", after_contents)?;
@@ -80,11 +83,12 @@ fn remove_headers_and_footers(instruction_contents: &mut HashMap<UnExpandedInstr
     for (instr, instructions) in instruction_contents.iter_mut() {
         let mut new_lines = vec![];
         for line in instructions.lines() {
-            if !line.contains(instr.0.as_str()) &&
-                !line.contains("INSTRUCTION SET REFERENCE, A-L") &&
-                !line.contains("INSTRUCTION SET REFERENCE, M-U") &&
-                !line.contains("INSTRUCTION SET REFERENCE, V") &&
-                !line.contains("INSTRUCTION SET REFERENCE, W-Z") {
+            if !line.contains(instr.0.as_str())
+                && !line.contains("INSTRUCTION SET REFERENCE, A-L")
+                && !line.contains("INSTRUCTION SET REFERENCE, M-U")
+                && !line.contains("INSTRUCTION SET REFERENCE, V")
+                && !line.contains("INSTRUCTION SET REFERENCE, W-Z")
+            {
                 new_lines.push(line);
             }
         }
@@ -92,13 +96,20 @@ fn remove_headers_and_footers(instruction_contents: &mut HashMap<UnExpandedInstr
     }
 }
 
-fn extract_instruction_contents(contents: Vec<UnExpandedInstruction>, after_contents: &str) -> HashMap<UnExpandedInstruction, String> {
+fn extract_instruction_contents(
+    contents: Vec<UnExpandedInstruction>,
+    after_contents: &str,
+) -> HashMap<UnExpandedInstruction, String> {
     let mut remaining_instructions = after_contents;
     let mut delimiters_and_instruction: Vec<(String, String, UnExpandedInstruction)> = vec![];
     let mut prev: Option<UnExpandedInstruction> = None;
     for unexpanded_instruction in contents.iter() {
         if let Some(prev) = prev {
-            delimiters_and_instruction.push((prev.0.to_string(), unexpanded_instruction.0.to_string(), prev));
+            delimiters_and_instruction.push((
+                prev.0.to_string(),
+                unexpanded_instruction.0.to_string(),
+                prev,
+            ));
         }
         prev = Some(unexpanded_instruction.clone());
     }
@@ -113,12 +124,28 @@ fn extract_instruction_contents(contents: Vec<UnExpandedInstruction>, after_cont
 }
 
 fn get_unexpanded(top_level: &str) -> (Vec<UnExpandedInstruction>, &str) {
-    let top_level = slice_after(slice_after(top_level, "Volume 2 (2A, 2B, 2C & 2D):"), "Instruction Set Reference, A-Z");
+    let top_level = slice_after(
+        slice_after(top_level, "Volume 2 (2A, 2B, 2C & 2D):"),
+        "Instruction Set Reference, A-Z",
+    );
     let top_level = slice_after(top_level, "3.2       INSTRUCTIONS (A-L)");
     let contents = slice_before(top_level, "APPENDIX A");
     let regex = Regex::new("\\s+(?P<instruction_name>[A-Z][0-9A-Za-z/\\[\\],]*—)").unwrap();
-    (regex.find_iter(contents).map(|match_| {
-        UnExpandedInstruction(regex.captures(match_.as_str()).unwrap().name("instruction_name").unwrap().as_str().to_string())
-    }).collect_vec(), slice_after(top_level, "APPENDIX A"))
+    (
+        regex
+            .find_iter(contents)
+            .map(|match_| {
+                UnExpandedInstruction(
+                    regex
+                        .captures(match_.as_str())
+                        .unwrap()
+                        .name("instruction_name")
+                        .unwrap()
+                        .as_str()
+                        .to_string(),
+                )
+            })
+            .collect_vec(),
+        slice_after(top_level, "APPENDIX A"),
+    )
 }
-

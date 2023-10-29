@@ -1,5 +1,6 @@
-use xed_sys::xed_reg_enum_t;
+use enum_iterator::Sequence;
 use crate::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
+use xed_sys::{xed_reg_enum_t, xed_uint_t};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum OperandSize {
@@ -32,12 +33,18 @@ pub enum ImmediateOperand {
 
 impl ImmediateOperand {
     pub fn from_capstone_displacement(capstone_displacement: i64) -> ImmediateOperand {
-        let res: i32 = capstone_displacement.try_into().expect("But x86 doesn't have 64 bit displacements?");
+        let res: i32 = capstone_displacement
+            .try_into()
+            .expect("But x86 doesn't have 64 bit displacements?");
         ImmediateOperand::Imm32(res)
+    }
+
+    pub fn to_xed(&self) -> u64{
+        todo!("self:?")
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Sequence)]
 pub enum X86Scale {
     One,
     Two,
@@ -53,8 +60,17 @@ impl X86Scale {
             4 => X86Scale::Four,
             8 => X86Scale::Eight,
             _ => {
-                panic!("Unexpected scale?")
+                panic!("Unexpected scale?: {capstone_scale}")
             }
+        }
+    }
+
+    pub fn to_xed(&self) -> xed_uint_t {
+        match self {
+            X86Scale::One => 1,
+            X86Scale::Two => 2,
+            X86Scale::Four => 4,
+            X86Scale::Eight => 9,
         }
     }
 }
@@ -68,16 +84,41 @@ pub enum GeneralReg {
 }
 
 impl GeneralReg {
-    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+    pub fn try_new(reg: xed_reg_enum_t, width: Option<u32>) -> Option<Self> {
         use xed_sys::*;
-        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
+        let class: xed_reg_class_enum_t = unsafe { xed_reg_class(reg) };
         Some(match class {
-            XED_REG_CLASS_GPR8 => GeneralReg::Reg8(Reg8::try_new(xed)?),
-            XED_REG_CLASS_GPR16 => GeneralReg::Reg16(Reg16WithRIP::try_new(xed)?),
-            XED_REG_CLASS_GPR32 => GeneralReg::Reg32(Reg32WithRIP::try_new(xed)?),
-            XED_REG_CLASS_GPR64 => GeneralReg::Reg64(Reg64WithRIP::try_new(xed)?),
-            _ => return None
+            XED_REG_CLASS_GPR => {
+                if reg >= XED_REG_GPR64_FIRST && reg <= XED_REG_GPR64_LAST{
+                    return Some(GeneralReg::Reg64(Reg64WithRIP::try_new(reg)?))
+                }
+                match width {
+                    None => todo!(),
+                    Some(64) => GeneralReg::Reg64(Reg64WithRIP::try_new(reg)?),
+                    Some(32) => GeneralReg::Reg32(Reg32WithRIP::try_new(reg)?),
+                    Some(16) => GeneralReg::Reg16(Reg16WithRIP::try_new(reg)?),
+                    width => todo!("{width:?}")
+                }
+            }
+            XED_REG_CLASS_GPR8 => GeneralReg::Reg8(Reg8::try_new(reg)?),
+            XED_REG_CLASS_GPR16 => GeneralReg::Reg16(Reg16WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR32 => GeneralReg::Reg32(Reg32WithRIP::try_new(reg)?),
+            XED_REG_CLASS_GPR64 => GeneralReg::Reg64(Reg64WithRIP::try_new(reg)?),
+            XED_REG_CLASS_INVALID => {
+                dbg!(reg);
+                todo!()
+            }
+            _ => return None,
         })
+    }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t{
+        match self {
+            GeneralReg::Reg64(reg) => reg.to_xed(),
+            GeneralReg::Reg32(reg) => reg.to_xed(),
+            GeneralReg::Reg16(reg) => reg.to_xed(),
+            GeneralReg::Reg8(reg) => reg.to_xed()
+        }
     }
 }
 
@@ -87,18 +128,21 @@ pub enum GeneralReg3264 {
     Reg32(Reg32WithRIP),
 }
 
-impl GeneralReg3264{
-    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+impl GeneralReg3264 {
+    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self> {
         use xed_sys::*;
         let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
         Some(match class {
             XED_REG_CLASS_GPR32 => Self::Reg32(Reg32WithRIP::try_new(xed)?),
             XED_REG_CLASS_GPR64 => Self::Reg64(Reg64WithRIP::try_new(xed)?),
-            _ => return None
+            _ => return None,
         })
     }
-}
 
+    pub fn to_xed(&self) -> xed_reg_enum_t{
+        todo!("self:?")
+    }
+}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum GeneralReg163264 {
@@ -107,20 +151,22 @@ pub enum GeneralReg163264 {
     Reg16(Reg16WithRIP),
 }
 
-impl GeneralReg163264{
-    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self>{
+impl GeneralReg163264 {
+    pub fn try_new(xed: xed_reg_enum_t) -> Option<Self> {
         use xed_sys::*;
         let class: xed_reg_class_enum_t = unsafe { xed_reg_class(xed) };
         Some(match class {
             XED_REG_CLASS_GPR16 => Self::Reg16(Reg16WithRIP::try_new(xed)?),
             XED_REG_CLASS_GPR32 => Self::Reg32(Reg32WithRIP::try_new(xed)?),
             XED_REG_CLASS_GPR64 => Self::Reg64(Reg64WithRIP::try_new(xed)?),
-            _ => return None
+            _ => return None,
         })
     }
+
+    pub fn to_xed(&self) -> xed_reg_enum_t{
+        todo!("self:?")
+    }
 }
-
-
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct MemoryOperand {
@@ -132,7 +178,7 @@ pub struct MemoryOperand {
 
 impl MemoryOperand {
     pub fn base64(reg: Reg64WithRIP) -> MemoryOperand {
-        Self{
+        Self {
             base: GeneralReg::Reg64(reg),
             scale: X86Scale::One,
             index: None,
@@ -155,4 +201,3 @@ impl MemoryOperand {
         }
     }*/
 }
-

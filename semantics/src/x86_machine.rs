@@ -1,6 +1,6 @@
+use bumpalo::Bump;
 use std::collections::HashMap;
 use std::ops::{Add, BitAnd, BitOr, Range};
-use bumpalo::Bump;
 use wrapper_common::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
 
 pub struct MemorySpace<'arena> {
@@ -15,9 +15,7 @@ impl<'arena> MemorySpace<'arena> {
     pub fn new_all_zeroed() -> Self {
         let mut specified_bytes = HashMap::new();
         specified_bytes.insert(0..usize::MAX, ZERO_U8_REF);
-        Self {
-            specified_bytes,
-        }
+        Self { specified_bytes }
     }
 }
 
@@ -30,8 +28,8 @@ pub enum BoolValue<'arena> {
     False,
     EqWord {
         left: &'arena WordValue<'arena>,
-        right: &'arena WordValue<'arena>
-    }
+        right: &'arena WordValue<'arena>,
+    },
 }
 
 impl BitOr<BoolValue<'static>> for BoolValue<'static> {
@@ -43,7 +41,7 @@ impl BitOr<BoolValue<'static>> for BoolValue<'static> {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum ByteValue<'arena>{
+pub enum ByteValue<'arena> {
     Constant(u8),
     LowerBits(&'arena QWordValue<'arena>),
     And {
@@ -54,11 +52,11 @@ pub enum ByteValue<'arena>{
         left: &'arena ByteValue<'arena>,
         right: &'arena ByteValue<'arena>,
     },
-    IfElse{
+    IfElse {
         condition: &'arena BoolValue<'arena>,
         true_case: &'arena ByteValue<'arena>,
-        false_case: &'arena ByteValue<'arena>
-    }
+        false_case: &'arena ByteValue<'arena>,
+    },
 }
 
 impl BitAnd for ByteValue<'static> {
@@ -68,7 +66,6 @@ impl BitAnd for ByteValue<'static> {
         todo!()
     }
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum WordValue<'arena> {
@@ -82,11 +79,11 @@ pub enum WordValue<'arena> {
         left: &'arena WordValue<'arena>,
         right: &'arena WordValue<'arena>,
     },
-    IfElse{
+    IfElse {
         condition: &'arena BoolValue<'arena>,
         true_case: &'arena WordValue<'arena>,
-        false_case: &'arena WordValue<'arena>
-    }
+        false_case: &'arena WordValue<'arena>,
+    },
 }
 
 impl Add<WordValue<'static>> for WordValue<'static> {
@@ -96,7 +93,6 @@ impl Add<WordValue<'static>> for WordValue<'static> {
         todo!()
     }
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum DWordValue<'arena> {
@@ -118,12 +114,11 @@ pub enum QWordValue<'arena> {
         left: &'arena QWordValue<'arena>,
         right: &'arena QWordValue<'arena>,
     },
-    WriteLowerBits{
+    WriteLowerBits {
         prev: &'arena QWordValue<'arena>,
-        lower: &'arena WordValue<'arena>
-    }
+        lower: &'arena WordValue<'arena>,
+    },
 }
-
 
 pub enum X86Mode {
     Real,
@@ -182,8 +177,8 @@ impl<'arena> X86MachineState<'arena> {
         }
     }
 
-    pub fn a<T>(&self, to_alloc: T) -> &'arena T{
-        todo!()/*self.bumpalo.alloc(to_alloc)*/
+    pub fn a<T>(&self, to_alloc: T) -> &'arena T {
+        todo!() /*self.bumpalo.alloc(to_alloc)*/
     }
 
     pub fn undefined_instruction_exception(&mut self) {
@@ -191,18 +186,14 @@ impl<'arena> X86MachineState<'arena> {
     }
 }
 
-
-pub struct SemanticsBuilder{
-
-}
+pub struct SemanticsBuilder {}
 
 impl SemanticsBuilder {
-
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         todo!()
     }
 
-    pub fn undefined_exception_if_64_bit(&self) -> SemanticsBuilder32{
+    pub fn undefined_exception_if_64_bit(&self) -> SemanticsBuilder32 {
         todo!()
     }
 
@@ -217,30 +208,25 @@ impl SemanticsBuilder {
     }
 }
 
-impl SemanticBuilderCommon for SemanticsBuilder{
+impl SemanticBuilderCommon for SemanticsBuilder {}
 
-}
-
-pub struct SemanticsBuilder32{
-
-}
+pub struct SemanticsBuilder32 {}
 
 impl SemanticsBuilder32 {
-
-
-
-    pub fn emit_conditional(&self, condition: BoolValue<'static>, true_case: impl FnOnce(SemanticsBuilder32), false_case: impl FnOnce(SemanticsBuilder32)){
+    pub fn emit_conditional(
+        &self,
+        condition: BoolValue<'static>,
+        true_case: impl FnOnce(SemanticsBuilder32),
+        false_case: impl FnOnce(SemanticsBuilder32),
+    ) {
         todo!()
     }
 }
 
-impl SemanticBuilderCommon for SemanticsBuilder32{
+impl SemanticBuilderCommon for SemanticsBuilder32 {}
 
-}
-
-
-pub trait SemanticBuilderCommon{
-    fn constant<NumIn, Out>(&self, num_in: NumIn) -> Out{
+pub trait SemanticBuilderCommon {
+    fn constant<NumIn, Out>(&self, num_in: NumIn) -> Out {
         todo!()
     }
 
@@ -279,7 +265,7 @@ pub trait SemanticBuilderCommon{
         todo!()
     }
 
-    fn set_ax(&self, val: WordValue<'static>)  {
+    fn set_ax(&self, val: WordValue<'static>) {
         todo!()
     }
 
@@ -297,14 +283,13 @@ pub trait SemanticBuilderCommon{
         todo!()
     }
 
-
     //comparison
 
-    fn less<T>(&self, left: T, right: T) -> BoolValue<'static>{
+    fn less<T>(&self, left: T, right: T) -> BoolValue<'static> {
         todo!()
     }
 
-    fn equal<T>(&self, left: T, right: T) -> BoolValue<'static>{
+    fn equal<T>(&self, left: T, right: T) -> BoolValue<'static> {
         todo!()
     }
 }

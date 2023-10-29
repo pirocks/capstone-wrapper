@@ -1,6 +1,6 @@
 // use remill_semantics_parser::remill_semantics;
-use xed_enum::*;
 use crate::iform_semantics::PUNPCKLDQV::PUNPCKLDQVSemanticsVisitor;
+use xed_enum::*;
 
 use crate::x86_machine::X86MachineState;
 
@@ -12,7 +12,7 @@ impl X86MachineState<'_> {
         match instr {
             X86Instruction::AAA(aaa) => self.apply_iform_aaa(aaa),
             X86Instruction::ADC(adc) => self.apply_iform_adc(adc),
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
@@ -21,12 +21,10 @@ impl X86MachineState<'_> {
 
 pub mod PUNPCKLDQV;
 
-pub struct SemanticsVisitor{
-
-}
-impl X86InstructionVisitor for SemanticsVisitor{
+pub struct SemanticsVisitor {}
+impl X86InstructionVisitor for SemanticsVisitor {
     fn visit_PUNPCKLDQ(&self, _0: PUNPCKLDQ) {
-        PUNPCKLDQVSemanticsVisitor{}.visit(_0)
+        PUNPCKLDQVSemanticsVisitor {}.visit(_0)
     }
     fn visit_CVTPS2PI(&self, _0: CVTPS2PI) {}
     fn visit_VPSRLW(&self, _0: VPSRLW) {}

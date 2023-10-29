@@ -14,3 +14,4 @@ itertools = "0.10"
 proc-macro2 = "1"
 quote = "1"
 xed-sys = { git = "https://github.com/rust-xed/xed-sys.git" }
+enum-iterator = { version = "1.4.1" }

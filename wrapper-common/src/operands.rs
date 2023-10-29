@@ -1,10 +1,14 @@
-use capstone::arch::x86::{X86Operand, X86OperandType};
-use crate::registers::{Reg16WithoutRIP, Reg16WithRIP, Reg32WithoutRIP, Reg32WithRIP, Reg64WithoutRIP, Reg64WithRIP, Reg8, RegBnd, RegControl, RegControlExtra, RegDebug, RegFloat, Register, RegMask, RegMMX, RegSegment, RegTMM, RegXMM, RegYMM, RegZMM};
-use serde::{Deserialize, Serialize};
 use crate::memory_operand::MemoryOperand;
+use crate::registers::{
+    Reg16WithRIP, Reg16WithoutRIP, Reg32WithRIP, Reg32WithoutRIP, Reg64WithRIP, Reg64WithoutRIP,
+    Reg8, RegBnd, RegControl, RegControlExtra, RegDebug, RegFloat, RegMMX, RegMask, RegSegment,
+    RegTMM, RegXMM, RegYMM, RegZMM, Register,
+};
+use capstone::arch::x86::{X86Operand, X86OperandType};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub enum OperandImm{
+pub enum OperandImm {
     Imm64(i64),
     Imm32(i32),
     Imm16(i16),
@@ -17,23 +21,20 @@ pub enum Operand {
     Imm(OperandImm),
 }
 
-impl Operand{
-    pub fn from_capstone(operand: &X86Operand) -> Self{
+impl Operand {
+    pub fn from_capstone(operand: &X86Operand) -> Self {
         match operand.op_type {
-            X86OperandType::Reg(reg) => {
-                Self::Reg(Register::from_capstone(reg, operand))
-            }
+            X86OperandType::Reg(reg) => Self::Reg(Register::from_capstone(reg, operand)),
             X86OperandType::Imm(imm) => {
-                if operand.size == 8{
+                if operand.size == 8 {
                     Self::Imm(OperandImm::Imm64(imm))
-                } else if operand.size == 4{
+                } else if operand.size == 4 {
                     Self::Imm(OperandImm::Imm32(imm as i32))
-                } else if operand.size == 2{
+                } else if operand.size == 2 {
                     Self::Imm(OperandImm::Imm16(imm as i16))
-                }else if operand.size == 1{
+                } else if operand.size == 1 {
                     Self::Imm(OperandImm::Imm8(imm as i8))
-                }
-                else {
+                } else {
                     dbg!(operand.size);
                     todo!()
                 }
@@ -51,10 +52,10 @@ impl Operand{
         todo!()
     }
 
-    pub fn unwrap_reg(&self) -> &Register{
+    pub fn unwrap_reg(&self) -> &Register {
         match self {
             Operand::Reg(reg) => reg,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 

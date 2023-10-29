@@ -27,17 +27,23 @@ impl X86MachineState<'_> {
             AAA::AAA {} => {
                 let mut semantics = SemanticsBuilder::new();
                 let mut semantics = semantics.undefined_exception_if_64_bit();
-                let condition = semantics.less(semantics.constant(9), semantics.al() & semantics.constant(0)) |
-                    semantics.equal(semantics.af(), semantics.constant(true));
-                semantics.emit_conditional(condition, |mut semantics| {
-                    semantics.set_ax(semantics.ax() + semantics.constant(0x106));
-                    semantics.set_af(semantics.constant(true));
-                    semantics.set_cf(semantics.constant(true));
-                }, |mut semantics| {
-                    semantics.set_af(semantics.constant(false));
-                    semantics.set_cf(semantics.constant(false));
-                });
-                semantics.set_al(semantics.al() & semantics.constant(0));//todo is this a zero?
+                let condition = semantics.less(
+                    semantics.constant(9),
+                    semantics.al() & semantics.constant(0),
+                ) | semantics.equal(semantics.af(), semantics.constant(true));
+                semantics.emit_conditional(
+                    condition,
+                    |mut semantics| {
+                        semantics.set_ax(semantics.ax() + semantics.constant(0x106));
+                        semantics.set_af(semantics.constant(true));
+                        semantics.set_cf(semantics.constant(true));
+                    },
+                    |mut semantics| {
+                        semantics.set_af(semantics.constant(false));
+                        semantics.set_cf(semantics.constant(false));
+                    },
+                );
+                semantics.set_al(semantics.al() & semantics.constant(0)); //todo is this a zero?
             }
         }
     }

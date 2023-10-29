@@ -35,8 +35,8 @@ members = [
 ]
 
 
-[profile.test]
-opt-level = 2
-debug = true
-overflow-checks = false
-lto = false
+#[profile.test]
+#opt-level = 2
+#debug = true
+#overflow-checks = false
+#lto = false

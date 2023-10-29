@@ -65,12 +65,26 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn new_general_register_value(&mut self, reg: RegisterOrParameter64, value: TypedExpression64) {
-        self.elements.push(RuleElement::NewGeneralRegisterValue { register: reg, value })
+    pub fn new_general_register_value(
+        &mut self,
+        reg: RegisterOrParameter64,
+        value: TypedExpression64,
+    ) {
+        self.elements.push(RuleElement::NewGeneralRegisterValue {
+            register: reg,
+            value,
+        })
     }
 
-    pub fn new_vector_register_value(&mut self, reg: RegisterOrParameterXMM, value: TypedExpression256) {
-        self.elements.push(RuleElement::NewVectorRegisterValue { register: reg, value })
+    pub fn new_vector_register_value(
+        &mut self,
+        reg: RegisterOrParameterXMM,
+        value: TypedExpression256,
+    ) {
+        self.elements.push(RuleElement::NewVectorRegisterValue {
+            register: reg,
+            value,
+        })
     }
 
     pub fn new_flags_value(&mut self, flags: NewFlags) {
@@ -97,7 +111,6 @@ impl Rule {
 pub struct MemoryValuesDiff {
     pub(crate) stores: Vec<TypedExpression64>,
 }
-
 
 pub struct ReplaceWith {
     pub _256: TypedExpression256,
@@ -149,7 +162,11 @@ pub enum TypedExpression {
 }
 
 impl TypedExpression {
-    pub(crate) fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpression {
+    pub(crate) fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpression {
         match self {
             TypedExpression::_64(_64) => {
                 TypedExpression::_64(_64.operand_replace(op, replace_with))
@@ -175,7 +192,7 @@ impl TypedExpression {
             TypedExpression::_16(_) => {
                 todo!()
             }
-            other => todo!("{other:?}")
+            other => todo!("{other:?}"),
         }
     }
 
@@ -206,35 +223,35 @@ impl TypedExpression {
     pub fn unwrap_1(self) -> TypedExpression1 {
         match self {
             TypedExpression::_1(inner) => inner,
-            _ => panic!("{:?}", self)
+            _ => panic!("{:?}", self),
         }
     }
 
     pub fn unwrap_8(self) -> TypedExpression8 {
         match self {
             TypedExpression::_8(inner) => inner,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
     pub fn unwrap_9(self) -> TypedExpression9 {
         match self {
             TypedExpression::_9(inner) => inner,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
     pub fn unwrap_64(self) -> TypedExpression64 {
         match self {
             TypedExpression::_64(inner) => inner,
-            _ => panic!("{:?}", self)
+            _ => panic!("{:?}", self),
         }
     }
 
     pub fn unwrap_128(self) -> TypedExpression128 {
         match self {
             TypedExpression::_128(inner) => inner,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -242,7 +259,7 @@ impl TypedExpression {
         // eprintln!("{}", serde_json::to_string_pretty(&self).unwrap());
         match self {
             TypedExpression::_256(inner) => inner,
-            other => panic!("{other:?}")
+            other => panic!("{other:?}"),
         }
     }
 }
@@ -324,126 +341,133 @@ impl TypedExpression {
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression120 {
-    Concatenate1128 { left: Box<TypedExpression8>, right: Box<TypedExpression112> },
+    Concatenate1128 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression112>,
+    },
 }
 
 impl TypedExpression120 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate1128 { left, right } => {
-                Self::Concatenate1128 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate1128 { left, right } => Self::Concatenate1128 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression112 {
-    Concatenate1048 { left: Box<TypedExpression8>, right: Box<TypedExpression104> },
+    Concatenate1048 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression104>,
+    },
 }
 
 impl TypedExpression112 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate1048 { left, right } => {
-                Self::Concatenate1048 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate1048 { left, right } => Self::Concatenate1048 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression104 {
-    Concatenate968 { left: Box<TypedExpression8>, right: Box<TypedExpression96> },
+    Concatenate968 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression96>,
+    },
 }
 
 impl TypedExpression104 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate968 { left, right } => {
-                Self::Concatenate968 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate968 { left, right } => Self::Concatenate968 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression96 {
-    Concatenate888 { left: Box<TypedExpression8>, right: Box<TypedExpression88> },
+    Concatenate888 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression88>,
+    },
 }
 
 impl TypedExpression96 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate888 { left, right } => {
-                Self::Concatenate888 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate888 { left, right } => Self::Concatenate888 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression88 {
-    Concatenate880 { left: Box<TypedExpression8>, right: Box<TypedExpression80> },
+    Concatenate880 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression80>,
+    },
 }
 
 impl TypedExpression88 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate880 { left, right } => {
-                Self::Concatenate880 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate880 { left, right } => Self::Concatenate880 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression80 {
-    Concatenate872 { left: Box<TypedExpression8>, right: Box<TypedExpression72> },
+    Concatenate872 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression72>,
+    },
 }
 
 impl TypedExpression80 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate872 { left, right } => {
-                Self::Concatenate872 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate872 { left, right } => Self::Concatenate872 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression72 {
-    Concatenate864 { left: Box<TypedExpression8>, right: Box<TypedExpression64> },
+    Concatenate864 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression64>,
+    },
 }
 
 impl TypedExpression72 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate864 { left, right } => {
-                Self::Concatenate864 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            Self::Concatenate864 { left, right } => Self::Concatenate864 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
@@ -451,27 +475,48 @@ impl TypedExpression72 {
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression64 {
     OperandR8 {
-        operand_idx: OperandIdx
+        operand_idx: OperandIdx,
     },
     Concatenate568 {
         left: Box<TypedExpression56>,
         right: Box<TypedExpression8>,
     },
-    OperandR64 { operand_idx: OperandIdx },
-    R64 { reg: Reg64WithRIP },
+    OperandR64 {
+        operand_idx: OperandIdx,
+    },
+    R64 {
+        reg: Reg64WithRIP,
+    },
     Load(Box<TypedExpression64>),
     Store {
         //todo this doesn't belong here, since it returns nothing
         address: Box<TypedExpression64>,
         value: Box<TypedExpression64>,
     },
-    Sub { left: Box<TypedExpression64>, right: Box<TypedExpression64> },
+    Sub {
+        left: Box<TypedExpression64>,
+        right: Box<TypedExpression64>,
+    },
     Constant(i128),
-    Extract128 { source: Box<TypedExpression128>, base: usize },
-    Float2MInt { inner: Box<TypedExpressionF64> },
-    And { left: Box<TypedExpression64>, right: Box<TypedExpression64> },
-    Extract256 { source: Box<TypedExpression256>, base: usize },
-    Concatenate856 { left: Box<TypedExpression8>, right: Box<TypedExpression56> },
+    Extract128 {
+        source: Box<TypedExpression128>,
+        base: usize,
+    },
+    Float2MInt {
+        inner: Box<TypedExpressionF64>,
+    },
+    And {
+        left: Box<TypedExpression64>,
+        right: Box<TypedExpression64>,
+    },
+    Extract256 {
+        source: Box<TypedExpression256>,
+        base: usize,
+    },
+    Concatenate856 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression56>,
+    },
 }
 
 impl TypedExpression64 {
@@ -479,7 +524,7 @@ impl TypedExpression64 {
         match self {
             TypedExpression64::OperandR8 { operand_idx } => {
                 if operand_idx == &op {
-                    todo!()/*replace_with.unwrap_8()*/
+                    todo!() /*replace_with.unwrap_8()*/
                 } else {
                     self.clone()
                 }
@@ -500,30 +545,23 @@ impl TypedExpression64 {
             TypedExpression64::Load(addr) => {
                 TypedExpression64::Load(Box::new(addr.operand_replace(op, replace_with)))
             }
-            TypedExpression64::Store { address, value } => {
-                TypedExpression64::Store {
-                    address: Box::new(address.operand_replace(op, replace_with)),
-                    value: Box::new(value.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpression64::Sub { left, right } => {
-                TypedExpression64::Sub {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpression64::R64 { reg } => {
-                TypedExpression64::R64 { reg: *reg }
-            }
-            TypedExpression64::Constant(con) => {
-                TypedExpression64::Constant(*con)
-            }
-            TypedExpression64::Extract128 { source, base } => {
-                TypedExpression64::Extract128 { source: Box::new(source.operand_replace(op, replace_with)), base: *base }
-            }
-            TypedExpression64::Float2MInt { inner } => {
-                TypedExpression64::Float2MInt { inner: Box::new(inner.operand_replace(op, replace_with)) }
-            }
+            TypedExpression64::Store { address, value } => TypedExpression64::Store {
+                address: Box::new(address.operand_replace(op, replace_with)),
+                value: Box::new(value.operand_replace(op, replace_with)),
+            },
+            TypedExpression64::Sub { left, right } => TypedExpression64::Sub {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpression64::R64 { reg } => TypedExpression64::R64 { reg: *reg },
+            TypedExpression64::Constant(con) => TypedExpression64::Constant(*con),
+            TypedExpression64::Extract128 { source, base } => TypedExpression64::Extract128 {
+                source: Box::new(source.operand_replace(op, replace_with)),
+                base: *base,
+            },
+            TypedExpression64::Float2MInt { inner } => TypedExpression64::Float2MInt {
+                inner: Box::new(inner.operand_replace(op, replace_with)),
+            },
             TypedExpression64::And { .. } => {
                 todo!()
             }
@@ -540,7 +578,6 @@ impl TypedExpression64 {
     }
 }
 
-
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression56 {
     Extract64 {
@@ -548,7 +585,10 @@ pub enum TypedExpression56 {
         base: usize,
     },
     Load(Box<TypedExpression64>),
-    Concatenate848 { left: Box<TypedExpression8>, right: Box<TypedExpression48> },
+    Concatenate848 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression48>,
+    },
 }
 
 impl TypedExpression56 {
@@ -556,7 +596,10 @@ impl TypedExpression56 {
         match self {
             TypedExpression56::Extract64 { source, base } => {
                 let source = source.operand_replace(op, replace_with);
-                TypedExpression56::Extract64 { source, base: *base }
+                TypedExpression56::Extract64 {
+                    source,
+                    base: *base,
+                }
             }
             TypedExpression56::Load(_) => {
                 todo!()
@@ -573,90 +616,95 @@ impl TypedExpression56 {
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression48 {
-    Concatenate840 { left: Box<TypedExpression8>, right: Box<TypedExpression40> },
+    Concatenate840 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression40>,
+    },
 }
 
 impl TypedExpression48 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate840 { left, right } => {
-                Self::Concatenate840 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with))
-                }
-            }
+            Self::Concatenate840 { left, right } => Self::Concatenate840 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression40 {
-    Concatenate832 { left: Box<TypedExpression8>, right: Box<TypedExpression32> },
+    Concatenate832 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression32>,
+    },
 }
 
 impl TypedExpression40 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate832 { left, right } => {
-                Self::Concatenate832 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with))
-                }
-            }
+            Self::Concatenate832 { left, right } => Self::Concatenate832 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression32 {
-    Concatenate824 { left: Box<TypedExpression8>, right: Box<TypedExpression24> },
+    Concatenate824 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression24>,
+    },
 }
 
 impl TypedExpression32 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate824 { left, right } => {
-                Self::Concatenate824 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with))
-                }
-            }
+            Self::Concatenate824 { left, right } => Self::Concatenate824 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression24 {
-    Concatenate816 { left: Box<TypedExpression8>, right: Box<TypedExpression16> },
+    Concatenate816 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression16>,
+    },
 }
 
 impl TypedExpression24 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate816 { left, right } => {
-                Self::Concatenate816 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with))
-                }
-            }
+            Self::Concatenate816 { left, right } => Self::Concatenate816 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression16 {
-    Concatenate88 { left: Box<TypedExpression8>, right: Box<TypedExpression8> },
+    Concatenate88 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression8>,
+    },
 }
 
 impl TypedExpression16 {
     pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> Self {
         match self {
-            Self::Concatenate88 { left, right } => {
-                Self::Concatenate88 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with))
-                }
-            }
+            Self::Concatenate88 { left, right } => Self::Concatenate88 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
         }
     }
 }
@@ -682,22 +730,55 @@ pub enum TypedExpression9 {
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression8 {
-    Extract { source: TypedExpression64, base: usize },
-    Extract9 { source: TypedExpression9, base: usize },
-    Extract64 { source: TypedExpression64, base: usize },
+    Extract {
+        source: TypedExpression64,
+        base: usize,
+    },
+    Extract9 {
+        source: TypedExpression9,
+        base: usize,
+    },
+    Extract64 {
+        source: TypedExpression64,
+        base: usize,
+    },
     Constant(i16),
-    Store { address: Box<TypedExpression64>, value: Box<TypedExpression8> },
-    And { left: Box<TypedExpression8>, right: Box<TypedExpression8> },
-    OperandR8 { operand_idx: OperandIdx },
+    Store {
+        address: Box<TypedExpression64>,
+        value: Box<TypedExpression8>,
+    },
+    And {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression8>,
+    },
+    OperandR8 {
+        operand_idx: OperandIdx,
+    },
     Load(Box<TypedExpression64>),
-    OperandR1 { operand_idx: OperandIdx },
-    Extract128 { source: TypedExpression128, base: usize },
-    Extract256 { source: TypedExpression256, base: usize },
-    IfThenElse { condition: TypedExpression1, true_case: Box<TypedExpression8>, false_case: Box<TypedExpression8> },
+    OperandR1 {
+        operand_idx: OperandIdx,
+    },
+    Extract128 {
+        source: TypedExpression128,
+        base: usize,
+    },
+    Extract256 {
+        source: TypedExpression256,
+        base: usize,
+    },
+    IfThenElse {
+        condition: TypedExpression1,
+        true_case: Box<TypedExpression8>,
+        false_case: Box<TypedExpression8>,
+    },
 }
 
 impl TypedExpression8 {
-    pub(crate) fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpression8 {
+    pub(crate) fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpression8 {
         match self {
             TypedExpression8::Extract { .. } => {
                 todo!()
@@ -705,19 +786,18 @@ impl TypedExpression8 {
             TypedExpression8::Extract9 { .. } => {
                 todo!()
             }
-            TypedExpression8::Extract64 { source, base } => {
-                TypedExpression8::Extract64 { source: source.operand_replace(op, replace_with), base: *base }
-            }
+            TypedExpression8::Extract64 { source, base } => TypedExpression8::Extract64 {
+                source: source.operand_replace(op, replace_with),
+                base: *base,
+            },
             TypedExpression8::Constant(con) => TypedExpression8::Constant(*con),
             TypedExpression8::Store { .. } => {
                 todo!()
             }
-            TypedExpression8::And { left, right } => {
-                TypedExpression8::And {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
+            TypedExpression8::And { left, right } => TypedExpression8::And {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
             TypedExpression8::OperandR8 { operand_idx } => {
                 if &op == operand_idx {
                     return replace_with._8.clone();
@@ -730,19 +810,23 @@ impl TypedExpression8 {
             TypedExpression8::OperandR1 { .. } => {
                 todo!()
             }
-            TypedExpression8::Extract128 { source, base } => {
-                TypedExpression8::Extract128 { source: source.operand_replace(op, replace_with), base: *base }
-            }
-            TypedExpression8::Extract256 { source, base } => {
-                TypedExpression8::Extract256 { source: source.operand_replace(op, replace_with), base: *base }
-            }
-            TypedExpression8::IfThenElse { condition, true_case, false_case } => {
-                TypedExpression8::IfThenElse {
-                    condition: condition.operand_replace(op, replace_with),
-                    true_case: Box::new(true_case.operand_replace(op, replace_with)),
-                    false_case: Box::new(false_case.operand_replace(op, replace_with)),
-                }
-            }
+            TypedExpression8::Extract128 { source, base } => TypedExpression8::Extract128 {
+                source: source.operand_replace(op, replace_with),
+                base: *base,
+            },
+            TypedExpression8::Extract256 { source, base } => TypedExpression8::Extract256 {
+                source: source.operand_replace(op, replace_with),
+                base: *base,
+            },
+            TypedExpression8::IfThenElse {
+                condition,
+                true_case,
+                false_case,
+            } => TypedExpression8::IfThenElse {
+                condition: condition.operand_replace(op, replace_with),
+                true_case: Box::new(true_case.operand_replace(op, replace_with)),
+                false_case: Box::new(false_case.operand_replace(op, replace_with)),
+            },
         }
     }
 }
@@ -760,95 +844,120 @@ pub enum TypedExpression1 {
         true_case: Box<TypedExpression1>,
         false_case: Box<TypedExpression1>,
     },
-    Extract9 { source: Box<TypedExpression9>, base: usize },
+    Extract9 {
+        source: Box<TypedExpression9>,
+        base: usize,
+    },
     Not(Box<TypedExpression1>),
     XorBool {
         left: Box<TypedExpression1>,
         right: Box<TypedExpression1>,
     },
-    Extract64 { source: Box<TypedExpression64>, base: usize },
-    Xor { left: Box<TypedExpression1>, right: Box<TypedExpression1> },
-    Equals8 { left: Box<TypedExpression8>, right: Box<TypedExpression8> },
-    AndBool { left: Box<TypedExpression1>, right: Box<TypedExpression1> },
+    Extract64 {
+        source: Box<TypedExpression64>,
+        base: usize,
+    },
+    Xor {
+        left: Box<TypedExpression1>,
+        right: Box<TypedExpression1>,
+    },
+    Equals8 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression8>,
+    },
+    AndBool {
+        left: Box<TypedExpression1>,
+        right: Box<TypedExpression1>,
+    },
     Load(Box<TypedExpression64>),
-    And { left: Box<TypedExpression1>, right: Box<TypedExpression1> },
+    And {
+        left: Box<TypedExpression1>,
+        right: Box<TypedExpression1>,
+    },
     Undefined,
-    OperandR1 { operand_idx: OperandIdx },
-    Extract8 { source: Box<TypedExpression8>, base: usize },
-    Extract256 { source: Box<TypedExpression256>, base: usize },
+    OperandR1 {
+        operand_idx: OperandIdx,
+    },
+    Extract8 {
+        source: Box<TypedExpression8>,
+        base: usize,
+    },
+    Extract256 {
+        source: Box<TypedExpression256>,
+        base: usize,
+    },
 }
 
-
 impl TypedExpression1 {
-    pub(crate) fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpression1 {
+    pub(crate) fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpression1 {
         match self {
             TypedExpression1::FlagCF => {
                 todo!()
             }
-            TypedExpression1::Constant(const_) => {
-                TypedExpression1::Constant(*const_)
-            }
-            TypedExpression1::Equals1 { left, right } => {
-                TypedExpression1::Equals1 {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpression1::IfThenElse { condition, true_case, false_case } => {
-                TypedExpression1::IfThenElse {
-                    condition: Box::new(condition.operand_replace(op, replace_with)),
-                    true_case: Box::new(true_case.operand_replace(op, replace_with)),
-                    false_case: Box::new(false_case.operand_replace(op, replace_with)),
-                }
-            }
+            TypedExpression1::Constant(const_) => TypedExpression1::Constant(*const_),
+            TypedExpression1::Equals1 { left, right } => TypedExpression1::Equals1 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpression1::IfThenElse {
+                condition,
+                true_case,
+                false_case,
+            } => TypedExpression1::IfThenElse {
+                condition: Box::new(condition.operand_replace(op, replace_with)),
+                true_case: Box::new(true_case.operand_replace(op, replace_with)),
+                false_case: Box::new(false_case.operand_replace(op, replace_with)),
+            },
             TypedExpression1::Extract9 { .. } => {
                 todo!()
             }
             TypedExpression1::Not(inner) => {
                 TypedExpression1::Not(Box::new(inner.operand_replace(op, replace_with)))
             }
-            TypedExpression1::XorBool { left, right } => {
-                TypedExpression1::XorBool {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpression1::Extract64 { source, base } => {
-                TypedExpression1::Extract64 { source: Box::new(source.operand_replace(op, replace_with)), base: *base }
-            }
+            TypedExpression1::XorBool { left, right } => TypedExpression1::XorBool {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpression1::Extract64 { source, base } => TypedExpression1::Extract64 {
+                source: Box::new(source.operand_replace(op, replace_with)),
+                base: *base,
+            },
             TypedExpression1::Xor { .. } => {
                 todo!()
             }
-            TypedExpression1::Equals8 { left, right } => {
-                TypedExpression1::Equals8 { left: Box::new(left.operand_replace(op, replace_with)), right: Box::new(right.operand_replace(op, replace_with)) }
-            }
+            TypedExpression1::Equals8 { left, right } => TypedExpression1::Equals8 {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
             TypedExpression1::AndBool { .. } => {
                 todo!()
             }
             TypedExpression1::Load(_) => {
                 todo!()
             }
-            TypedExpression1::And { left, right } => {
-                TypedExpression1::And {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpression1::Undefined => {
-                TypedExpression1::Undefined
-            }
+            TypedExpression1::And { left, right } => TypedExpression1::And {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpression1::Undefined => TypedExpression1::Undefined,
             TypedExpression1::OperandR1 { operand_idx } => {
                 if op == *operand_idx {
                     return replace_with._1.clone();
                 }
                 todo!()
             }
-            TypedExpression1::Extract8 { source, base } => {
-                TypedExpression1::Extract8 { source: Box::new(source.operand_replace(op, replace_with)), base: *base }
-            }
-            TypedExpression1::Extract256 { source, base } => {
-                TypedExpression1::Extract256 { source: Box::new(source.operand_replace(op, replace_with)), base: *base }
-            }
+            TypedExpression1::Extract8 { source, base } => TypedExpression1::Extract8 {
+                source: Box::new(source.operand_replace(op, replace_with)),
+                base: *base,
+            },
+            TypedExpression1::Extract256 { source, base } => TypedExpression1::Extract256 {
+                source: Box::new(source.operand_replace(op, replace_with)),
+                base: *base,
+            },
         }
     }
 }
@@ -856,18 +965,38 @@ impl TypedExpression1 {
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression128 {
     Constant(i128),
-    OperandR128 { operand_idx: OperandIdx },
-    Concatenate6464 { left: Box<TypedExpression64>, right: Box<TypedExpression64> },
+    OperandR128 {
+        operand_idx: OperandIdx,
+    },
+    Concatenate6464 {
+        left: Box<TypedExpression64>,
+        right: Box<TypedExpression64>,
+    },
     Load(Box<TypedExpression64>),
-    OperandR256 { operand_idx: OperandIdx },
-    Extract256 { source: Box<TypedExpression256>, base: usize },
+    OperandR256 {
+        operand_idx: OperandIdx,
+    },
+    Extract256 {
+        source: Box<TypedExpression256>,
+        base: usize,
+    },
     Neg(Box<TypedExpression128>),
-    And { left: Box<TypedExpression128>, right: Box<TypedExpression128> },
-    Concatenate1208 { left: Box<TypedExpression8>, right: Box<TypedExpression120> },
+    And {
+        left: Box<TypedExpression128>,
+        right: Box<TypedExpression128>,
+    },
+    Concatenate1208 {
+        left: Box<TypedExpression8>,
+        right: Box<TypedExpression120>,
+    },
 }
 
 impl TypedExpression128 {
-    pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpression128 {
+    pub fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpression128 {
         match self {
             TypedExpression128::Constant(_) => {
                 todo!()
@@ -887,9 +1016,10 @@ impl TypedExpression128 {
             TypedExpression128::OperandR256 { .. } => {
                 todo!()
             }
-            TypedExpression128::Extract256 { source, base } => {
-                TypedExpression128::Extract256 { source: Box::new(source.operand_replace(op, replace_with)), base: *base }
-            }
+            TypedExpression128::Extract256 { source, base } => TypedExpression128::Extract256 {
+                source: Box::new(source.operand_replace(op, replace_with)),
+                base: *base,
+            },
             TypedExpression128::Neg(_) => {
                 todo!()
             }
@@ -897,7 +1027,10 @@ impl TypedExpression128 {
                 todo!()
             }
             TypedExpression128::Concatenate1208 { left, right } => {
-                TypedExpression128::Concatenate1208 { left: Box::new(left.operand_replace(op, replace_with)), right: Box::new(right.operand_replace(op, replace_with)) }
+                TypedExpression128::Concatenate1208 {
+                    left: Box::new(left.operand_replace(op, replace_with)),
+                    right: Box::new(right.operand_replace(op, replace_with)),
+                }
             }
         }
     }
@@ -905,49 +1038,74 @@ impl TypedExpression128 {
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpressionF64 {
-    FloatAdd { left: Box<TypedExpressionF64>, right: Box<TypedExpressionF64> },
-    FloatMul { left: Box<TypedExpressionF64>, right: Box<TypedExpressionF64> },
-    MInt2Float { from: TypedExpression64, range_end: i32, range_start: i32 },
+    FloatAdd {
+        left: Box<TypedExpressionF64>,
+        right: Box<TypedExpressionF64>,
+    },
+    FloatMul {
+        left: Box<TypedExpressionF64>,
+        right: Box<TypedExpressionF64>,
+    },
+    MInt2Float {
+        from: TypedExpression64,
+        range_end: i32,
+        range_start: i32,
+    },
 }
 
 impl TypedExpressionF64 {
-    pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpressionF64 {
+    pub fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpressionF64 {
         match self {
-            TypedExpressionF64::FloatAdd { left, right } => {
-                TypedExpressionF64::FloatAdd {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpressionF64::FloatMul { left, right } => {
-                TypedExpressionF64::FloatMul {
-                    left: Box::new(left.operand_replace(op, replace_with)),
-                    right: Box::new(right.operand_replace(op, replace_with)),
-                }
-            }
-            TypedExpressionF64::MInt2Float { from, range_end, range_start } => {
-                TypedExpressionF64::MInt2Float {
-                    from: from.operand_replace(op, replace_with),
-                    range_end: *range_end,
-                    range_start: *range_start,
-                }
-            }
+            TypedExpressionF64::FloatAdd { left, right } => TypedExpressionF64::FloatAdd {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpressionF64::FloatMul { left, right } => TypedExpressionF64::FloatMul {
+                left: Box::new(left.operand_replace(op, replace_with)),
+                right: Box::new(right.operand_replace(op, replace_with)),
+            },
+            TypedExpressionF64::MInt2Float {
+                from,
+                range_end,
+                range_start,
+            } => TypedExpressionF64::MInt2Float {
+                from: from.operand_replace(op, replace_with),
+                range_end: *range_end,
+                range_start: *range_start,
+            },
         }
     }
 }
 
-
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TypedExpression256 {
-    Concatenate128128 { left: Box<TypedExpression128>, right: Box<TypedExpression128> },
+    Concatenate128128 {
+        left: Box<TypedExpression128>,
+        right: Box<TypedExpression128>,
+    },
     Load(Box<TypedExpression64>),
-    OperandR256 { operand_idx: OperandIdx },
-    And { left: Box<TypedExpression256>, right: Box<TypedExpression256> },
-    R256 { reg: RegYMM },
+    OperandR256 {
+        operand_idx: OperandIdx,
+    },
+    And {
+        left: Box<TypedExpression256>,
+        right: Box<TypedExpression256>,
+    },
+    R256 {
+        reg: RegYMM,
+    },
 }
 
 impl TypedExpression256 {
-    pub fn operand_replace(&self, op: OperandIdx, replace_with: &ReplaceWith) -> TypedExpression256 {
+    pub fn operand_replace(
+        &self,
+        op: OperandIdx,
+        replace_with: &ReplaceWith,
+    ) -> TypedExpression256 {
         match self {
             TypedExpression256::Concatenate128128 { left, right } => {
                 TypedExpression256::Concatenate128128 {
@@ -967,9 +1125,7 @@ impl TypedExpression256 {
             TypedExpression256::And { .. } => {
                 todo!()
             }
-            TypedExpression256::R256 { .. } => {
-                self.clone()
-            }
+            TypedExpression256::R256 { .. } => self.clone(),
         }
     }
 }

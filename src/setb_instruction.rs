@@ -1,12 +1,12 @@
+use crate::memory_operand::MemoryOperandOrRegister8;
+use crate::registers::Register8;
 use capstone::arch::x86::{X86InsnDetail, X86OperandType};
 use capstone::prelude::DetailsArchInsn;
 use itertools::Itertools;
-use crate::memory_operand::MemoryOperandOrRegister8;
-use crate::registers::Register8;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct SetBInstruction {
-    target: MemoryOperandOrRegister8
+    target: MemoryOperandOrRegister8,
 }
 
 impl SetBInstruction {
@@ -16,11 +16,9 @@ impl SetBInstruction {
             todo!()
         }
         match &operands[0].op_type {
-            X86OperandType::Reg(reg_id) => {
-                SetBInstruction{
-                    target: MemoryOperandOrRegister8::Reg(Register8::new(*reg_id))
-                }
-            }
+            X86OperandType::Reg(reg_id) => SetBInstruction {
+                target: MemoryOperandOrRegister8::Reg(Register8::new(*reg_id)),
+            },
             X86OperandType::Imm(_) => {
                 todo!()
             }

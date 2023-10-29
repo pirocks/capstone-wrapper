@@ -25,51 +25,52 @@ impl SubInstruction {
         }
         let target_op_size = OperandSize::from_capstone_size(operands[0].size);
         match &operands[0].op_type {
-            X86OperandType::Reg(reg_id) => {
-                match target_op_size {
-                    OperandSize::QuadWord => {
-                        let target = MemoryOperandOrRegister64::Reg(Register64::new(*reg_id));
-                        match &operands[1].op_type {
-                            X86OperandType::Reg(reg_id) => {
-                                let to_sub = Register64::new(*reg_id);
-                                SubInstruction::R64Rm64 { target, to_sub }
-                            }
-                            X86OperandType::Imm(imm) => {
-                                SubInstruction::R64Imm32 { target, imm32: (*imm).try_into().expect("Unexpected immediate received from capstone") }
-                            }
-                            X86OperandType::Mem(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Invalid => {
-                                todo!()
-                            }
+            X86OperandType::Reg(reg_id) => match target_op_size {
+                OperandSize::QuadWord => {
+                    let target = MemoryOperandOrRegister64::Reg(Register64::new(*reg_id));
+                    match &operands[1].op_type {
+                        X86OperandType::Reg(reg_id) => {
+                            let to_sub = Register64::new(*reg_id);
+                            SubInstruction::R64Rm64 { target, to_sub }
                         }
-                    }
-                    OperandSize::DoubleWord => {
-                        todo!()
-                    }
-                    OperandSize::Word => {
-                        let target = MemoryOperandOrRegister16::Reg(Register16::new(*reg_id));
-                        match &operands[1].op_type {
-                            X86OperandType::Reg(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Imm(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Mem(_) => {
-                                todo!()
-                            }
-                            X86OperandType::Invalid => {
-                                todo!()
-                            }
+                        X86OperandType::Imm(imm) => SubInstruction::R64Imm32 {
+                            target,
+                            imm32: (*imm)
+                                .try_into()
+                                .expect("Unexpected immediate received from capstone"),
+                        },
+                        X86OperandType::Mem(_) => {
+                            todo!()
                         }
-                    }
-                    OperandSize::HalfWord => {
-                        todo!()
+                        X86OperandType::Invalid => {
+                            todo!()
+                        }
                     }
                 }
-            }
+                OperandSize::DoubleWord => {
+                    todo!()
+                }
+                OperandSize::Word => {
+                    let target = MemoryOperandOrRegister16::Reg(Register16::new(*reg_id));
+                    match &operands[1].op_type {
+                        X86OperandType::Reg(_) => {
+                            todo!()
+                        }
+                        X86OperandType::Imm(_) => {
+                            todo!()
+                        }
+                        X86OperandType::Mem(_) => {
+                            todo!()
+                        }
+                        X86OperandType::Invalid => {
+                            todo!()
+                        }
+                    }
+                }
+                OperandSize::HalfWord => {
+                    todo!()
+                }
+            },
             X86OperandType::Imm(_) => {
                 todo!()
             }

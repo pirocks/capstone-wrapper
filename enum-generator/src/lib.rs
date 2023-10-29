@@ -1,13 +1,17 @@
-use proc_macro::{TokenStream};
+use proc_macro::TokenStream;
+use quote::{format_ident, quote};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::num::NonZeroU8;
-use quote::{format_ident, quote};
 
 use string_concat_utils::concat_camel_case;
-use wrapper_common::instructions::{Instruction, InstructionEncoding, InstructionName, Instructions};
+use wrapper_common::instructions::{
+    Instruction, InstructionEncoding, InstructionName, Instructions,
+};
 use wrapper_common::operand_index::OperandIndex;
-use wrapper_common::operand_type::{Imm, MemoryOperandType, MemoryOperandTypeKind, OperandType, VectorRegisterKind};
+use wrapper_common::operand_type::{
+    Imm, MemoryOperandType, MemoryOperandTypeKind, OperandType, VectorRegisterKind,
+};
 use wrapper_common::registers::RegisterType;
 
 #[derive(Debug)]
@@ -16,7 +20,11 @@ struct VariantNamePretty(String);
 impl VariantNamePretty {
     pub fn new(encoding: &InstructionEncoding) -> Self {
         let mut operand_types = vec![];
-        let InstructionEncoding { bcast, mode_prefix_string, operands } = encoding;
+        let InstructionEncoding {
+            bcast,
+            mode_prefix_string,
+            operands,
+        } = encoding;
         let mut variant_name_components = vec![mode_prefix_string.to_string()];
         if let Some(bcast) = bcast {
             variant_name_components.push(format!("BCast{}", bcast.get()));
@@ -41,7 +49,12 @@ struct InstructionNamePretty(String);
 
 impl InstructionNamePretty {
     pub fn new(instruction_name: &InstructionName) -> Self {
-        InstructionNamePretty(instruction_name.0.replace("{evex} ", "vex").replace("REPE ", "repe"))
+        InstructionNamePretty(
+            instruction_name
+                .0
+                .replace("{evex} ", "vex")
+                .replace("REPE ", "repe"),
+        )
     }
 }
 
@@ -57,97 +70,91 @@ struct VariantEncodingGeneratorData {
 impl VariantEncodingGeneratorData {
     fn operand_to_name(idx: &OperandIndex, op_type: &OperandType) -> Option<String> {
         Some(match op_type {
-            OperandType::Reg(reg) => {
-                match reg {
-                    RegisterType::AllMmx => {
-                        format!("mmx_{}", idx.0)
-                    }
-                    RegisterType::SomeXmm(_) |
-                    RegisterType::AllXmm16 |
-                    RegisterType::AllXmm32 => {
-                        format!("xmm_{}", idx.0)
-                    }
-                    RegisterType::AllYmm16 |
-                    RegisterType::AllYmm32 => {
-                        format!("ymm_{}", idx.0)
-                    }
-                    RegisterType::SomeZmm(_) |
-                    RegisterType::AllZmm32 => {
-                        format!("zmm_{}", idx.0)
-                    }
-                    RegisterType::AllTmm => {
-                        format!("tmm_{}", idx.0)
-                    }
-                    RegisterType::AllMask |
-                    RegisterType::SomeMask(_) => {
-                        format!("mask_{}", idx.0)
-                    }
-                    RegisterType::AllGP64WithoutRIP => {
-                        format!("gp64_{}", idx.0)
-                    }
-                    RegisterType::AllGP64WithRIP => {
-                        format!("gp64_{}", idx.0)
-                    }
-                    RegisterType::AllGP32WithoutRIP => {
-                        format!("gp32_{}", idx.0)
-                    }
-                    RegisterType::SomeGP32(_) |
-                    RegisterType::AllGP32WithRIP => {
-                        format!("gp32_{}", idx.0)
-                    }
-                    RegisterType::AllGP16WithoutRIP => {
-                        format!("gp16_{}", idx.0)
-                    }
-                    RegisterType::SomeGP16(_) |
-                    RegisterType::AllGP16WithRIP => {
-                        format!("gp16_{}", idx.0)
-                    }
-                    RegisterType::AllGP8 => {
-                        format!("gp8_{}", idx.0)
-                    }
-                    RegisterType::SomeGP8(_) => {
-                        format!("gp8_{}", idx.0)
-                    }
-                    RegisterType::AllFloat => {
-                        format!("st_i_{}", idx.0)
-                    }
-                    RegisterType::AllBnd => {
-                        format!("bnd_{}", idx.0)
-                    }
-                    RegisterType::SomeSegment(_) |
-                    RegisterType::AllSegment => {
-                        format!("bnd_{}", idx.0)
-                    }
-                    RegisterType::AllDebug => {
-                        format!("dr_{}", idx.0)
-                    }
-                    RegisterType::SomeControl(_) => {
-                        format!("cr_{}", idx.0)
-                    }
-                    RegisterType::SomeControlExtra(_) => {
-                        format!("cr_{}", idx.0)
-                    }
-                    RegisterType::SingleGP64(_) |
-                    RegisterType::SingleSegment(_) |
-                    RegisterType::SingleFloat(_) |
-                    RegisterType::SingleGP16(_) |
-                    RegisterType::SingleGP8(_) |
-                    RegisterType::SingleGP32(_) |
-                    RegisterType::SingleXmm(_) |
-                    RegisterType::SingleSegmentBase(_) |
-                    RegisterType::SingleFloatControl(_) |
-                    RegisterType::SingleSpecial(_) |
-                    RegisterType::SingleControl(_) => {
-                        return None;
-                    }
-                    RegisterType::AllControl |
-                    RegisterType::Multiple(_) => {
-                        todo!()
-                    }
+            OperandType::Reg(reg) => match reg {
+                RegisterType::AllMmx => {
+                    format!("mmx_{}", idx.0)
                 }
-            }
+                RegisterType::SomeXmm(_) | RegisterType::AllXmm16 | RegisterType::AllXmm32 => {
+                    format!("xmm_{}", idx.0)
+                }
+                RegisterType::AllYmm16 | RegisterType::AllYmm32 => {
+                    format!("ymm_{}", idx.0)
+                }
+                RegisterType::SomeZmm(_) | RegisterType::AllZmm32 => {
+                    format!("zmm_{}", idx.0)
+                }
+                RegisterType::AllTmm => {
+                    format!("tmm_{}", idx.0)
+                }
+                RegisterType::AllMask | RegisterType::SomeMask(_) => {
+                    format!("mask_{}", idx.0)
+                }
+                RegisterType::AllGP64WithoutRIP => {
+                    format!("gp64_{}", idx.0)
+                }
+                RegisterType::AllGP64WithRIP => {
+                    format!("gp64_{}", idx.0)
+                }
+                RegisterType::AllGP32WithoutRIP => {
+                    format!("gp32_{}", idx.0)
+                }
+                RegisterType::SomeGP32(_) | RegisterType::AllGP32WithRIP => {
+                    format!("gp32_{}", idx.0)
+                }
+                RegisterType::AllGP16WithoutRIP => {
+                    format!("gp16_{}", idx.0)
+                }
+                RegisterType::SomeGP16(_) | RegisterType::AllGP16WithRIP => {
+                    format!("gp16_{}", idx.0)
+                }
+                RegisterType::AllGP8 => {
+                    format!("gp8_{}", idx.0)
+                }
+                RegisterType::SomeGP8(_) => {
+                    format!("gp8_{}", idx.0)
+                }
+                RegisterType::AllFloat => {
+                    format!("st_i_{}", idx.0)
+                }
+                RegisterType::AllBnd => {
+                    format!("bnd_{}", idx.0)
+                }
+                RegisterType::SomeSegment(_) | RegisterType::AllSegment => {
+                    format!("bnd_{}", idx.0)
+                }
+                RegisterType::AllDebug => {
+                    format!("dr_{}", idx.0)
+                }
+                RegisterType::SomeControl(_) => {
+                    format!("cr_{}", idx.0)
+                }
+                RegisterType::SomeControlExtra(_) => {
+                    format!("cr_{}", idx.0)
+                }
+                RegisterType::SingleGP64(_)
+                | RegisterType::SingleSegment(_)
+                | RegisterType::SingleFloat(_)
+                | RegisterType::SingleGP16(_)
+                | RegisterType::SingleGP8(_)
+                | RegisterType::SingleGP32(_)
+                | RegisterType::SingleXmm(_)
+                | RegisterType::SingleSegmentBase(_)
+                | RegisterType::SingleFloatControl(_)
+                | RegisterType::SingleSpecial(_)
+                | RegisterType::SingleControl(_) => {
+                    return None;
+                }
+                RegisterType::AllControl | RegisterType::Multiple(_) => {
+                    todo!()
+                }
+            },
             OperandType::Mem(mem) => {
-                let MemoryOperandType { vsib, kind, load:_, store:_ } = mem;
+                let MemoryOperandType {
+                    vsib,
+                    kind,
+                    load: _,
+                    store: _,
+                } = mem;
                 let vsib = match vsib {
                     None => "",
                     Some(VectorRegisterKind::XMM) => "_vsib_xmm",
@@ -173,25 +180,21 @@ impl VariantEncodingGeneratorData {
                 };
                 format!("mem_{}{}_{}", kind_string, vsib, idx.0)
             }
-            OperandType::Imm(imm) => {
-                match imm {
-                    Imm::Imm8 => {
-                        format!("imm_{}", idx.0)
-                    }
-                    Imm::Imm16 => {
-                        format!("imm_{}", idx.0)
-                    }
-                    Imm::Imm32 => {
-                        format!("imm_{}", idx.0)
-                    }
-                    Imm::Imm64 => {
-                        format!("imm_{}", idx.0)
-                    }
+            OperandType::Imm(imm) => match imm {
+                Imm::Imm8 => {
+                    format!("imm_{}", idx.0)
                 }
-            }
-            OperandType::ImmSpecific(_) |
-            OperandType::Flags(_) |
-            OperandType::Agen(_) => {
+                Imm::Imm16 => {
+                    format!("imm_{}", idx.0)
+                }
+                Imm::Imm32 => {
+                    format!("imm_{}", idx.0)
+                }
+                Imm::Imm64 => {
+                    format!("imm_{}", idx.0)
+                }
+            },
+            OperandType::ImmSpecific(_) | OperandType::Flags(_) | OperandType::Agen(_) => {
                 return None;
             }
             OperandType::Rel8 => {
@@ -207,144 +210,84 @@ impl VariantEncodingGeneratorData {
     }
 
     fn operand_to_type_name(op_type: &OperandType) -> Option<String> {
-        Some(match op_type {
-            OperandType::Reg(reg) => {
-                match reg {
-                    RegisterType::AllMmx => {
-                        "RegMMX"
-                    }
-                    RegisterType::SomeXmm(_) |
-                    RegisterType::AllXmm16 |
-                    RegisterType::AllXmm32 => {
+        Some(
+            match op_type {
+                OperandType::Reg(reg) => match reg {
+                    RegisterType::AllMmx => "RegMMX",
+                    RegisterType::SomeXmm(_) | RegisterType::AllXmm16 | RegisterType::AllXmm32 => {
                         "RegXMM"
                     }
-                    RegisterType::AllYmm16 |
-                    RegisterType::AllYmm32 => {
-                        "RegYMM"
-                    }
-                    RegisterType::SomeZmm(_) |
-                    RegisterType::AllZmm32 => {
-                        "RegZMM"
-                    }
-                    RegisterType::AllTmm => {
-                        "RegTMM"
-                    }
-                    RegisterType::AllMask |
-                    RegisterType::SomeMask(_) => {
-                        "RegMask"
-                    }
-                    RegisterType::AllGP64WithoutRIP => {
-                        "Reg64WithoutRIP"
-                    }
-                    RegisterType::AllGP64WithRIP => {
-                        "Reg64WithRIP"
-                    }
-                    RegisterType::AllGP32WithoutRIP => {
-                        "Reg32WithoutRIP"
-                    }
-                    RegisterType::SomeGP32(_) |
-                    RegisterType::AllGP32WithRIP => {
-                        "Reg32WithRIP"
-                    }
-                    RegisterType::AllGP16WithoutRIP => {
-                        "Reg16WithoutRIP"
-                    }
-                    RegisterType::SomeGP16(_) |
-                    RegisterType::AllGP16WithRIP => {
-                        "Reg16WithRIP"
-                    }
-                    RegisterType::AllGP8 => {
-                        "Reg8"
-                    }
-                    RegisterType::SomeGP8(_) => {
-                        "Reg8"
-                    }
-                    RegisterType::AllFloat => {
-                        "RegFloat"
-                    }
-                    RegisterType::AllBnd => {
-                        "RegBnd"
-                    }
-                    RegisterType::SomeSegment(_) |
-                    RegisterType::AllSegment => {
-                        "RegSegment"
-                    }
-                    RegisterType::AllDebug => {
-                        "RegDebug"
-                    }
-                    RegisterType::SomeControl(_) => {
-                        "RegControl"
-                    }
-                    RegisterType::SomeControlExtra(_) => {
-                        "RegControlExtra"
-                    }
-                    RegisterType::SingleGP64(_) |
-                    RegisterType::SingleSegment(_) |
-                    RegisterType::SingleFloat(_) |
-                    RegisterType::SingleGP16(_) |
-                    RegisterType::SingleGP8(_) |
-                    RegisterType::SingleGP32(_) |
-                    RegisterType::SingleXmm(_) |
-                    RegisterType::SingleSegmentBase(_) |
-                    RegisterType::SingleFloatControl(_) |
-                    RegisterType::SingleSpecial(_) |
-                    RegisterType::SingleControl(_) => {
+                    RegisterType::AllYmm16 | RegisterType::AllYmm32 => "RegYMM",
+                    RegisterType::SomeZmm(_) | RegisterType::AllZmm32 => "RegZMM",
+                    RegisterType::AllTmm => "RegTMM",
+                    RegisterType::AllMask | RegisterType::SomeMask(_) => "RegMask",
+                    RegisterType::AllGP64WithoutRIP => "Reg64WithoutRIP",
+                    RegisterType::AllGP64WithRIP => "Reg64WithRIP",
+                    RegisterType::AllGP32WithoutRIP => "Reg32WithoutRIP",
+                    RegisterType::SomeGP32(_) | RegisterType::AllGP32WithRIP => "Reg32WithRIP",
+                    RegisterType::AllGP16WithoutRIP => "Reg16WithoutRIP",
+                    RegisterType::SomeGP16(_) | RegisterType::AllGP16WithRIP => "Reg16WithRIP",
+                    RegisterType::AllGP8 => "Reg8",
+                    RegisterType::SomeGP8(_) => "Reg8",
+                    RegisterType::AllFloat => "RegFloat",
+                    RegisterType::AllBnd => "RegBnd",
+                    RegisterType::SomeSegment(_) | RegisterType::AllSegment => "RegSegment",
+                    RegisterType::AllDebug => "RegDebug",
+                    RegisterType::SomeControl(_) => "RegControl",
+                    RegisterType::SomeControlExtra(_) => "RegControlExtra",
+                    RegisterType::SingleGP64(_)
+                    | RegisterType::SingleSegment(_)
+                    | RegisterType::SingleFloat(_)
+                    | RegisterType::SingleGP16(_)
+                    | RegisterType::SingleGP8(_)
+                    | RegisterType::SingleGP32(_)
+                    | RegisterType::SingleXmm(_)
+                    | RegisterType::SingleSegmentBase(_)
+                    | RegisterType::SingleFloatControl(_)
+                    | RegisterType::SingleSpecial(_)
+                    | RegisterType::SingleControl(_) => {
                         return None;
                     }
-                    RegisterType::AllControl |
-                    RegisterType::Multiple(_) => {
+                    RegisterType::AllControl | RegisterType::Multiple(_) => {
                         todo!()
                     }
+                },
+                OperandType::Mem(_) => "MemoryOperand",
+                OperandType::Imm(imm) => match imm {
+                    Imm::Imm8 => "i8",
+                    Imm::Imm16 => "i16",
+                    Imm::Imm32 => "i32",
+                    Imm::Imm64 => "i64",
+                },
+                OperandType::ImmSpecific(_) | OperandType::Flags(_) | OperandType::Agen(_) => {
+                    return None;
                 }
+                OperandType::Rel8 => "i8",
+                OperandType::Rel16 => "i16",
+                OperandType::Rel32 => "i32",
             }
-            OperandType::Mem(_) => {
-                "MemoryOperand"
-            }
-            OperandType::Imm(imm) => {
-                match imm {
-                    Imm::Imm8 => {
-                        "i8"
-                    }
-                    Imm::Imm16 => {
-                        "i16"
-                    }
-                    Imm::Imm32 => {
-                        "i32"
-                    }
-                    Imm::Imm64 => {
-                        "i64"
-                    }
-                }
-            }
-            OperandType::ImmSpecific(_) |
-            OperandType::Flags(_) |
-            OperandType::Agen(_) => {
-                return None;
-            }
-            OperandType::Rel8 => {
-                "i8"
-            }
-            OperandType::Rel16 => {
-                "i16"
-            }
-            OperandType::Rel32 => {
-                "i32"
-            }
-        }.to_string())
+            .to_string(),
+        )
     }
 
     pub fn new(encoding_data: &InstructionEncoding) -> Self {
-        let InstructionEncoding { bcast, mode_prefix_string, operands } = encoding_data;
+        let InstructionEncoding {
+            bcast,
+            mode_prefix_string,
+            operands,
+        } = encoding_data;
         Self {
             bcast: bcast.clone(),
             mode_prefix_string: mode_prefix_string.to_string(),
             operands: operands.clone(),
-            operand_names: operands.iter().flat_map(|(idx, op_type)| {
-                Some((*idx, Self::operand_to_name(idx, op_type)?))
-            }).collect(),
-            operand_type_names: operands.iter().flat_map(|(idx, op_type)| {
-                Some((*idx, Self::operand_to_type_name(op_type)?))
-            }).collect(),
+            operand_names: operands
+                .iter()
+                .flat_map(|(idx, op_type)| Some((*idx, Self::operand_to_name(idx, op_type)?)))
+                .collect(),
+            operand_type_names: operands
+                .iter()
+                .flat_map(|(idx, op_type)| Some((*idx, Self::operand_to_type_name(op_type)?)))
+                .collect(),
         }
     }
 }
@@ -374,9 +317,7 @@ impl Generator {
             }
             instruction_names.push((instruct_name_pretty, variant_data));
         }
-        Self {
-            instruction_names,
-        }
+        Self { instruction_names }
     }
 }
 
@@ -387,7 +328,6 @@ fn generate_single_instruction_enum() -> Vec<TokenStream> {
 fn generate_from_encoding() -> Vec<TokenStream> {
     todo!()
 }
-
 
 #[proc_macro]
 pub fn make_enums(_: TokenStream) -> TokenStream {
@@ -414,7 +354,7 @@ pub fn make_enums(_: TokenStream) -> TokenStream {
                 }
             });
         }
-        let instruction_name = format_ident!("{}",instruction_name.0.as_str());
+        let instruction_name = format_ident!("{}", instruction_name.0.as_str());
         lower_enums.push(quote! {
             pub enum #instruction_name {
                 #(#enum_variants),*
@@ -423,8 +363,8 @@ pub fn make_enums(_: TokenStream) -> TokenStream {
     }
     let mut upper_variants = vec![];
     for (instruction_name, _) in generator.instruction_names.iter() {
-        let instruction_name1 = format_ident!("{}",instruction_name.0.as_str());
-        let instruction_name2 = format_ident!("{}",instruction_name.0.as_str());
+        let instruction_name1 = format_ident!("{}", instruction_name.0.as_str());
+        let instruction_name2 = format_ident!("{}", instruction_name.0.as_str());
         upper_variants.push(quote! {
             #instruction_name1(#instruction_name2)
         });
@@ -738,13 +678,13 @@ fn unsupported_instruction(s: &str) -> bool {
         "CMPPD" => true,
         "CMPSXADD" => true,
         "CMPLXADD" => true,
-        _ => false
+        _ => false,
     }
 }
 
 fn convert_instruction_name_to_capstone_name(s: &str) -> &str {
     match s {
-        other => other
+        other => other,
     }
 }
 
@@ -783,35 +723,57 @@ pub fn make_from_detail(_: TokenStream) -> TokenStream {
         instruction_encoding_enum.push_str(instruction_name.0.as_str());
         instruction_encoding_enum.push_str(" { ");
         instruction_encoding_enum.push_str(" pub fn from_detail(detail: &X86InsnDetail) -> Self {");
-        instruction_encoding_enum.push_str(" let operands: Vec<X86Operand> = dbg!(detail.operands().collect_vec()); ");
+        instruction_encoding_enum
+            .push_str(" let operands: Vec<X86Operand> = dbg!(detail.operands().collect_vec()); ");
         instruction_encoding_enum.push_str(" let operands = operands.iter().map(|operand|Operand::from_capstone(operand)).collect_vec(); ");
         instruction_encoding_enum.push_str(" dbg!(&operands); ");
         for (variant_i, variant_data) in variants.iter().enumerate() {
             let encoding = &variant_data.encoding;
-            instruction_encoding_enum.push_str(format!("let is_this_variant_{variant_i} = ").as_str());
+            instruction_encoding_enum
+                .push_str(format!("let is_this_variant_{variant_i} = ").as_str());
             for (index, operand_type) in encoding.operands.iter() {
-                instruction_encoding_enum.push_str(format!("operands.len() >= {} && {}.is_of_type(&operands[{}]) && ",
-                                                           index.0.get(),
-                                                           operand_type.to_declaration_string(),
-                                                           index.0.get() - 1)
-                    .as_str());
+                instruction_encoding_enum.push_str(
+                    format!(
+                        "operands.len() >= {} && {}.is_of_type(&operands[{}]) && ",
+                        index.0.get(),
+                        operand_type.to_declaration_string(),
+                        index.0.get() - 1
+                    )
+                    .as_str(),
+                );
             }
             instruction_encoding_enum.push_str(" true;");
         }
         for (variant_i, variant_data) in variants.iter().enumerate() {
             instruction_encoding_enum.push_str(format!("if is_this_variant_{variant_i}").as_str());
             instruction_encoding_enum.push_str("{");
-            instruction_encoding_enum.push_str(format!("return Self::{}{{", variant_data.variant_name.0.as_str()).as_str());
+            instruction_encoding_enum.push_str(
+                format!("return Self::{}{{", variant_data.variant_name.0.as_str()).as_str(),
+            );
             for (idx, name) in variant_data.encoding.operand_names.iter() {
                 let type_string = variant_data.encoding.operand_type_names.get(idx).unwrap();
                 let unwrap_name = type_string.to_ascii_lowercase();
-                instruction_encoding_enum.push_str(format!("{} : operands[{}].unwrap_{}()", name.as_str(), idx.0.get() - 1, unwrap_name).as_str());
+                instruction_encoding_enum.push_str(
+                    format!(
+                        "{} : operands[{}].unwrap_{}()",
+                        name.as_str(),
+                        idx.0.get() - 1,
+                        unwrap_name
+                    )
+                    .as_str(),
+                );
                 instruction_encoding_enum.push_str(" , ");
             }
             instruction_encoding_enum.push_str("};");
             instruction_encoding_enum.push_str("}");
         }
-        instruction_encoding_enum.push_str(format!("panic!(\"Not any variant: {}\")", instruction_name.0.as_str()).as_str());
+        instruction_encoding_enum.push_str(
+            format!(
+                "panic!(\"Not any variant: {}\")",
+                instruction_name.0.as_str()
+            )
+            .as_str(),
+        );
         instruction_encoding_enum.push_str(" } ");
         instruction_encoding_enum.push_str(" } ");
         let token_stream: TokenStream = instruction_encoding_enum.parse().unwrap();
@@ -820,9 +782,6 @@ pub fn make_from_detail(_: TokenStream) -> TokenStream {
     TokenStream::from_iter(res.into_iter())
 }
 
-
 fn get_instruction_metadata() -> Instructions {
     bincode::deserialize_from(Cursor::new(include_bytes!("../../out.bin"))).unwrap()
 }
-
-

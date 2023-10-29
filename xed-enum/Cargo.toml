@@ -9,5 +9,9 @@ edition = "2021"
 xed-enum-generator = { path = "../xed-enum-generator" }
 wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
+#xed-sys = "0.4.0"
 xed-sys = { git = "https://github.com/rust-xed/xed-sys.git" }
 enum-visitor = { path = "../enum-visitor" }
+
+[dev-dependencies]
+capstone = "0.11.0"

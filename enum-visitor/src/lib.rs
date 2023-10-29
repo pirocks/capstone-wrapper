@@ -13,7 +13,7 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
             let mut fields = vec![];
             let mut field_names = vec![];
             let mut single = false;
-            for (i,field) in variant.fields.into_iter().enumerate() {
+            for (i, field) in variant.fields.into_iter().enumerate() {
                 let type_tokens = field.ty.to_token_stream();
                 if let Some(ident) = &field.ident {
                     fields.push(quote! {
@@ -51,7 +51,7 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
                 match_cases.push(quote! {
                     #enum_name::#variant_name( #(#field_names)* ) => self.#visit_ident(#(#field_names_clone),*),
                 });
-            }else {
+            } else {
                 match_cases.push(quote! {
                     #enum_name::#variant_name { #(#field_names),* } => self.#visit_ident(#(#field_names_clone),*),
                 });
@@ -71,8 +71,7 @@ pub fn derive_enum_visitor(_item: TokenStream) -> TokenStream {
             }
         };
         return proc_macro::TokenStream::from(stream);
-    }else {
+    } else {
         panic!("Not an Enum");
     }
 }
-

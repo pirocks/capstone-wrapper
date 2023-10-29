@@ -21,7 +21,7 @@ pub enum FunctionToCall {
     LshrMInt,
     UvalueMInt,
     NegMInt,
-    ShiftLeftMInt
+    ShiftLeftMInt,
 }
 
 impl FunctionToCall {
@@ -49,7 +49,7 @@ impl FunctionToCall {
             "uvalueMInt" => Self::UvalueMInt,
             "negMInt" => Self::NegMInt,
             "shiftLeftMInt" => Self::ShiftLeftMInt,
-            _ => panic!("{}", s)
+            _ => panic!("{}", s),
         }
     }
 }
@@ -71,7 +71,7 @@ pub enum ConstantParameter {
     Imm32,
     Imm8,
     UndefMInt,
-    Mem64
+    Mem64,
 }
 
 impl ConstantParameter {
@@ -94,7 +94,7 @@ impl ConstantParameter {
             "Imm8" => Self::Imm8,
             "undefMInt" => Self::UndefMInt,
             "Mem64" => Self::Mem64,
-            _ => todo!("{}", s.as_str())
+            _ => todo!("{}", s.as_str()),
         }
     }
 }
@@ -119,7 +119,7 @@ pub enum KSemanticsExpr {
     ImplicationSequence(Vec<(KSemanticsExpr, KSemanticsExpr)>),
     RIPLookup {},
     CoerceMInt {
-        inner: Box<KSemanticsExpr>
+        inner: Box<KSemanticsExpr>,
     },
 }
 
@@ -136,9 +136,7 @@ pub struct Tokens {
 impl Tokens {
     pub fn new(mut tokens: Vec<Token>) -> Self {
         tokens.reverse();
-        Self {
-            tokens,
-        }
+        Self { tokens }
     }
 
     pub fn next(&mut self) -> Token {
@@ -168,7 +166,10 @@ impl Tokens {
             }
         }
         self.expect(Token::CloseParen);
-        KSemanticsExpr::FunctionCall { name: function_to_call, args }
+        KSemanticsExpr::FunctionCall {
+            name: function_to_call,
+            args,
+        }
     }
 
     pub fn parse_expression(&mut self) -> KSemanticsExpr {
@@ -196,12 +197,8 @@ impl Tokens {
                         todo!()
                     }
                 }
-                Token::Str(str) => {
-                    KSemanticsExpr::ConstParam(ConstantParameter::new(str))
-                }
-                Token::Number(num) => {
-                    KSemanticsExpr::Num(num)
-                }
+                Token::Str(str) => KSemanticsExpr::ConstParam(ConstantParameter::new(str)),
+                Token::Number(num) => KSemanticsExpr::Num(num),
                 Token::Implication => {
                     dbg!(&self.tokens);
                     todo!()
@@ -219,7 +216,9 @@ impl Tokens {
                     self.expect(Token::CloseCurlyParen);
                     self.expect(Token::ColonGreater);
                     self.expect(Token::Ident("MInt".to_string()));
-                    KSemanticsExpr::CoerceMInt { inner: Box::new(inner) }
+                    KSemanticsExpr::CoerceMInt {
+                        inner: Box::new(inner),
+                    }
                 }
                 Token::CloseParen => {
                     todo!()
@@ -280,7 +279,10 @@ impl Tokens {
                     let name = FunctionToCall::new(next_ident);
                     let _ = self.next();
                     let next_expression = self.parse_expression();
-                    return KSemanticsExpr::FunctionCall { name, args: vec![res, next_expression] };
+                    return KSemanticsExpr::FunctionCall {
+                        name,
+                        args: vec![res, next_expression],
+                    };
                 }
             }
             if let Some(Token::Equal) = self.nth(0) {

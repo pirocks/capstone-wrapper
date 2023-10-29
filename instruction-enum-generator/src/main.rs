@@ -1,8 +1,8 @@
-use std::{io, vec};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Cursor, Read, Write};
 use std::path::PathBuf;
+use std::{io, vec};
 
 use anyhow::{anyhow, Context};
 use clap::Parser;
@@ -112,7 +112,7 @@ pub enum ParsedOperandSimple {
     _0,
     _1,
     _3,
-    M
+    M,
 }
 
 #[derive(Clone, Debug)]
@@ -248,7 +248,6 @@ pub enum ParsedOperand {
     VM64Z,
 }
 
-
 fn main() -> anyhow::Result<()> {
     let Opts { generate_to, csv } = Opts::parse();
     let write_to = get_write_to(generate_to)?;
@@ -302,7 +301,11 @@ fn parse_csv_operands(operand: &str) -> anyhow::Result<Vec<ParsedOperandSimple>>
         "xmm1/m32" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M32],
         "xmm2/m32" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M32],
         "xmm3/m32" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M32],
-        "xmm2/m64/m32bcst" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M64, ParsedOperandSimple::M32BCST],
+        "xmm2/m64/m32bcst" => vec![
+            ParsedOperandSimple::XMM,
+            ParsedOperandSimple::M64,
+            ParsedOperandSimple::M32BCST,
+        ],
         "xmm/m64" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M64],
         "xmm1/m64" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M64],
         "xmm2/m64" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M64],
@@ -311,29 +314,77 @@ fn parse_csv_operands(operand: &str) -> anyhow::Result<Vec<ParsedOperandSimple>>
         "xmm1/m128" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128],
         "xmm2/m128" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128],
         "xmm3/m128" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128],
-        "xmm2/m128/m32bcst" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128, ParsedOperandSimple::M32BCST],
-        "xmm3/m128/m32bcst" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128, ParsedOperandSimple::M32BCST],
-        "xmm2/m128/m64bcst" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128, ParsedOperandSimple::M64BCST],
-        "xmm3/m128/m64bcst" => vec![ParsedOperandSimple::XMM, ParsedOperandSimple::M128, ParsedOperandSimple::M64BCST],
+        "xmm2/m128/m32bcst" => vec![
+            ParsedOperandSimple::XMM,
+            ParsedOperandSimple::M128,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "xmm3/m128/m32bcst" => vec![
+            ParsedOperandSimple::XMM,
+            ParsedOperandSimple::M128,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "xmm2/m128/m64bcst" => vec![
+            ParsedOperandSimple::XMM,
+            ParsedOperandSimple::M128,
+            ParsedOperandSimple::M64BCST,
+        ],
+        "xmm3/m128/m64bcst" => vec![
+            ParsedOperandSimple::XMM,
+            ParsedOperandSimple::M128,
+            ParsedOperandSimple::M64BCST,
+        ],
         "ymm1" => vec![ParsedOperandSimple::YMM],
         "ymm2" => vec![ParsedOperandSimple::YMM],
         "ymm4" => vec![ParsedOperandSimple::YMM],
         "ymm1/m256" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256],
         "ymm2/m256" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256],
         "ymm3/m256" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256],
-        "ymm2/m256/m32bcst" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256, ParsedOperandSimple::M32BCST],
-        "ymm3/m256/m32bcst" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256, ParsedOperandSimple::M32BCST],
-        "ymm2/m256/m64bcst" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256, ParsedOperandSimple::M64BCST],
-        "ymm3/m256/m64bcst" => vec![ParsedOperandSimple::YMM, ParsedOperandSimple::M256, ParsedOperandSimple::M64BCST],
+        "ymm2/m256/m32bcst" => vec![
+            ParsedOperandSimple::YMM,
+            ParsedOperandSimple::M256,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "ymm3/m256/m32bcst" => vec![
+            ParsedOperandSimple::YMM,
+            ParsedOperandSimple::M256,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "ymm2/m256/m64bcst" => vec![
+            ParsedOperandSimple::YMM,
+            ParsedOperandSimple::M256,
+            ParsedOperandSimple::M64BCST,
+        ],
+        "ymm3/m256/m64bcst" => vec![
+            ParsedOperandSimple::YMM,
+            ParsedOperandSimple::M256,
+            ParsedOperandSimple::M64BCST,
+        ],
         "zmm1" => vec![ParsedOperandSimple::ZMM],
         "zmm2" => vec![ParsedOperandSimple::ZMM],
         "zmm1/m512" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512],
         "zmm2/m512" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512],
         "zmm3/m512" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512],
-        "zmm2/m512/m32bcst" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512, ParsedOperandSimple::M32BCST],
-        "zmm3/m512/m32bcst" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512, ParsedOperandSimple::M32BCST],
-        "zmm2/m512/m64bcst" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512, ParsedOperandSimple::M64BCST],
-        "zmm3/m512/m64bcst" => vec![ParsedOperandSimple::ZMM, ParsedOperandSimple::M512, ParsedOperandSimple::M64BCST],
+        "zmm2/m512/m32bcst" => vec![
+            ParsedOperandSimple::ZMM,
+            ParsedOperandSimple::M512,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "zmm3/m512/m32bcst" => vec![
+            ParsedOperandSimple::ZMM,
+            ParsedOperandSimple::M512,
+            ParsedOperandSimple::M32BCST,
+        ],
+        "zmm2/m512/m64bcst" => vec![
+            ParsedOperandSimple::ZMM,
+            ParsedOperandSimple::M512,
+            ParsedOperandSimple::M64BCST,
+        ],
+        "zmm3/m512/m64bcst" => vec![
+            ParsedOperandSimple::ZMM,
+            ParsedOperandSimple::M512,
+            ParsedOperandSimple::M64BCST,
+        ],
         "k1" => vec![ParsedOperandSimple::K],
         "{k1}" => vec![ParsedOperandSimple::KMask],
         "k2" => vec![ParsedOperandSimple::K],
@@ -365,7 +416,11 @@ fn parse_csv_operands(operand: &str) -> anyhow::Result<Vec<ParsedOperandSimple>>
         "mm/m32" => vec![ParsedOperandSimple::MM, ParsedOperandSimple::M32],
         "mm/m64" => vec![ParsedOperandSimple::MM, ParsedOperandSimple::M64],
         "mm2/m64" => vec![ParsedOperandSimple::MM, ParsedOperandSimple::M64],
-        "reg/m32" => vec![ParsedOperandSimple::R32, ParsedOperandSimple::R64, ParsedOperandSimple::M32],
+        "reg/m32" => vec![
+            ParsedOperandSimple::R32,
+            ParsedOperandSimple::R64,
+            ParsedOperandSimple::M32,
+        ],
         "m32fp" => vec![ParsedOperandSimple::M32FP],
         "m64fp" => vec![ParsedOperandSimple::M64FP],
         "ST(0)" => vec![ParsedOperandSimple::ST0],
@@ -402,8 +457,16 @@ fn parse_csv_operands(operand: &str) -> anyhow::Result<Vec<ParsedOperandSimple>>
         "DR0-DR7" => vec![ParsedOperandSimple::DR0DR7],
         "DR8" => vec![ParsedOperandSimple::DR8],
         "r64/m64" => vec![ParsedOperandSimple::R64, ParsedOperandSimple::M64],
-        "reg/m8" => vec![ParsedOperandSimple::R32, ParsedOperandSimple::R64, ParsedOperandSimple::M8],
-        "reg/m16" => vec![ParsedOperandSimple::R32, ParsedOperandSimple::R64, ParsedOperandSimple::M16],
+        "reg/m8" => vec![
+            ParsedOperandSimple::R32,
+            ParsedOperandSimple::R64,
+            ParsedOperandSimple::M8,
+        ],
+        "reg/m16" => vec![
+            ParsedOperandSimple::R32,
+            ParsedOperandSimple::R64,
+            ParsedOperandSimple::M16,
+        ],
         "CS" => vec![ParsedOperandSimple::CS],
         "CL" => vec![ParsedOperandSimple::CL],
         "vm32x" => vec![ParsedOperandSimple::VM32X],
@@ -430,10 +493,17 @@ fn parse_csv(csv_string: Box<dyn Read>) -> anyhow::Result<ParsedCSV> {
     for record in reader.records() {
         let record = record.with_context(|| "parse error")?;
         let mut record_iter = record.iter();
-        let instruction_string = record_iter.next().ok_or(anyhow!("Unexpected end of csv record"))?;
+        let instruction_string = record_iter
+            .next()
+            .ok_or(anyhow!("Unexpected end of csv record"))?;
         let arg_split_regex = regex::Regex::new(" |,|(, )").expect("regex compile failure");
         let mut instruction_split = arg_split_regex.split(instruction_string);
-        let opcode = OpCode(instruction_split.next().ok_or(anyhow!("Unexpected instruction name"))?.to_string());
+        let opcode = OpCode(
+            instruction_split
+                .next()
+                .ok_or(anyhow!("Unexpected instruction name"))?
+                .to_string(),
+        );
         let mut csv_operands = vec![];
         dbg!(&opcode);
         for operand in instruction_split {
@@ -458,21 +528,29 @@ fn parse_csv(csv_string: Box<dyn Read>) -> anyhow::Result<ParsedCSV> {
             csv_operands.push(parse_csv_operands(without_sae_er_z.as_str())?);
         }
 
-        instructions.entry(opcode).or_default().push(CSVEncoding { csv_operands: csv_operands });
+        instructions.entry(opcode).or_default().push(CSVEncoding {
+            csv_operands: csv_operands,
+        });
 
-        let _valid_64_bit = record_iter.next().ok_or(anyhow!("Unexpected end of csv record"))?;
-        let _valid_32_bit = record_iter.next().ok_or(anyhow!("Unexpected end of csv record"))?;
-        let _valid_16_bit = record_iter.next().ok_or(anyhow!("Unexpected end of csv record"))?;
-        let _feature_flags = record_iter.next().ok_or(anyhow!("Unexpected end of csv record"))?;
+        let _valid_64_bit = record_iter
+            .next()
+            .ok_or(anyhow!("Unexpected end of csv record"))?;
+        let _valid_32_bit = record_iter
+            .next()
+            .ok_or(anyhow!("Unexpected end of csv record"))?;
+        let _valid_16_bit = record_iter
+            .next()
+            .ok_or(anyhow!("Unexpected end of csv record"))?;
+        let _feature_flags = record_iter
+            .next()
+            .ok_or(anyhow!("Unexpected end of csv record"))?;
     }
     Ok(ParsedCSV { instructions })
 }
 
 fn get_csv(csv: Option<PathBuf>) -> anyhow::Result<Box<dyn Read>> {
     Ok(match csv {
-        None => {
-            Box::new(Cursor::new(include_bytes!("../resources/x86.csv"))) as Box<dyn Read>
-        }
+        None => Box::new(Cursor::new(include_bytes!("../resources/x86.csv"))) as Box<dyn Read>,
         Some(csv) => {
             Box::new(File::open(csv).with_context(|| "Cannot open csv file")?) as Box<dyn Read>
         }
@@ -481,11 +559,10 @@ fn get_csv(csv: Option<PathBuf>) -> anyhow::Result<Box<dyn Read>> {
 
 fn get_write_to(generate_to: Option<PathBuf>) -> anyhow::Result<Box<dyn Write>> {
     Ok(match generate_to {
-        None => {
-            Box::new(io::stdout().lock()) as Box<dyn Write>
-        }
+        None => Box::new(io::stdout().lock()) as Box<dyn Write>,
         Some(generate_to) => {
-            Box::new(File::create(generate_to).with_context(|| "Cannot open output file")?) as Box<dyn Write>
+            Box::new(File::create(generate_to).with_context(|| "Cannot open output file")?)
+                as Box<dyn Write>
         }
     })
 }
