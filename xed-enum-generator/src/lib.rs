@@ -66,26 +66,28 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let mut variant_field_names = vec![];
         let mut variant_types = vec![];
         for (variant_name, variants) in top_level_instruction.variants.iter() {
-            for (_, variant_fields) in variants {
+            for (variant_name, variants) in variants.iter() {
                 instruction_variant_names1.push(variant_name.proc_macro_safe_name());
-                variant_field_names.push(vec![]);
-                variant_types.push(vec![]);
-                for (variant_field_index, variant_type) in variant_fields.operands.iter().sorted_by_key(|(i, _)| *i) {
-                    variant_field_names
-                        .last_mut()
-                        .unwrap()
-                        .push(format_ident!("operand_{}", *variant_field_index));
-                    variant_types
-                        .last_mut()
-                        .unwrap()
-                        .push(match &variant_type.field_type {
-                            FieldType::Mem(_) => format_ident!("MemoryOperands"),
-                            FieldType::Reg(reg) => reg.type_to_rust_type(),
-                            FieldType::Imm(imm) => imm_width_to_indent(imm.clone()),
-                            FieldType::RelBR => format_ident!("RelativeBr"),
-                            FieldType::Ptr => format_ident!("Immediate"),
-                            FieldType::AGen => format_ident!("MemoryOperands"),
-                        })
+                for variant_fields in variants {
+                    variant_field_names.push(vec![]);
+                    variant_types.push(vec![]);
+                    for (variant_field_index, variant_type) in variant_fields.operands.iter().sorted_by_key(|(i, _)| *i) {
+                        variant_field_names
+                            .last_mut()
+                            .unwrap()
+                            .push(format_ident!("operand_{}", *variant_field_index));
+                        variant_types
+                            .last_mut()
+                            .unwrap()
+                            .push(match &variant_type.field_type {
+                                FieldType::Mem(_) => format_ident!("MemoryOperands"),
+                                FieldType::Reg(reg) => reg.type_to_rust_type(),
+                                FieldType::Imm(imm) => imm_width_to_indent(imm.clone()),
+                                FieldType::RelBR => format_ident!("RelativeBr"),
+                                FieldType::Ptr => format_ident!("Immediate"),
+                                FieldType::AGen => format_ident!("MemoryOperands"),
+                            })
+                    }
                 }
             }
         }
@@ -120,75 +122,77 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         iclass_nums.push(top_level_instruction.iclass);
         iclass_names1.push(instruction_enum_name.clone());
         iclass_names2.push(instruction_enum_name.clone());
+        let mut closure_vec = vec![];
         let mut iform_nums = vec![];
-        let mut iform_names = vec![];
-        let mut variant_field_names = vec![];
-        let mut fields = vec![];
         //todo regroup by iform.
-        for (variant_name, variants_in) in top_level_instruction.variants.iter() {
-            fields.push(vec![]);
-            variant_field_names.push(vec![]);
-            iform_names.push(vec![]);
-            for (iform, Variant{ operands, iform:_ }) in variants_in.iter() {
-                iform_nums.push(*iform);
-                variant_field_names.last_mut().unwrap().push(vec![]);
-                iform_names.last_mut().unwrap().push(variant_name.proc_macro_safe_name());
-                let mut second_immediate = false;
-                let mut mem_idx = 0u32;
-                fields.last_mut().unwrap().push(vec![]);
-                for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| *i) {
-                    variant_field_names
-                        .last_mut()
-                        .unwrap()
-                        .last_mut()
-                        .unwrap()
-                        .push(format_ident!("operand_{}", operand_i));
-                    let current_variants = fields.last_mut().unwrap().last_mut().unwrap();
-                    let operand_name = operand.field_name;
-                    match &operand.field_type {
-                        FieldType::Mem(_) | FieldType::AGen => {
-                            current_variants.push(quote! {
+        for (iform, variants_in) in top_level_instruction.variants.iter() {
+            iform_nums.push(*iform);
+            let mut closures = vec![];
+            for (variant_name, variants_in) in variants_in {
+                let iform_name = variant_name.proc_macro_safe_name();
+                let mut variant_field_names = vec![];
+                let mut fields = vec![];
+                for Variant{ operands, iform:_ } in variants_in {
+                    let mut second_immediate = false;
+                    let mut mem_idx = 0u32;
+                    for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| *i) {
+                        variant_field_names
+                            .push(format_ident!("operand_{}", operand_i));
+                        let current_variants = &mut fields;
+                        let operand_name = operand.field_name;
+                        match &operand.field_type {
+                            FieldType::Mem(_) | FieldType::AGen => {
+                                current_variants.push(quote! {
                                 let instr_template = xed_decoded_inst_inst(xed);
                                 MemoryOperands::from_xed(xed, instr_template, #mem_idx)
                             });
-                            mem_idx += 1;
-                        }
-                        FieldType::Reg(register_type) => {
-                            let reg_type = register_type.type_to_rust_type();
-                            if reg_type == format_ident!("GeneralReg") {
-                                current_variants.push(quote! {
+                                mem_idx += 1;
+                            }
+                            FieldType::Reg(register_type) => {
+                                let reg_type = register_type.type_to_rust_type();
+                                if reg_type == format_ident!("GeneralReg") {
+                                    current_variants.push(quote! {
                                     let reg = xed_decoded_inst_get_reg(xed,#operand_name);
                                     let width = xed_decoded_inst_get_operand_width(xed);
                                     #reg_type::try_new(reg, Some(width))?
                                 });
-                            } else {
-                                current_variants.push(quote! {
+                                } else {
+                                    current_variants.push(quote! {
                                     let reg = xed_decoded_inst_get_reg(xed,#operand_name);
                                     #reg_type::try_new(reg)?
                                 });
+                                }
                             }
-                        }
-                        FieldType::Ptr => {
-                            current_variants.push(quote! {
+                            FieldType::Ptr => {
+                                current_variants.push(quote! {
                                 Immediate::from_xed(xed, #second_immediate)
                             });
-                            second_immediate = true;
-                        }
-                        FieldType::Imm(width) => {
-                            let type_ = imm_width_to_indent(width.clone());
-                            current_variants.push(quote! {
+                                second_immediate = true;
+                            }
+                            FieldType::Imm(width) => {
+                                let type_ = imm_width_to_indent(width.clone());
+                                current_variants.push(quote! {
                                 #type_::from_xed(xed, #second_immediate)
                             });
-                            second_immediate = true;
-                        }
-                        FieldType::RelBR => {
-                            current_variants.push(quote! {
+                                second_immediate = true;
+                            }
+                            FieldType::RelBR => {
+                                current_variants.push(quote! {
                                 RelativeBr::from_xed(xed)
                             });
+                            }
                         }
                     }
                 }
+                closures.push(quote! {
+                    (||{Some(Self::#iform_name {
+                        #(#variant_field_names: { #fields }),*
+                    })})
+                });
             }
+            closure_vec.push(quote! {
+                vec![#(#closures),*].into_iter().find_map(|inner|inner()).unwrap()
+            });
         }
         impls.push(quote! {
             impl #instruction_enum_name {
@@ -197,9 +201,7 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                         let iform = xed_decoded_inst_get_iform_enum(xed);
                         match iform {
                             #(#iform_nums => {
-                                vec![#((||{Some(Self::#iform_names {
-                                    #(#variant_field_names: { #fields }),*
-                                })})),*].into_iter().find_map(|inner|inner()).unwrap()
+                                #closure_vec
                             }),*,
                             _ => panic!()
                         }
@@ -246,7 +248,9 @@ pub fn enum_to_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let mut variant_constructors = vec![];
         let iclass = top_level_instruction.iclass;
         for (variant_name, Variant { operands, iform: _ }) in top_level_instruction.variants.iter()
-            .flat_map(|(variant_name, variants)|variants.iter().map(|(_, variant)|(variant_name.clone(),variant.clone()))) {
+            .flat_map(|(iform, variants)|variants.iter()
+                .flat_map(|(variant_name, variants)| variants.iter()
+                    .map(|variant|(variant_name.clone(),variant.clone())))) {
             iform_names.push(variant_name.proc_macro_safe_name());
             variant_field_names.push(vec![]);
             let mut variant_field_constructors = vec![];

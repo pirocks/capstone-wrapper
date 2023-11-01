@@ -181,7 +181,7 @@ pub struct Variant {
 #[derive(Clone, Debug)]
 pub struct TopLevelInstruction {
     pub iclass: xed_iclass_enum_t,
-    pub variants: HashMap<VariantName, HashMap<xed_iform_enum_t,Variant>>
+    pub variants: HashMap<xed_iform_enum_t,HashMap<VariantName, Vec<Variant>>>
 }
 
 static START: Once = Once::new();
@@ -210,21 +210,22 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                         .unwrap()
                         .to_string(),
                 );
-                let variant_fields: &mut HashMap<usize, Field> = &mut res
+                let variants = &mut res
                     .entry(instruction_name)
                     .or_insert_with(|| TopLevelInstruction {
                         iclass: xed_inst_iclass(instruction_table_elem),
                         variants: Default::default(),
                     })
                     .variants
-                    .entry(variant_name.clone())
-                    .or_default()
                     .entry(iform_i)
-                    .or_insert_with(|| Variant {
-                        operands: Default::default(),
-                        iform: iform_i,
-                    })
-                    .operands;
+                    .or_default()
+                    .entry(variant_name.clone())
+                    .or_default();
+                variants.push(Variant {
+                    operands: Default::default(),
+                    iform: iform_i,
+                });
+                let variant_fields: &mut HashMap<usize, Field> = &mut variants.last_mut().unwrap().operands;
                 let number_of_operands = xed_inst_noperands(instruction_table_elem);
                 let mut visible_field_i = 0;
                 for operand_i in 0..number_of_operands {
@@ -406,213 +407,215 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
 pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopLevelInstruction>) -> HashMap<TopLevelInstructionName, TopLevelInstruction> {
     let mut res = HashMap::new();
     for (name, top_level_instr) in before.iter().sorted_by_key(|(key, _)| key.0.clone()) {
-        let mut variants: HashMap<VariantName, HashMap<xed_iform_enum_t, Variant>> = HashMap::new();
-        for (variant_name, variant) in top_level_instr.variants.iter().sorted_by_key(|(key, _)| key.0.clone()) {
-            for (iform, variant) in variant.iter() {
-                if variant.operands.iter().any(|(_, operand)| operand.field_is_multi_width()) {
-                    fn operands_to_width(variant: &Variant, width: OperandWidth) -> Variant {
-                        Variant {
-                            operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width(width))).collect(),
-                            iform: variant.iform,
+        let mut variants: HashMap<xed_iform_enum_t, HashMap<VariantName, Vec<Variant>>> = HashMap::new();
+        for (iform, variant) in top_level_instr.variants.iter().sorted_by_key(|(key, _)| **key) {
+            for (variant_name, variants_in) in variant.iter().sorted_by_key(|(variant_name,_)|variant_name.clone()) {
+                for variant in variants_in.iter() {
+                    if variant.operands.iter().any(|(_, operand)| operand.field_is_multi_width()) {
+                        fn operands_to_width(variant: &Variant, width: OperandWidth) -> Variant {
+                            Variant {
+                                operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width(width))).collect(),
+                                iform: variant.iform,
+                            }
                         }
-                    }
-                    fn operands_to_width_many(variant: &Variant, width: Vec<OperandWidth>) -> Variant {
-                        let mut width = width.into_iter();
-                        Variant {
-                            operands: variant.operands.iter().sorted_by_key(|(i, _)| **i).map(|(i, field)| {
-                                if let Some(width) = width.next() {
-                                    (*i, field.field_as_width(width))
-                                } else {
-                                    (*i, field.clone())
-                                }
-                            }).collect(),
-                            iform: variant.iform,
+                        fn operands_to_width_many(variant: &Variant, width: Vec<OperandWidth>) -> Variant {
+                            let mut width = width.into_iter();
+                            Variant {
+                                operands: variant.operands.iter().sorted_by_key(|(i, _)| **i).map(|(i, field)| {
+                                    if let Some(width) = width.next() {
+                                        (*i, field.field_as_width(width))
+                                    } else {
+                                        (*i, field.clone())
+                                    }
+                                }).collect(),
+                                iform: variant.iform,
+                            }
                         }
-                    }
-                    fn operands_to_width_imm(variant: &Variant, width: OperandWidth, imm_width: OperandWidth) -> Variant {
-                        Variant {
-                            operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width_with_imm(width, imm_width))).collect(),
-                            iform: variant.iform,
+                        fn operands_to_width_imm(variant: &Variant, width: OperandWidth, imm_width: OperandWidth) -> Variant {
+                            Variant {
+                                operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width_with_imm(width, imm_width))).collect(),
+                                iform: variant.iform,
+                            }
                         }
-                    }
 
-                    let variant_name_ref = variant_name.0.replace(name.0.as_str(), "");
-                    let variant_name_ref = variant_name_ref.as_str();
-                    if variant_name_ref == "_GPRV_GPRV" ||
-                        variant_name_ref == "_GPRV_GPRV_01" ||
-                        variant_name_ref == "_GPRV_GPRV_03" ||
-                        variant_name_ref == "_GPRV_GPRV_21" ||
-                        variant_name_ref == "_GPRV_GPRV_23" ||
-                        variant_name_ref == "_GPRV" ||
-                        variant_name_ref == "_GPRV_GPR8" ||
-                        variant_name_ref == "_GPRV_MEMB" ||
-                        variant_name_ref == "_GPRV_MEMZ" ||
-                        variant_name_ref == "_MEMV_IMMB" ||
-                        variant_name_ref == "_MEMV" ||
-                        variant_name_ref == "_MEMV_CL" ||
-                        variant_name_ref == "_MEMV_CL_D3R4" ||
-                        variant_name_ref == "_MEMV_CL_D3R6" ||
-                        variant_name_ref == "_MEMV_IMMB_C1R4" ||
-                        variant_name_ref == "_MEMV_IMMB_C1R6" ||
-                        variant_name_ref == "_MEMV_ONE" ||
-                        variant_name_ref == "_MEMV_ONE_D1R4" ||
-                        variant_name_ref == "_MEMV_ONE_D1R6" ||
-                        variant_name_ref == "_GPRV_GPR16" ||
-                        variant_name_ref == "_GPRA_MEM" ||
-                        variant_name_ref == "_GPRV_FFR1" ||
-                        variant_name_ref == "_GPRV_FFR0" ||
-                        variant_name_ref == "_GPRV_40" ||
-                        variant_name_ref == "_GPRV_CL" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_64));
-                    } else if variant_name_ref == "_GPRV_GPRV_11" ||
-                        variant_name_ref == "_GPRV_GPRV_13" ||
-                        variant_name_ref == "_GPRV_GPRV_39" ||
-                        variant_name_ref == "_GPRV_GPRV_3B" ||
-                        variant_name_ref == "_GPRV_GPRV_89" ||
-                        variant_name_ref == "_GPRV_GPRV_8B" ||
-                        variant_name_ref == "_GPRV_GPRV_IMMB" ||
-                        variant_name_ref == "_GPRV_IMMB_C1R4" ||
-                        variant_name_ref == "_GPRV_IMMB_C1R6" ||
-                        variant_name_ref == "_GPRV_MEMV_IMMB" ||
-                        variant_name_ref == "_GPRV_IMMB" ||
-                        variant_name_ref == "_GPRV_MEMV" ||
-                        variant_name_ref == "_GPRV_MEMW" ||
-                        variant_name_ref == "_GPRV_MEMP2" ||
-                        variant_name_ref == "_GPRV_AGEN" ||
-                        variant_name_ref == "_GPRV_SEG" ||
-                        variant_name_ref == "_GPRV_0F18R0" ||
-                        variant_name_ref == "_GPRV_0F18R1" ||
-                        variant_name_ref == "_GPRV_0F18R2" ||
-                        variant_name_ref == "_GPRV_0F18R3" ||
-                        variant_name_ref == "_GPRV_0F18R4" ||
-                        variant_name_ref == "_GPRV_0F18R5" ||
-                        variant_name_ref == "_GPRV_0F18R6" ||
-                        variant_name_ref == "_GPRV_0F18R7" ||
-                        variant_name_ref == "_GPRV_GPRV_0F0D" ||
-                        variant_name_ref == "_GPRV_GPRV_0F19" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1A" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1B" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1C" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1D" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1E" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1F" ||
-                        variant_name_ref == "_GPRV_GPRV_0F1F" ||
-                        variant_name_ref == "_GPRV_MEMV_0F1A" ||
-                        variant_name_ref == "_GPRV_MEM_0F1B" ||
-                        variant_name_ref == "_MEMV_0F18R4" ||
-                        variant_name_ref == "_MEMV_0F18R5" ||
-                        variant_name_ref == "_MEMV_0F18R6" ||
-                        variant_name_ref == "_MEMV_0F18R7" ||
-                        variant_name_ref == "_MEMV_GPRV_0F19" ||
-                        variant_name_ref == "_MEMV_GPRV_0F1C" ||
-                        variant_name_ref == "_MEMV_GPRV_0F1D" ||
-                        variant_name_ref == "_MEMV_GPRV_0F1E" ||
-                        variant_name_ref == "_MEMV_GPRV_0F1F" ||
-                        variant_name_ref == "_MEMV_ORAX" ||
-                        variant_name_ref == "_ORAX_MEMV" ||
-                        variant_name_ref == "_GPRV_GPRV_09" ||
-                        variant_name_ref == "_GPRV_GPRV_0B" ||
-                        variant_name_ref == "_GPRV_GPRV_31" ||
-                        variant_name_ref == "_GPRV_GPRV_33" ||
-                        variant_name_ref == "_GPRV_58" ||
-                        variant_name_ref == "_GPRV_50" ||
-                        variant_name_ref == "_GPRV_8F" ||
-                        variant_name_ref == "_GPRV_ONE" ||
-                        variant_name_ref == "_GPRV_FFR6" ||
-                        variant_name_ref == "_GPRV_GPRV_19" ||
-                        variant_name_ref == "_GPRV_GPRV_1B" ||
-                        variant_name_ref == "_GPRV_CL_D3R4" ||
-                        variant_name_ref == "_GPRV_CL_D3R6" ||
-                        variant_name_ref == "_GPRV_ONE_D1R4" ||
-                        variant_name_ref == "_GPRV_ONE_D1R6" ||
-                        variant_name_ref == "_GPRV_GPRV_CL" ||
-                        variant_name_ref == "_MEMV_GPRV_CL" ||
-                        variant_name_ref == "_MEMV_GPRV_IMMB" ||
-                        variant_name_ref == "_GPRV_GPRV_29" ||
-                        variant_name_ref == "_GPRV_GPRV_2B" ||
-                        variant_name_ref == "_GPRV_ORAX" ||
-                        variant_name_ref == "_GPRA" ||
-                        variant_name_ref == "_MEMV_GPRV" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_64));
-                    } else if variant_name_ref == "_GPRV_IMMZ" ||
-                        variant_name_ref == "_MEMV_IMMZ" ||
-                        variant_name_ref == "_MEMV_IMMZ_F7R0" ||
-                        variant_name_ref == "_MEMV_IMMZ_F7R1" ||
-                        variant_name_ref == "_GPRV_GPRV_IMMZ" ||
-                        variant_name_ref == "_GPRV_MEMV_IMMZ" ||
-                        variant_name_ref == "_GPRV_IMMZ_F7R0" ||
-                        variant_name_ref == "_GPRV_IMMZ_F7R1" ||
-                        variant_name_ref == "_ORAX_IMMZ" ||
-                        variant_name_ref == "_IMMZ" ||
-                        variant_name_ref == "_GPRV_MEMA16" ||
-                        variant_name_ref == "_AX_IMMZ" ||
-                        variant_name_ref == "_GPRV_MEMA32" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_32));
-                    } else if variant_name_ref == "_VGPRYY_MEMY_IMMD" ||
-                        variant_name_ref == "_VGPRYY_VGPRYY_IMMD" ||
-                        variant_name_ref == "_GPRYY_GPR8B" ||
-                        variant_name_ref == "_VGPRYY_MEMY" ||
-                        variant_name_ref == "_GPRYY_MEMB" ||
-                        variant_name_ref == "_VGPRYY" ||
-                        variant_name_ref == "_GPRY" ||
-                        variant_name_ref == "_GPRY" ||
-                        variant_name_ref == "_MEMY" ||
-                        variant_name_ref == "_GPRA_MEMU32" ||
-                        variant_name_ref == "_VGPRYY_VGPRYY" {
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_64));
-                    } else if variant_name_ref == "_GPRYY_GPRV" || variant_name_ref == "_GPRYY_MEMV" {
-                        variants.entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                        variants.entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_16]));
-                        variants.entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_64]));
-                    } else if variant_name_ref == "_GPRV_48" || variant_name_ref == "_GPRZ_MEMP" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                    } else if variant_name_ref == "_GPRV_GPRZ" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16).add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_16, OperandWidth::_16]));
-                        variants.entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                        variants.entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
-                    } else if variant_name_ref == "_VGPRYY_MEMD_IMMD" || variant_name_ref == "_VGPRYY_VGPR32Y_IMMD" {
-                        variants.entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                        variants.entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
-                    } else if variant_name_ref == "_GPRV_IMMV" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_64));
-                    } else if variant_name_ref == "_XMMPD_MEMPD" ||
-                        variant_name_ref == "_XMMPS_MEMPS" ||
-                        variant_name_ref == "_XMMXUD_MEMXUD" ||
-                        variant_name_ref == "_XMMPD_MEMPD_IMMB" ||
-                        variant_name_ref == "_XMMPS_MEMPS_IMMB" ||
-                        variant_name_ref == "_XMMPS_MEMPD" ||
-                        variant_name_ref == "_XMMDQ_MEMPD" ||
-                        variant_name_ref == "_XMMDQ_MEMPS" ||
-                        variant_name_ref == "_MMXQ_MEMPD" ||
-                        variant_name_ref == "_MEMPD_XMMPD" ||
-                        variant_name_ref == "_MEMPS_XMMPS" ||
-                        variant_name_ref == "_XMMXUQ_MEMXUQ" {
-                        variants.entry(variant_name.add_width(OperandWidth::_128)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_128));
-                    } else if variant_name_ref == "_MEMP2" {
-                        variants.entry(variant_name.add_width(OperandWidth::_16)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_16));
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                    } else if variant_name_ref == "_MEMS" {
-                        variants.entry(variant_name.add_width(OperandWidth::_32)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_32));
-                    } else if variant_name_ref == "_MEMS64" {
-                        variants.entry(variant_name.add_width(OperandWidth::_64)).or_default().insert(*iform, operands_to_width(variant, OperandWidth::_64));
+                        let variant_name_ref = variant_name.0.replace(name.0.as_str(), "");
+                        let variant_name_ref = variant_name_ref.as_str();
+                        if variant_name_ref == "_GPRV_GPRV" ||
+                            variant_name_ref == "_GPRV_GPRV_01" ||
+                            variant_name_ref == "_GPRV_GPRV_03" ||
+                            variant_name_ref == "_GPRV_GPRV_21" ||
+                            variant_name_ref == "_GPRV_GPRV_23" ||
+                            variant_name_ref == "_GPRV" ||
+                            variant_name_ref == "_GPRV_GPR8" ||
+                            variant_name_ref == "_GPRV_MEMB" ||
+                            variant_name_ref == "_GPRV_MEMZ" ||
+                            variant_name_ref == "_MEMV_IMMB" ||
+                            variant_name_ref == "_MEMV" ||
+                            variant_name_ref == "_MEMV_CL" ||
+                            variant_name_ref == "_MEMV_CL_D3R4" ||
+                            variant_name_ref == "_MEMV_CL_D3R6" ||
+                            variant_name_ref == "_MEMV_IMMB_C1R4" ||
+                            variant_name_ref == "_MEMV_IMMB_C1R6" ||
+                            variant_name_ref == "_MEMV_ONE" ||
+                            variant_name_ref == "_MEMV_ONE_D1R4" ||
+                            variant_name_ref == "_MEMV_ONE_D1R6" ||
+                            variant_name_ref == "_GPRV_GPR16" ||
+                            variant_name_ref == "_GPRA_MEM" ||
+                            variant_name_ref == "_GPRV_FFR1" ||
+                            variant_name_ref == "_GPRV_FFR0" ||
+                            variant_name_ref == "_GPRV_40" ||
+                            variant_name_ref == "_GPRV_CL" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                        } else if variant_name_ref == "_GPRV_GPRV_11" ||
+                            variant_name_ref == "_GPRV_GPRV_13" ||
+                            variant_name_ref == "_GPRV_GPRV_39" ||
+                            variant_name_ref == "_GPRV_GPRV_3B" ||
+                            variant_name_ref == "_GPRV_GPRV_89" ||
+                            variant_name_ref == "_GPRV_GPRV_8B" ||
+                            variant_name_ref == "_GPRV_GPRV_IMMB" ||
+                            variant_name_ref == "_GPRV_IMMB_C1R4" ||
+                            variant_name_ref == "_GPRV_IMMB_C1R6" ||
+                            variant_name_ref == "_GPRV_MEMV_IMMB" ||
+                            variant_name_ref == "_GPRV_IMMB" ||
+                            variant_name_ref == "_GPRV_MEMV" ||
+                            variant_name_ref == "_GPRV_MEMW" ||
+                            variant_name_ref == "_GPRV_MEMP2" ||
+                            variant_name_ref == "_GPRV_AGEN" ||
+                            variant_name_ref == "_GPRV_SEG" ||
+                            variant_name_ref == "_GPRV_0F18R0" ||
+                            variant_name_ref == "_GPRV_0F18R1" ||
+                            variant_name_ref == "_GPRV_0F18R2" ||
+                            variant_name_ref == "_GPRV_0F18R3" ||
+                            variant_name_ref == "_GPRV_0F18R4" ||
+                            variant_name_ref == "_GPRV_0F18R5" ||
+                            variant_name_ref == "_GPRV_0F18R6" ||
+                            variant_name_ref == "_GPRV_0F18R7" ||
+                            variant_name_ref == "_GPRV_GPRV_0F0D" ||
+                            variant_name_ref == "_GPRV_GPRV_0F19" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1A" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1B" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1C" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1D" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1E" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1F" ||
+                            variant_name_ref == "_GPRV_GPRV_0F1F" ||
+                            variant_name_ref == "_GPRV_MEMV_0F1A" ||
+                            variant_name_ref == "_GPRV_MEM_0F1B" ||
+                            variant_name_ref == "_MEMV_0F18R4" ||
+                            variant_name_ref == "_MEMV_0F18R5" ||
+                            variant_name_ref == "_MEMV_0F18R6" ||
+                            variant_name_ref == "_MEMV_0F18R7" ||
+                            variant_name_ref == "_MEMV_GPRV_0F19" ||
+                            variant_name_ref == "_MEMV_GPRV_0F1C" ||
+                            variant_name_ref == "_MEMV_GPRV_0F1D" ||
+                            variant_name_ref == "_MEMV_GPRV_0F1E" ||
+                            variant_name_ref == "_MEMV_GPRV_0F1F" ||
+                            variant_name_ref == "_MEMV_ORAX" ||
+                            variant_name_ref == "_ORAX_MEMV" ||
+                            variant_name_ref == "_GPRV_GPRV_09" ||
+                            variant_name_ref == "_GPRV_GPRV_0B" ||
+                            variant_name_ref == "_GPRV_GPRV_31" ||
+                            variant_name_ref == "_GPRV_GPRV_33" ||
+                            variant_name_ref == "_GPRV_58" ||
+                            variant_name_ref == "_GPRV_50" ||
+                            variant_name_ref == "_GPRV_8F" ||
+                            variant_name_ref == "_GPRV_ONE" ||
+                            variant_name_ref == "_GPRV_FFR6" ||
+                            variant_name_ref == "_GPRV_GPRV_19" ||
+                            variant_name_ref == "_GPRV_GPRV_1B" ||
+                            variant_name_ref == "_GPRV_CL_D3R4" ||
+                            variant_name_ref == "_GPRV_CL_D3R6" ||
+                            variant_name_ref == "_GPRV_ONE_D1R4" ||
+                            variant_name_ref == "_GPRV_ONE_D1R6" ||
+                            variant_name_ref == "_GPRV_GPRV_CL" ||
+                            variant_name_ref == "_MEMV_GPRV_CL" ||
+                            variant_name_ref == "_MEMV_GPRV_IMMB" ||
+                            variant_name_ref == "_GPRV_GPRV_29" ||
+                            variant_name_ref == "_GPRV_GPRV_2B" ||
+                            variant_name_ref == "_GPRV_ORAX" ||
+                            variant_name_ref == "_GPRA" ||
+                            variant_name_ref == "_MEMV_GPRV" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                        } else if variant_name_ref == "_GPRV_IMMZ" ||
+                            variant_name_ref == "_MEMV_IMMZ" ||
+                            variant_name_ref == "_MEMV_IMMZ_F7R0" ||
+                            variant_name_ref == "_MEMV_IMMZ_F7R1" ||
+                            variant_name_ref == "_GPRV_GPRV_IMMZ" ||
+                            variant_name_ref == "_GPRV_MEMV_IMMZ" ||
+                            variant_name_ref == "_GPRV_IMMZ_F7R0" ||
+                            variant_name_ref == "_GPRV_IMMZ_F7R1" ||
+                            variant_name_ref == "_ORAX_IMMZ" ||
+                            variant_name_ref == "_IMMZ" ||
+                            variant_name_ref == "_GPRV_MEMA16" ||
+                            variant_name_ref == "_AX_IMMZ" ||
+                            variant_name_ref == "_GPRV_MEMA32" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_32));
+                        } else if variant_name_ref == "_VGPRYY_MEMY_IMMD" ||
+                            variant_name_ref == "_VGPRYY_VGPRYY_IMMD" ||
+                            variant_name_ref == "_GPRYY_GPR8B" ||
+                            variant_name_ref == "_VGPRYY_MEMY" ||
+                            variant_name_ref == "_GPRYY_MEMB" ||
+                            variant_name_ref == "_VGPRYY" ||
+                            variant_name_ref == "_GPRY" ||
+                            variant_name_ref == "_GPRY" ||
+                            variant_name_ref == "_MEMY" ||
+                            variant_name_ref == "_GPRA_MEMU32" ||
+                            variant_name_ref == "_VGPRYY_VGPRYY" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                        } else if variant_name_ref == "_GPRYY_GPRV" || variant_name_ref == "_GPRYY_MEMV" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_16)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_16]));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_64)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_64]));
+                        } else if variant_name_ref == "_GPRV_48" || variant_name_ref == "_GPRZ_MEMP" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                        } else if variant_name_ref == "_GPRV_GPRZ" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16).add_width(OperandWidth::_16)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_16, OperandWidth::_16]));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
+                        } else if variant_name_ref == "_VGPRYY_MEMD_IMMD" || variant_name_ref == "_VGPRYY_VGPR32Y_IMMD" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
+                        } else if variant_name_ref == "_GPRV_IMMV" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_64));
+                        } else if variant_name_ref == "_XMMPD_MEMPD" ||
+                            variant_name_ref == "_XMMPS_MEMPS" ||
+                            variant_name_ref == "_XMMXUD_MEMXUD" ||
+                            variant_name_ref == "_XMMPD_MEMPD_IMMB" ||
+                            variant_name_ref == "_XMMPS_MEMPS_IMMB" ||
+                            variant_name_ref == "_XMMPS_MEMPD" ||
+                            variant_name_ref == "_XMMDQ_MEMPD" ||
+                            variant_name_ref == "_XMMDQ_MEMPS" ||
+                            variant_name_ref == "_MMXQ_MEMPD" ||
+                            variant_name_ref == "_MEMPD_XMMPD" ||
+                            variant_name_ref == "_MEMPS_XMMPS" ||
+                            variant_name_ref == "_XMMXUQ_MEMXUQ" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_128)).or_default().push(operands_to_width(variant, OperandWidth::_128));
+                        } else if variant_name_ref == "_MEMP2" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                        } else if variant_name_ref == "_MEMS" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                        } else if variant_name_ref == "_MEMS64" {
+                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                        } else {
+                            dbg!(variant_name);
+                            dbg!(variant_name_ref);
+                            todo!()
+                        }
                     } else {
-                        dbg!(variant_name);
-                        dbg!(variant_name_ref);
-                        todo!()
+                        let variant_name = variant_name.clone();
+                        variants.entry(*iform).or_default().entry(variant_name).or_default().push(variant.clone());
                     }
-                } else {
-                    let variant_name = variant_name.clone();
-                    variants.entry(variant_name).or_default().insert(*iform, variant.clone());
                 }
             }
         }
