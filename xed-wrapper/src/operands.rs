@@ -58,7 +58,7 @@ impl Imm8 {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct Imm16(i16);
+pub struct Imm16(pub i16);
 
 impl Imm16 {
     pub fn from_xed(xed: *const xed_decoded_inst_t, second_immediate: bool) -> Self {
@@ -88,7 +88,7 @@ impl Imm16 {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct Imm32(i32);
+pub struct Imm32(pub i32);
 
 impl Imm32 {
     pub fn from_xed(xed: *const xed_decoded_inst_t, second_immediate: bool) -> Self {

@@ -11,3 +11,4 @@ remill-semantics-parser = { path = "../remill-semantics-parser" }
 wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
 bumpalo = "3.12"
+bitvec = "1.0.1"

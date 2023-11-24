@@ -1466,7 +1466,7 @@ impl OperandWidth{
             XedOperandWidth::MEM94 => Self::_94,
             XedOperandWidth::MEM108 => Self::_108,
             XedOperandWidth::B => Self::_8,
-            XedOperandWidth::D => Self::_16,
+            XedOperandWidth::D => Self::_32,
             XedOperandWidth::A16 => Self::_16,
             XedOperandWidth::A32 => Self::_32,
             XedOperandWidth::Q => Self::_64,

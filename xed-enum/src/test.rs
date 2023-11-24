@@ -7,7 +7,7 @@ use xed_sys::{XED_ADDRESS_WIDTH_64b, xed_convert_to_encoder_request, xed_decode,
 
 use wrapper_common::registers::Reg32WithRIP;
 
-use crate::{CMP, EncodeContext, X86Instruction};
+use crate::{CMP, EncodeDecodeContext, X86Instruction};
 
 pub struct EncodedInstr {
     bytes: [u8; 15],
@@ -82,7 +82,7 @@ pub fn encode() {
 
 #[test]
 pub fn round_trip() {
-    let mut encode_context = EncodeContext::new();
+    let mut encode_context = EncodeDecodeContext::new();
     let mut xed: xed_encoder_request_t = CMP::CMP_GPRV_GPRV_3B_32 {
         operand_0: Reg32WithRIP::EDX,
         operand_1: Reg32WithRIP::ESI,

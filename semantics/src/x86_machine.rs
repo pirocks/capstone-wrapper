@@ -1,11 +1,68 @@
-use bumpalo::Bump;
 use std::collections::HashMap;
 use std::ops::{Add, BitAnd, BitOr, Range};
-use wrapper_common::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
 
+use bumpalo::Bump;
+
+use wrapper_common::registers::Reg8;
+
+use crate::x86_machine::concrete::{ConcreteFlags, ConcreteMemorySpace, ConcreteX86MachineState};
+use crate::x86_machine::semantics_builder::ArenaRef;
+use crate::x86_machine::values::{BoolValue, ByteValue, DWordValue, QWordValue, WordValue};
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct QWordVariable(pub usize);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct DWordVariable(pub usize);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct WordVariable(pub usize);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct ByteVariable(pub usize);
+
+
+pub struct VariableMappings<'arena> {
+    pub(crate) qword_variables: HashMap<QWordVariable, &'arena QWordValue<'arena>>,
+    pub(crate) dword_variables: HashMap<DWordVariable, &'arena DWordValue<'arena>>,
+    pub(crate) word_variables: HashMap<WordVariable, &'arena WordValue<'arena>>,
+    pub(crate) byte_variables: HashMap<ByteVariable, &'arena ByteValue<'arena>>,
+}
+
+impl<'arena> VariableMappings<'arena> {
+    pub fn new() -> Self {
+        Self {
+            qword_variables: Default::default(),
+            dword_variables: Default::default(),
+            word_variables: Default::default(),
+            byte_variables: Default::default(),
+        }
+    }
+
+    pub fn from_qword_variables(qword_variables: HashMap<QWordVariable, &'arena QWordValue<'arena>>) -> Self {
+        Self {
+            qword_variables,
+            dword_variables: Default::default(),
+            word_variables: Default::default(),
+            byte_variables: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemorySpace<'arena> {
     //todo use a proper sparse vec for whole memory space
     specified_bytes: HashMap<Range<usize>, &'arena u8>,
+}
+
+impl<'arena> MemorySpace<'arena> {
+    pub fn make_concrete(&self, _variable_mappings: &VariableMappings) -> ConcreteMemorySpace {
+        ConcreteMemorySpace {
+            specified_bytes: self.specified_bytes.iter().map(|(range, value)| {
+                (range.clone(), **value)
+            }).collect()
+        }
+    }
 }
 
 pub const ZERO_U8: u8 = 0;
@@ -22,112 +79,44 @@ impl<'arena> MemorySpace<'arena> {
 pub const ZERO_U64: u64 = 0;
 pub const ZERO_U64_REF: &'static u64 = &ZERO_U64;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum BoolValue<'arena> {
-    True,
-    False,
-    EqWord {
-        left: &'arena WordValue<'arena>,
-        right: &'arena WordValue<'arena>,
-    },
-}
 
-impl BitOr<BoolValue<'static>> for BoolValue<'static> {
-    type Output = BoolValue<'static>;
+pub mod values;
+pub mod accessors;
+pub mod read_write;
 
-    fn bitor(self, rhs: BoolValue<'_>) -> Self::Output {
-        todo!()
-    }
-}
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum ByteValue<'arena> {
-    Constant(u8),
-    LowerBits(&'arena QWordValue<'arena>),
-    And {
-        left: &'arena ByteValue<'arena>,
-        right: &'arena ByteValue<'arena>,
-    },
-    Or {
-        left: &'arena ByteValue<'arena>,
-        right: &'arena ByteValue<'arena>,
-    },
-    IfElse {
-        condition: &'arena BoolValue<'arena>,
-        true_case: &'arena ByteValue<'arena>,
-        false_case: &'arena ByteValue<'arena>,
-    },
-}
-
-impl BitAnd for ByteValue<'static> {
-    type Output = ByteValue<'static>;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        todo!()
-    }
-}
-
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum WordValue<'arena> {
-    Constant(u16),
-    LowerBits(&'arena QWordValue<'arena>),
-    And {
-        left: &'arena WordValue<'arena>,
-        right: &'arena WordValue<'arena>,
-    },
-    Or {
-        left: &'arena WordValue<'arena>,
-        right: &'arena WordValue<'arena>,
-    },
-    IfElse {
-        condition: &'arena BoolValue<'arena>,
-        true_case: &'arena WordValue<'arena>,
-        false_case: &'arena WordValue<'arena>,
-    },
-}
-
-impl Add<WordValue<'static>> for WordValue<'static> {
-    type Output = WordValue<'static>;
-
-    fn add(self, rhs: WordValue<'static>) -> Self::Output {
-        todo!()
-    }
-}
-
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum DWordValue<'arena> {
-    Constant(u32),
-    And {
-        left: &'arena DWordValue<'arena>,
-        right: &'arena DWordValue<'arena>,
-    },
-}
-
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum QWordValue<'arena> {
-    Constant(u64),
-    And {
-        left: &'arena QWordValue<'arena>,
-        right: &'arena QWordValue<'arena>,
-    },
-    Or {
-        left: &'arena QWordValue<'arena>,
-        right: &'arena QWordValue<'arena>,
-    },
-    WriteLowerBits {
-        prev: &'arena QWordValue<'arena>,
-        lower: &'arena WordValue<'arena>,
-    },
-}
-
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum X86Mode {
     Real,
     Protected,
     _64Bit,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Flags<'arena> {
+    pub(crate) pf: BoolValue<'arena>,
+    pub(crate) of: BoolValue<'arena>,
+    pub(crate) af: BoolValue<'arena>,
+    pub(crate) zf: BoolValue<'arena>,
+    pub(crate) sf: BoolValue<'arena>,
+    pub(crate) cf: BoolValue<'arena>,
+}
+
+impl<'arena> Flags<'arena> {
+    pub(crate) fn make_concrete(&self, variable_mappings: &VariableMappings<'arena>) -> ConcreteFlags {
+        ConcreteFlags {
+            pf: self.pf.make_concrete(variable_mappings),
+            of: self.of.make_concrete(variable_mappings),
+            af: self.af.make_concrete(variable_mappings),
+            zf: self.zf.make_concrete(variable_mappings),
+            sf: self.sf.make_concrete(variable_mappings),
+            cf: self.cf.make_concrete(variable_mappings),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct X86MachineState<'arena> {
-    bumpalo: &'arena mut Bump,
     pub(crate) mode: X86Mode,
     pub(crate) rax: QWordValue<'arena>,
     pub(crate) rbx: QWordValue<'arena>,
@@ -146,14 +135,15 @@ pub struct X86MachineState<'arena> {
     pub(crate) r14: QWordValue<'arena>,
     pub(crate) r15: QWordValue<'arena>,
     pub(crate) rip: QWordValue<'arena>,
+    pub(crate) flags: Flags<'arena>,
     pub(crate) memory: MemorySpace<'arena>,
     pub(crate) pending_exception: bool,
+    pub(crate) arena: &'arena Bump,
 }
 
 impl<'arena> X86MachineState<'arena> {
-    pub fn new_all_zeroed(bump: &'arena mut Bump, mode: X86Mode) -> Self {
+    pub fn new_all_zeroed(arena: &'arena Bump, mode: X86Mode) -> Self {
         Self {
-            bumpalo: bump,
             mode,
             rax: QWordValue::Constant(0),
             rbx: QWordValue::Constant(0),
@@ -172,124 +162,212 @@ impl<'arena> X86MachineState<'arena> {
             r14: QWordValue::Constant(0),
             r15: QWordValue::Constant(0),
             rip: QWordValue::Constant(0),
+            flags: Flags {
+                pf: BoolValue::False,
+                of: BoolValue::False,
+                af: BoolValue::False,
+                zf: BoolValue::False,
+                sf: BoolValue::False,
+                cf: BoolValue::False,
+
+            },
             memory: MemorySpace::new_all_zeroed(),
             pending_exception: false,
+            arena,
         }
     }
 
     pub fn a<T>(&self, to_alloc: T) -> &'arena T {
-        todo!() /*self.bumpalo.alloc(to_alloc)*/
+        self.arena.alloc(to_alloc)
     }
 
     pub fn undefined_instruction_exception(&mut self) {
         self.pending_exception = true;
     }
-}
 
-pub struct SemanticsBuilder {}
-
-impl SemanticsBuilder {
-    pub fn new() -> Self {
-        todo!()
+    pub fn make_concrete(&self, variable_mappings: &VariableMappings) -> ConcreteX86MachineState {
+        ConcreteX86MachineState {
+            mode: X86Mode::Real,
+            rax: self.rax.make_concrete(variable_mappings),
+            rbx: self.rbx.make_concrete(variable_mappings),
+            rcx: self.rcx.make_concrete(variable_mappings),
+            rdx: self.rdx.make_concrete(variable_mappings),
+            rsi: self.rsi.make_concrete(variable_mappings),
+            rdi: self.rdi.make_concrete(variable_mappings),
+            rbp: self.rbp.make_concrete(variable_mappings),
+            rsp: self.rsp.make_concrete(variable_mappings),
+            r8: self.r8.make_concrete(variable_mappings),
+            r9: self.r9.make_concrete(variable_mappings),
+            r10: self.r10.make_concrete(variable_mappings),
+            r11: self.r11.make_concrete(variable_mappings),
+            r12: self.r12.make_concrete(variable_mappings),
+            r13: self.r13.make_concrete(variable_mappings),
+            r14: self.r14.make_concrete(variable_mappings),
+            r15: self.r15.make_concrete(variable_mappings),
+            rip: self.rip.make_concrete(variable_mappings),
+            flags: self.flags.make_concrete(variable_mappings),
+            memory: self.memory.make_concrete(variable_mappings),
+            pending_exception: self.pending_exception,
+        }
     }
 
-    pub fn undefined_exception_if_64_bit(&self) -> SemanticsBuilder32 {
-        todo!()
-    }
-
-    //64 bit registers:
-
-    pub(crate) fn rax(&self) -> QWordValue<'static> {
-        todo!()
-    }
-
-    pub(crate) fn get_reg_64(&self, reg: Reg64WithRIP) -> QWordValue<'static> {
-        todo!()
-    }
-}
-
-impl SemanticBuilderCommon for SemanticsBuilder {}
-
-pub struct SemanticsBuilder32 {}
-
-impl SemanticsBuilder32 {
-    pub fn emit_conditional(
-        &self,
-        condition: BoolValue<'static>,
-        true_case: impl FnOnce(SemanticsBuilder32),
-        false_case: impl FnOnce(SemanticsBuilder32),
-    ) {
-        todo!()
-    }
-}
-
-impl SemanticBuilderCommon for SemanticsBuilder32 {}
-
-pub trait SemanticBuilderCommon {
-    fn constant<NumIn, Out>(&self, num_in: NumIn) -> Out {
-        todo!()
-    }
 
     //flags:
-    fn af(&self) -> BoolValue<'static> {
+    fn pf(&self) -> BoolValue<'arena> {
         todo!()
     }
 
-    fn set_af(&self, flag: BoolValue<'static>) {
+    fn set_pf(&mut self, arena: &'arena Bump, flag: &'arena BoolValue<'arena>) {
         todo!()
     }
 
-    fn cf(&self) -> BoolValue<'static> {
+    fn of(&self) -> BoolValue<'arena> {
         todo!()
     }
 
-    fn set_cf(&self, flag: BoolValue<'static>) {
+    fn set_of(&mut self, arena: &'arena Bump, flag: &'arena BoolValue<'arena>) {
         todo!()
     }
 
+    pub(crate) fn af(&self) -> &'arena BoolValue<'arena> {
+        self.arena.alloc(self.flags.af)
+    }
+
+    pub(crate) fn set_af(&mut self, arena: &'arena Bump, flag: impl ArenaRef<'arena, BoolValue<'arena>>) {
+        self.flags.af = *flag.arena_ref(arena);
+    }
+
+    fn zf(&self) -> BoolValue<'arena> {
+        todo!()
+    }
+
+    fn set_zf(&mut self, arena: &'arena Bump, flag: &'arena BoolValue<'arena>) {
+        todo!()
+    }
+
+    fn sf(&self) -> BoolValue<'arena> {
+        todo!()
+    }
+
+    fn set_sf(&mut self, arena: &'arena Bump, flag: impl ArenaRef<'arena, BoolValue<'arena>>) {
+        todo!()
+    }
+
+    pub(crate) fn cf(&self) -> BoolValue<'arena> {
+        todo!()
+    }
+
+    pub(crate) fn set_cf(&mut self, arena: &'arena Bump, flag: impl ArenaRef<'arena, BoolValue<'arena>>) {
+        self.flags.cf = *flag.arena_ref(arena);
+    }
     // 8 bit regs:
-    fn ah(&self) -> ByteValue<'static> {
+    fn ah(&self) -> &'arena ByteValue<'arena> {
         todo!()
     }
 
-    fn al(&self) -> ByteValue<'static> {
-        todo!()
+    pub(crate) fn al(&self) -> &'arena ByteValue<'arena> {
+        self.get_reg_8(&Reg8::AL)
     }
 
-    fn set_al(&self, val: ByteValue<'static>) {
-        todo!()
+    pub(crate) fn set_al(&mut self, arena: &'arena Bump, val: &'arena ByteValue<'arena>) {
+        self.rax = QWordValue::ZeroExtendByte(val);
     }
+
+    pub fn get_reg_8(&self, reg: &Reg8) -> &'arena ByteValue<'arena> {
+        self.a(match reg {
+            Reg8::AL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rax),
+                byte_from_lower: 0,
+            },
+            Reg8::AH => ByteValue::QExtractByte {
+                to_extract: self.a(self.rax),
+                byte_from_lower: 1,
+            },
+            Reg8::BL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rbx),
+                byte_from_lower: 0,
+            },
+            Reg8::BH => ByteValue::QExtractByte {
+                to_extract: self.a(self.rbx),
+                byte_from_lower: 1,
+            },
+            Reg8::CL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rcx),
+                byte_from_lower: 0,
+            },
+            Reg8::CH => ByteValue::QExtractByte {
+                to_extract: self.a(self.rcx),
+                byte_from_lower: 1,
+            },
+            Reg8::DL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rdx),
+                byte_from_lower: 0,
+            },
+            Reg8::DH => ByteValue::QExtractByte {
+                to_extract: self.a(self.rdx),
+                byte_from_lower: 1,
+            },
+            Reg8::SPL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rsp),
+                byte_from_lower: 0,
+            },
+            Reg8::BPL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rbp),
+                byte_from_lower: 0,
+            },
+            Reg8::SIL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rsi),
+                byte_from_lower: 0,
+            },
+            Reg8::DIL => ByteValue::QExtractByte {
+                to_extract: self.a(self.rdi),
+                byte_from_lower: 0,
+            },
+            Reg8::R8B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r8),
+                byte_from_lower: 0,
+            },
+            Reg8::R9B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r9),
+                byte_from_lower: 0,
+            },
+            Reg8::R10B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r10),
+                byte_from_lower: 0,
+            },
+            Reg8::R11B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r11),
+                byte_from_lower: 0,
+            },
+            Reg8::R12B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r12),
+                byte_from_lower: 0,
+            },
+            Reg8::R13B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r13),
+                byte_from_lower: 0,
+            },
+            Reg8::R14B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r14),
+                byte_from_lower: 0,
+            },
+            Reg8::R15B => ByteValue::QExtractByte {
+                to_extract: self.a(self.r15),
+                byte_from_lower: 0,
+            },
+        })
+    }
+
 
     // 16 bit regs:
-    fn ax(&self) -> WordValue<'static> {
-        todo!()
+    pub(crate) fn ax(&self) -> &'arena WordValue<'arena> {
+        self.arena.alloc(WordValue::LowerBits(self.arena.alloc(self.rax)))
     }
 
-    fn set_ax(&self, val: WordValue<'static>) {
-        todo!()
-    }
-
-    // generic regs:
-
-    fn get_reg_8(&self, reg: Reg8) -> ByteValue<'static> {
-        todo!()
-    }
-
-    fn get_reg_16(&self, reg: Reg16WithRIP) -> WordValue<'static> {
-        todo!()
-    }
-
-    fn get_reg_32(&self, reg: Reg32WithRIP) -> DWordValue<'static> {
-        todo!()
-    }
-
-    //comparison
-
-    fn less<T>(&self, left: T, right: T) -> BoolValue<'static> {
-        todo!()
-    }
-
-    fn equal<T>(&self, left: T, right: T) -> BoolValue<'static> {
-        todo!()
+    pub(crate) fn set_ax(&mut self, arena: &'arena Bump, val: impl ArenaRef<'arena, WordValue<'arena>>) {
+        self.rax = QWordValue::ZeroExtendWord(val.arena_ref(arena));
     }
 }
+
+pub mod concrete;
+pub mod semantics_builder;

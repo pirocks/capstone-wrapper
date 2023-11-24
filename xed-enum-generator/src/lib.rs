@@ -65,29 +65,27 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let mut instruction_variant_names1 = vec![];
         let mut variant_field_names = vec![];
         let mut variant_types = vec![];
-        for (variant_name, variants) in top_level_instruction.variants.iter() {
-            for (variant_name, variants) in variants.iter() {
+        for (_iform, variants) in top_level_instruction.variants.iter().sorted_by_key(|(iform, _)| *iform) {
+            for (variant_name, Variant { operands, iform:_ }) in variants.iter().sorted_by_key(|(vn, _)| *vn) {
                 instruction_variant_names1.push(variant_name.proc_macro_safe_name());
-                for variant_fields in variants {
-                    variant_field_names.push(vec![]);
-                    variant_types.push(vec![]);
-                    for (variant_field_index, variant_type) in variant_fields.operands.iter().sorted_by_key(|(i, _)| *i) {
-                        variant_field_names
-                            .last_mut()
-                            .unwrap()
-                            .push(format_ident!("operand_{}", *variant_field_index));
-                        variant_types
-                            .last_mut()
-                            .unwrap()
-                            .push(match &variant_type.field_type {
-                                FieldType::Mem(_) => format_ident!("MemoryOperands"),
-                                FieldType::Reg(reg) => reg.type_to_rust_type(),
-                                FieldType::Imm(imm) => imm_width_to_indent(imm.clone()),
-                                FieldType::RelBR => format_ident!("RelativeBr"),
-                                FieldType::Ptr => format_ident!("Immediate"),
-                                FieldType::AGen => format_ident!("MemoryOperands"),
-                            })
-                    }
+                variant_field_names.push(vec![]);
+                variant_types.push(vec![]);
+                for (variant_field_index, variant_type) in operands.iter().sorted_by_key(|(i, _)| *i) {
+                    variant_field_names
+                        .last_mut()
+                        .unwrap()
+                        .push(format_ident!("operand_{}", *variant_field_index));
+                    variant_types
+                        .last_mut()
+                        .unwrap()
+                        .push(match &variant_type.field_type {
+                            FieldType::Mem(_) => format_ident!("MemoryOperands"),
+                            FieldType::Reg(reg) => reg.type_to_rust_type(),
+                            FieldType::Imm(imm) => imm_width_to_indent(imm.clone()),
+                            FieldType::RelBR => format_ident!("RelativeBr"),
+                            FieldType::Ptr => format_ident!("Immediate"),
+                            FieldType::AGen => format_ident!("MemoryOperands"),
+                        })
                 }
             }
         }
@@ -128,60 +126,61 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         for (iform, variants_in) in top_level_instruction.variants.iter() {
             iform_nums.push(*iform);
             let mut closures = vec![];
-            for (variant_name, variants_in) in variants_in {
+            for (variant_name, variant_in) in variants_in.iter().sorted_by_key(|(vn, _)| *vn) {
                 let iform_name = variant_name.proc_macro_safe_name();
                 let mut variant_field_names = vec![];
                 let mut fields = vec![];
-                for Variant{ operands, iform:_ } in variants_in {
-                    let mut second_immediate = false;
-                    let mut mem_idx = 0u32;
-                    for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| *i) {
-                        variant_field_names
-                            .push(format_ident!("operand_{}", operand_i));
-                        let current_variants = &mut fields;
-                        let operand_name = operand.field_name;
-                        match &operand.field_type {
-                            FieldType::Mem(_) | FieldType::AGen => {
-                                current_variants.push(quote! {
+                let Variant { operands, iform: _ } = variant_in;
+                let mut second_immediate = false;
+                let mut mem_idx = 0u32;
+                for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| *i) {
+                    variant_field_names
+                        .push(format_ident!("operand_{}", operand_i));
+                    let operand_name = operand.field_name;
+                    fields.push(match &operand.field_type {
+                        FieldType::Mem(_) | FieldType::AGen => {
+                            quote! {
                                 let instr_template = xed_decoded_inst_inst(xed);
                                 MemoryOperands::from_xed(xed, instr_template, #mem_idx)
-                            });
-                                mem_idx += 1;
                             }
-                            FieldType::Reg(register_type) => {
-                                let reg_type = register_type.type_to_rust_type();
-                                if reg_type == format_ident!("GeneralReg") {
-                                    current_variants.push(quote! {
+                        }
+                        FieldType::Reg(register_type) => {
+                            let reg_type = register_type.type_to_rust_type();
+                            if reg_type == format_ident!("GeneralReg") {
+                                quote! {
                                     let reg = xed_decoded_inst_get_reg(xed,#operand_name);
                                     let width = xed_decoded_inst_get_operand_width(xed);
                                     #reg_type::try_new(reg, Some(width))?
-                                });
-                                } else {
-                                    current_variants.push(quote! {
+                                }
+                            } else {
+                                quote! {
                                     let reg = xed_decoded_inst_get_reg(xed,#operand_name);
                                     #reg_type::try_new(reg)?
-                                });
                                 }
                             }
-                            FieldType::Ptr => {
-                                current_variants.push(quote! {
+                        }
+                        FieldType::Ptr => {
+                            quote! {
                                 Immediate::from_xed(xed, #second_immediate)
-                            });
-                                second_immediate = true;
-                            }
-                            FieldType::Imm(width) => {
-                                let type_ = imm_width_to_indent(width.clone());
-                                current_variants.push(quote! {
-                                #type_::from_xed(xed, #second_immediate)
-                            });
-                                second_immediate = true;
-                            }
-                            FieldType::RelBR => {
-                                current_variants.push(quote! {
-                                RelativeBr::from_xed(xed)
-                            });
                             }
                         }
+                        FieldType::Imm(width) => {
+                            let type_ = imm_width_to_indent(width.clone());
+                            quote! {
+                                #type_::from_xed(xed, #second_immediate)
+                            }
+                        }
+                        FieldType::RelBR => {
+                            quote! {
+                                RelativeBr::from_xed(xed)
+                            }
+                        }
+                    });
+                    if let FieldType::Mem(_) | FieldType::AGen = &operand.field_type {
+                        mem_idx += 1;
+                    }
+                    if let FieldType::Ptr | FieldType::Imm(_) = &operand.field_type {
+                        second_immediate = true;
                     }
                 }
                 closures.push(quote! {
@@ -191,7 +190,7 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 });
             }
             closure_vec.push(quote! {
-                vec![#(#closures),*].into_iter().find_map(|inner|inner()).unwrap()
+                vec![#(Box::new(#closures) as Box<dyn FnOnce() -> Option<Self>>),*].into_iter().find_map(|inner|inner()).unwrap()
             });
         }
         impls.push(quote! {
@@ -247,85 +246,84 @@ pub fn enum_to_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let mut variant_field_names = vec![];
         let mut variant_constructors = vec![];
         let iclass = top_level_instruction.iclass;
-        for (variant_name, Variant { operands, iform: _ }) in top_level_instruction.variants.iter()
-            .flat_map(|(iform, variants)|variants.iter()
-                .flat_map(|(variant_name, variants)| variants.iter()
-                    .map(|variant|(variant_name.clone(),variant.clone())))) {
-            iform_names.push(variant_name.proc_macro_safe_name());
-            variant_field_names.push(vec![]);
-            let mut variant_field_constructors = vec![];
-            let mut second_immediate = false;
-            let effective_operand_width = 32u32;
-            for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| **i) {
-                let variant_ident = format_ident!("operand_{}", operand_i);
-                variant_field_names
-                    .last_mut()
-                    .unwrap()
-                    .push(variant_ident.clone());
-                match &operand.field_type {
-                    FieldType::Mem(mem) => {
-                        assert_eq!(mem.len(), 1);
-                        let mem_xed = mem.into_iter().next().unwrap().to_xed_width_bits() as c_uint;
-                        variant_field_constructors.push(quote! {
-                            if let MemoryOperands::SIBAddressing { segment, base, scale, index, disp, disp_width } = #variant_ident.clone(){
-                                xed_mem_gbisd(
-                                    segment.as_ref().map(|seg|seg.to_xed()).unwrap_or(0),
-                                    base.to_xed(),
-                                    index.as_ref().map(|index|index.to_xed()).unwrap_or(0),
-                                    scale.to_xed(),
-                                    xed_disp(disp, disp_width),
-                                    #mem_xed)
-                            } else {
-                                todo!()
-                            }
-                        });
-                    }
-                    FieldType::Reg(_) => {
-                        variant_field_constructors.push(quote! {
+        for (_iform, variants) in top_level_instruction.variants.iter() {
+            for (variant_name, Variant { operands, iform: _ }) in variants.iter() {
+                iform_names.push(variant_name.proc_macro_safe_name());
+                variant_field_names.push(vec![]);
+                let mut variant_field_constructors = vec![];
+                let mut second_immediate = false;
+                let effective_operand_width = 32u32;
+                for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| **i) {
+                    let variant_ident = format_ident!("operand_{}", operand_i);
+                    variant_field_names
+                        .last_mut()
+                        .unwrap()
+                        .push(variant_ident.clone());
+                    match &operand.field_type {
+                        FieldType::Mem(mem) => {
+                            assert_eq!(mem.len(), 1);
+                            let mem_xed = mem.into_iter().next().unwrap().to_xed_width_bits() as c_uint;
+                            variant_field_constructors.push(quote! {
+                                if let MemoryOperands::SIBAddressing { segment, base, scale, index, disp, disp_width } = #variant_ident.clone(){
+                                    xed_mem_gbisd(
+                                        segment.as_ref().map(|seg|seg.to_xed()).unwrap_or(0),
+                                        base.to_xed(),
+                                        index.as_ref().map(|index|index.to_xed()).unwrap_or(0),
+                                        scale.to_xed(),
+                                        xed_disp(disp, disp_width),
+                                        #mem_xed)
+                                } else {
+                                    todo!()
+                                }
+                            });
+                        }
+                        FieldType::Reg(_) => {
+                            variant_field_constructors.push(quote! {
                             let reg = #variant_ident.to_xed();
                             xed_reg(reg)
                         });
-                    }
-                    FieldType::Imm(_) => {
-                        if second_immediate {
-                            variant_field_constructors.push(quote! {
+                        }
+                        FieldType::Imm(_) => {
+                            if second_immediate {
+                                variant_field_constructors.push(quote! {
                                 xed_imm1(#variant_ident.to_xed_byte_identifier())
                             });
-                        } else {
-                            variant_field_constructors.push(quote! {
+                            } else {
+                                variant_field_constructors.push(quote! {
                                 #variant_ident.to_xed()
                             });
+                            }
+                            second_immediate = true;
                         }
-                        second_immediate = true;
-                    }
-                    FieldType::RelBR => {
-                        variant_field_constructors.push(quote! {
+                        FieldType::RelBR => {
+                            variant_field_constructors.push(quote! {
                             todo!()
                         });
-                        second_immediate = true;
-                    }
-                    FieldType::Ptr => {
-                        variant_field_constructors.push(quote! {
+                            second_immediate = true;
+                        }
+                        FieldType::Ptr => {
+                            variant_field_constructors.push(quote! {
                             todo!()
                         });
-                        second_immediate = true;
-                    }
-                    FieldType::AGen => {
-                        variant_field_constructors.push(quote! {
+                            second_immediate = true;
+                        }
+                        FieldType::AGen => {
+                            variant_field_constructors.push(quote! {
                             todo!()
                         })
+                        }
                     }
                 }
+                let length = operands.len();
+                let xed_inst = format_ident!("xed_inst{length}");
+                variant_constructors.push(quote! {
+                    #xed_inst(encoder_inst.as_mut_ptr(), xed_state.assume_init_ref().clone(), #iclass,#effective_operand_width,  #( { #variant_field_constructors }),* );
+                });
             }
-            let length = operands.len();
-            let xed_inst = format_ident!("xed_inst{length}");
-            variant_constructors.push(quote! {
-                #xed_inst(encoder_inst.as_mut_ptr(), xed_state.assume_init_ref().clone(), #iclass,#effective_operand_width,  #( { #variant_field_constructors }),* );
-            });
         }
         impls.push(quote! {
             impl #instruction_enum_name {
-                pub fn to_xed(&self, encode_context: &mut EncodeContext) -> xed_encoder_request_t {
+                pub fn to_xed(&self, encode_context: &mut EncodeDecodeContext) -> xed_encoder_request_t {
                     crate::START.call_once(||{
                         unsafe { xed_tables_init(); }
                     });
@@ -359,7 +357,7 @@ pub fn enum_to_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         #(#impls)*
 
         impl X86Instruction {
-            pub fn to_xed(&self, encode_context: &mut EncodeContext) -> xed_encoder_request_t {
+            pub fn to_xed(&self, encode_context: &mut EncodeDecodeContext) -> xed_encoder_request_t {
                 match self {
                     #(Self::#iclass_names1(inner) => inner.to_xed(encode_context)),*,
                     _ => panic!()

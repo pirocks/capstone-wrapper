@@ -84,6 +84,16 @@ pub enum GeneralReg {
 }
 
 impl GeneralReg {
+
+    pub fn bit_width(&self) -> usize{
+        match self {
+            GeneralReg::Reg64(_) => 64,
+            GeneralReg::Reg32(_) => 32,
+            GeneralReg::Reg16(_) => 16,
+            GeneralReg::Reg8(_) => 8,
+        }
+    }
+
     pub fn try_new(reg: xed_reg_enum_t, width: Option<u32>) -> Option<Self> {
         use xed_sys::*;
         let class: xed_reg_class_enum_t = unsafe { xed_reg_class(reg) };

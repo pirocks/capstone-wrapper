@@ -1,3 +1,5 @@
+#![feature(entry_insert)]
+
 use std::collections::{HashMap, HashSet};
 use std::ffi::CStr;
 use std::sync::{Once, OnceLock};
@@ -181,8 +183,15 @@ pub struct Variant {
 #[derive(Clone, Debug)]
 pub struct TopLevelInstruction {
     pub iclass: xed_iclass_enum_t,
+    pub variants: HashMap<xed_iform_enum_t,HashMap<VariantName, Variant>>
+}
+
+#[derive(Clone, Debug)]
+pub struct TopLevelInstructionBeforeSpread {
+    pub iclass: xed_iclass_enum_t,
     pub variants: HashMap<xed_iform_enum_t,HashMap<VariantName, Vec<Variant>>>
 }
+
 
 static START: Once = Once::new();
 
@@ -190,7 +199,7 @@ static DATA: OnceLock<HashMap<TopLevelInstructionName, TopLevelInstruction>> = O
 
 pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstruction> {
     DATA.get_or_init(|| {
-        let mut res: HashMap<TopLevelInstructionName, TopLevelInstruction> = HashMap::new();
+        let mut res: HashMap<TopLevelInstructionName, TopLevelInstructionBeforeSpread> = HashMap::new();
         unsafe {
             START.call_once(|| {
                 xed_tables_init();
@@ -212,7 +221,7 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                 );
                 let variants = &mut res
                     .entry(instruction_name)
-                    .or_insert_with(|| TopLevelInstruction {
+                    .or_insert_with(|| TopLevelInstructionBeforeSpread {
                         iclass: xed_inst_iclass(instruction_table_elem),
                         variants: Default::default(),
                     })
@@ -400,16 +409,16 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                 }
             }
         }
-        spread_multi_width_variants(res)
+        spread_multi_width_variants(res)/*.into_iter().dropping(0).take(2000).collect()*//*.into_iter().filter(|(name,_)|name == &TopLevelInstructionName("VFMSUB132PS".to_string())).collect()*/
     })
 }
 
-pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopLevelInstruction>) -> HashMap<TopLevelInstructionName, TopLevelInstruction> {
+pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopLevelInstructionBeforeSpread>) -> HashMap<TopLevelInstructionName, TopLevelInstruction> {
     let mut res = HashMap::new();
     for (name, top_level_instr) in before.iter().sorted_by_key(|(key, _)| key.0.clone()) {
-        let mut variants: HashMap<xed_iform_enum_t, HashMap<VariantName, Vec<Variant>>> = HashMap::new();
+        let mut variants: HashMap<xed_iform_enum_t, HashMap<VariantName, Variant>> = HashMap::new();
         for (iform, variant) in top_level_instr.variants.iter().sorted_by_key(|(key, _)| **key) {
-            for (variant_name, variants_in) in variant.iter().sorted_by_key(|(variant_name,_)|variant_name.clone()) {
+            for (variant_name, variants_in) in variant.iter().sorted_by_key(|(variant_name,_)|(*variant_name).clone()) {
                 for variant in variants_in.iter() {
                     if variant.operands.iter().any(|(_, operand)| operand.field_is_multi_width()) {
                         fn operands_to_width(variant: &Variant, width: OperandWidth) -> Variant {
@@ -465,9 +474,9 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             variant_name_ref == "_GPRV_FFR0" ||
                             variant_name_ref == "_GPRV_40" ||
                             variant_name_ref == "_GPRV_CL" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16), operands_to_width(variant, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width(variant, OperandWidth::_32)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64), operands_to_width(variant, OperandWidth::_64)).is_none();
                         } else if variant_name_ref == "_GPRV_GPRV_11" ||
                             variant_name_ref == "_GPRV_GPRV_13" ||
                             variant_name_ref == "_GPRV_GPRV_39" ||
@@ -537,9 +546,9 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             variant_name_ref == "_GPRV_ORAX" ||
                             variant_name_ref == "_GPRA" ||
                             variant_name_ref == "_MEMV_GPRV" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16), operands_to_width(variant, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width(variant, OperandWidth::_32)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64), operands_to_width(variant, OperandWidth::_64)).is_none();
                         } else if variant_name_ref == "_GPRV_IMMZ" ||
                             variant_name_ref == "_MEMV_IMMZ" ||
                             variant_name_ref == "_MEMV_IMMZ_F7R0" ||
@@ -553,9 +562,9 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             variant_name_ref == "_GPRV_MEMA16" ||
                             variant_name_ref == "_AX_IMMZ" ||
                             variant_name_ref == "_GPRV_MEMA32" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_32));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16), operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64), operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_32)).is_none();
                         } else if variant_name_ref == "_VGPRYY_MEMY_IMMD" ||
                             variant_name_ref == "_VGPRYY_VGPRYY_IMMD" ||
                             variant_name_ref == "_GPRYY_GPR8B" ||
@@ -567,26 +576,26 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             variant_name_ref == "_MEMY" ||
                             variant_name_ref == "_GPRA_MEMU32" ||
                             variant_name_ref == "_VGPRYY_VGPRYY" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32),operands_to_width(variant, OperandWidth::_32)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64),operands_to_width(variant, OperandWidth::_64)).is_none();
                         } else if variant_name_ref == "_GPRYY_GPRV" || variant_name_ref == "_GPRYY_MEMV" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_16)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_16]));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_64)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_64]));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32),operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32])).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_16),operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_16])).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_64),operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_64])).is_none();
                         } else if variant_name_ref == "_GPRV_48" || variant_name_ref == "_GPRZ_MEMP" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16),operands_to_width(variant, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32),operands_to_width(variant, OperandWidth::_32)).is_none();
                         } else if variant_name_ref == "_GPRV_GPRZ" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16).add_width(OperandWidth::_16)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_16, OperandWidth::_16]));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16).add_width(OperandWidth::_16),operands_to_width_many(variant, vec![OperandWidth::_16, OperandWidth::_16])).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32),operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32])).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32),operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32])).is_none();
                         } else if variant_name_ref == "_VGPRYY_MEMD_IMMD" || variant_name_ref == "_VGPRYY_VGPR32Y_IMMD" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32]));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32)).or_default().push(operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32]));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32).add_width(OperandWidth::_32),operands_to_width_many(variant, vec![OperandWidth::_32, OperandWidth::_32])).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64).add_width(OperandWidth::_32),operands_to_width_many(variant, vec![OperandWidth::_64, OperandWidth::_32])).is_none();
                         } else if variant_name_ref == "_GPRV_IMMV" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_64));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16), operands_to_width_imm(variant, OperandWidth::_16, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width_imm(variant, OperandWidth::_32, OperandWidth::_32)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64), operands_to_width_imm(variant, OperandWidth::_64, OperandWidth::_64)).is_none();
                         } else if variant_name_ref == "_XMMPD_MEMPD" ||
                             variant_name_ref == "_XMMPS_MEMPS" ||
                             variant_name_ref == "_XMMXUD_MEMXUD" ||
@@ -599,14 +608,14 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             variant_name_ref == "_MEMPD_XMMPD" ||
                             variant_name_ref == "_MEMPS_XMMPS" ||
                             variant_name_ref == "_XMMXUQ_MEMXUQ" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_128)).or_default().push(operands_to_width(variant, OperandWidth::_128));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_128), operands_to_width(variant, OperandWidth::_128)).is_none();
                         } else if variant_name_ref == "_MEMP2" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_16)).or_default().push(operands_to_width(variant, OperandWidth::_16));
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_16), operands_to_width(variant, OperandWidth::_16)).is_none();
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width(variant, OperandWidth::_32)).is_none();
                         } else if variant_name_ref == "_MEMS" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_32)).or_default().push(operands_to_width(variant, OperandWidth::_32));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_32), operands_to_width(variant, OperandWidth::_32)).is_none();
                         } else if variant_name_ref == "_MEMS64" {
-                            variants.entry(*iform).or_default().entry(variant_name.add_width(OperandWidth::_64)).or_default().push(operands_to_width(variant, OperandWidth::_64));
+                            /*assert!*/let _ = variants.entry(*iform).or_default().insert(variant_name.add_width(OperandWidth::_64), operands_to_width(variant, OperandWidth::_64)).is_none();
                         } else {
                             dbg!(variant_name);
                             dbg!(variant_name_ref);
@@ -614,7 +623,7 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                         }
                     } else {
                         let variant_name = variant_name.clone();
-                        variants.entry(*iform).or_default().entry(variant_name).or_default().push(variant.clone());
+                        variants.entry(*iform).or_default().insert(variant_name, variant.clone());
                     }
                 }
             }

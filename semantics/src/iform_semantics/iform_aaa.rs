@@ -1,6 +1,9 @@
+use bumpalo::Bump;
 use xed_enum::AAA;
 
-use crate::x86_machine::{SemanticsBuilder, X86MachineState};
+use crate::x86_machine::{X86MachineState};
+use crate::x86_machine::semantics_builder::{ConstantBuilder, SemanticBuilder32, SemanticsBuilder, SemanticsBuilder32Ext};
+use crate::x86_machine::values::{BoolValue, EmptyValue};
 
 ///Operation
 //            IF 64-Bit Mode
@@ -20,30 +23,51 @@ use crate::x86_machine::{SemanticsBuilder, X86MachineState};
 //            FI;
 //
 
-impl X86MachineState<'_> {
+impl <'arena> X86MachineState<'arena> {
     //for making xed enum_defs xed has all the tables that are needed
-    pub fn apply_iform_aaa(&mut self, iform_aaa: AAA) {
+    pub fn apply_iform_aaa(&mut self,arena: &'arena Bump, iform_aaa: AAA) {
         match iform_aaa {
             AAA::AAA {} => {
-                let mut semantics = SemanticsBuilder::new();
-                let mut semantics = semantics.undefined_exception_if_64_bit();
+                let mut semantics = SemanticsBuilder::new(arena);
+                let mut semantics = semantics.undefined_exception_if_64_bit(self);
                 let condition = semantics.less(
                     semantics.constant(9),
-                    semantics.al() & semantics.constant(0),
-                ) | semantics.equal(semantics.af(), semantics.constant(true));
-                semantics.emit_conditional(
+                    self.al() & semantics.constant(0xF),
+                ) | semantics.equal::<BoolValue<'arena>>(self.af(), semantics.constant(true));
+                self.set_ax(arena,semantics.emit_conditional(
+                    self,
                     condition,
-                    |mut semantics| {
-                        semantics.set_ax(semantics.ax() + semantics.constant(0x106));
-                        semantics.set_af(semantics.constant(true));
-                        semantics.set_cf(semantics.constant(true));
+                    |state, mut semantics| {
+                        state.ax() + semantics.constant(0x106)
                     },
-                    |mut semantics| {
-                        semantics.set_af(semantics.constant(false));
-                        semantics.set_cf(semantics.constant(false));
+                    |state, mut semantics| {
+                        *semantics.constant(0)
                     },
-                );
-                semantics.set_al(semantics.al() & semantics.constant(0)); //todo is this a zero?
+                ));
+
+                self.set_af(arena,semantics.emit_conditional(
+                    self,
+                    condition,
+                    |state, mut semantics| {
+                        *semantics.constant(true)
+                    },
+                    |state, mut semantics| {
+                        *semantics.constant(false)
+                    },
+                ));
+
+                self.set_cf(arena,semantics.emit_conditional(
+                    self,
+                    condition,
+                    |state, mut semantics| {
+                        *semantics.constant(true)
+                    },
+                    |state, mut semantics| {
+                        *semantics.constant(false)
+                    },
+                ));
+
+                self.set_al(arena,arena.alloc(self.al() & semantics.constant(0xF)));
             }
         }
     }
