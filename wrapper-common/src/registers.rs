@@ -75,7 +75,6 @@ pub enum RegXMM {
     XMM29,
     XMM30,
     XMM31,
-    XMM32,
 }
 
 impl RegXMM {
@@ -151,12 +150,81 @@ impl RegXMM {
             RegXMM::XMM29 => "RegXMM::XMM29".to_string(),
             RegXMM::XMM30 => "RegXMM::XMM30".to_string(),
             RegXMM::XMM31 => "RegXMM::XMM31".to_string(),
-            RegXMM::XMM32 => "RegXMM::XMM32".to_string(),
         }
     }
 
     pub fn to_xed(&self) -> xed_reg_enum_t {
-        todo!("self:?")
+        match self {
+            RegXMM::XMM0 => XED_REG_XMM0,
+            RegXMM::XMM1 => XED_REG_XMM1,
+            RegXMM::XMM2 => XED_REG_XMM2,
+            RegXMM::XMM3 => XED_REG_XMM3,
+            RegXMM::XMM4 => XED_REG_XMM4,
+            RegXMM::XMM5 => XED_REG_XMM5,
+            RegXMM::XMM6 => XED_REG_XMM6,
+            RegXMM::XMM7 => XED_REG_XMM7,
+            RegXMM::XMM8 => XED_REG_XMM8,
+            RegXMM::XMM9 => XED_REG_XMM9,
+            RegXMM::XMM10 => XED_REG_XMM10,
+            RegXMM::XMM11 => XED_REG_XMM11,
+            RegXMM::XMM12 => XED_REG_XMM12,
+            RegXMM::XMM13 => XED_REG_XMM13,
+            RegXMM::XMM14 => XED_REG_XMM14,
+            RegXMM::XMM15 => XED_REG_XMM15,
+            RegXMM::XMM16 => XED_REG_XMM16,
+            RegXMM::XMM17 => XED_REG_XMM17,
+            RegXMM::XMM18 => XED_REG_XMM18,
+            RegXMM::XMM19 => XED_REG_XMM19,
+            RegXMM::XMM20 => XED_REG_XMM20,
+            RegXMM::XMM21 => XED_REG_XMM21,
+            RegXMM::XMM22 => XED_REG_XMM22,
+            RegXMM::XMM23 => XED_REG_XMM23,
+            RegXMM::XMM24 => XED_REG_XMM24,
+            RegXMM::XMM25 => XED_REG_XMM25,
+            RegXMM::XMM26 => XED_REG_XMM26,
+            RegXMM::XMM27 => XED_REG_XMM27,
+            RegXMM::XMM28 => XED_REG_XMM28,
+            RegXMM::XMM29 => XED_REG_XMM29,
+            RegXMM::XMM30 => XED_REG_XMM30,
+            RegXMM::XMM31 => XED_REG_XMM31,
+        }
+    }
+
+    pub fn widen_to_zmm(&self) -> RegZMM {
+        match self {
+            RegXMM::XMM0 => RegZMM::ZMM0,
+            RegXMM::XMM1 => RegZMM::ZMM1,
+            RegXMM::XMM2 => RegZMM::ZMM2,
+            RegXMM::XMM3 => RegZMM::ZMM3,
+            RegXMM::XMM4 => RegZMM::ZMM4,
+            RegXMM::XMM5 => RegZMM::ZMM5,
+            RegXMM::XMM6 => RegZMM::ZMM6,
+            RegXMM::XMM7 => RegZMM::ZMM7,
+            RegXMM::XMM8 => RegZMM::ZMM8,
+            RegXMM::XMM9 => RegZMM::ZMM9,
+            RegXMM::XMM10 => RegZMM::ZMM10,
+            RegXMM::XMM11 => RegZMM::ZMM11,
+            RegXMM::XMM12 => RegZMM::ZMM12,
+            RegXMM::XMM13 => RegZMM::ZMM13,
+            RegXMM::XMM14 => RegZMM::ZMM14,
+            RegXMM::XMM15 => RegZMM::ZMM15,
+            RegXMM::XMM16 => RegZMM::ZMM16,
+            RegXMM::XMM17 => RegZMM::ZMM17,
+            RegXMM::XMM18 => RegZMM::ZMM18,
+            RegXMM::XMM19 => RegZMM::ZMM19,
+            RegXMM::XMM20 => RegZMM::ZMM20,
+            RegXMM::XMM21 => RegZMM::ZMM21,
+            RegXMM::XMM22 => RegZMM::ZMM22,
+            RegXMM::XMM23 => RegZMM::ZMM23,
+            RegXMM::XMM24 => RegZMM::ZMM24,
+            RegXMM::XMM25 => RegZMM::ZMM25,
+            RegXMM::XMM26 => RegZMM::ZMM26,
+            RegXMM::XMM27 => RegZMM::ZMM27,
+            RegXMM::XMM28 => RegZMM::ZMM28,
+            RegXMM::XMM29 => RegZMM::ZMM29,
+            RegXMM::XMM30 => RegZMM::ZMM30,
+            RegXMM::XMM31 => RegZMM::ZMM31,
+        }
     }
 }
 
@@ -194,7 +262,6 @@ pub enum RegYMM {
     YMM29,
     YMM30,
     YMM31,
-    YMM32,
 }
 
 impl RegYMM {
@@ -270,10 +337,46 @@ impl RegYMM {
             RegYMM::YMM29 => "RegYMM::YMM29".to_string(),
             RegYMM::YMM30 => "RegYMM::YMM30".to_string(),
             RegYMM::YMM31 => "RegYMM::YMM31".to_string(),
-            RegYMM::YMM32 => "RegYMM::YMM32".to_string(),
         }
     }
 
+
+    pub fn widen_to_zmm(&self) -> RegZMM {
+        match self {
+            RegYMM::YMM0 => RegZMM::ZMM0,
+            RegYMM::YMM1 => RegZMM::ZMM1,
+            RegYMM::YMM2 => RegZMM::ZMM2,
+            RegYMM::YMM3 => RegZMM::ZMM3,
+            RegYMM::YMM4 => RegZMM::ZMM4,
+            RegYMM::YMM5 => RegZMM::ZMM5,
+            RegYMM::YMM6 => RegZMM::ZMM6,
+            RegYMM::YMM7 => RegZMM::ZMM7,
+            RegYMM::YMM8 => RegZMM::ZMM8,
+            RegYMM::YMM9 => RegZMM::ZMM9,
+            RegYMM::YMM10 => RegZMM::ZMM10,
+            RegYMM::YMM11 => RegZMM::ZMM11,
+            RegYMM::YMM12 => RegZMM::ZMM12,
+            RegYMM::YMM13 => RegZMM::ZMM13,
+            RegYMM::YMM14 => RegZMM::ZMM14,
+            RegYMM::YMM15 => RegZMM::ZMM15,
+            RegYMM::YMM16 => RegZMM::ZMM16,
+            RegYMM::YMM17 => RegZMM::ZMM17,
+            RegYMM::YMM18 => RegZMM::ZMM18,
+            RegYMM::YMM19 => RegZMM::ZMM19,
+            RegYMM::YMM20 => RegZMM::ZMM20,
+            RegYMM::YMM21 => RegZMM::ZMM21,
+            RegYMM::YMM22 => RegZMM::ZMM22,
+            RegYMM::YMM23 => RegZMM::ZMM23,
+            RegYMM::YMM24 => RegZMM::ZMM24,
+            RegYMM::YMM25 => RegZMM::ZMM25,
+            RegYMM::YMM26 => RegZMM::ZMM26,
+            RegYMM::YMM27 => RegZMM::ZMM27,
+            RegYMM::YMM28 => RegZMM::ZMM28,
+            RegYMM::YMM29 => RegZMM::ZMM29,
+            RegYMM::YMM30 => RegZMM::ZMM30,
+            RegYMM::YMM31 => RegZMM::ZMM31,
+        }
+    }
     pub fn to_xed(&self) -> xed_reg_enum_t {
         todo!("self:?")
     }
@@ -313,7 +416,6 @@ pub enum RegZMM {
     ZMM29,
     ZMM30,
     ZMM31,
-    ZMM32,
 }
 
 impl RegZMM {
@@ -389,7 +491,6 @@ impl RegZMM {
             RegZMM::ZMM29 => "RegZMM::ZMM29".to_string(),
             RegZMM::ZMM30 => "RegZMM::ZMM30".to_string(),
             RegZMM::ZMM31 => "RegZMM::ZMM31".to_string(),
-            RegZMM::ZMM32 => "RegZMM::ZMM32".to_string(),
         }
     }
 

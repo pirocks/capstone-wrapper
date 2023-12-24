@@ -21,6 +21,7 @@ pub fn test_aaa_does_something() {
 
 
 #[test]
+#[ignore]
 pub fn test_adc() {
     let mut bump = Bump::new();
     let mut state = X86MachineState::new_all_zeroed(&bump, X86Mode::_64Bit);

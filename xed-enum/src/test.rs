@@ -3,11 +3,13 @@ use std::mem::MaybeUninit;
 
 use capstone::arch::x86::ArchMode;
 use capstone::prelude::BuildsCapstone;
-use xed_sys::{XED_ADDRESS_WIDTH_64b, xed_convert_to_encoder_request, xed_decode, xed_decoded_inst_dump, xed_decoded_inst_t, xed_decoded_inst_zero_set_mode, xed_encode, xed_encoder_instruction_t, xed_encoder_request_t, xed_encoder_request_zero_set_mode, xed_error_enum_t2str, XED_ERROR_NONE, XED_ICLASS_ADD, xed_inst2, XED_MACHINE_MODE_LONG_64, XED_MAX_INSTRUCTION_BYTES, xed_reg, XED_REG_RBX, XED_REG_RCX, xed_state_init, xed_state_t, xed_state_zero, xed_tables_init};
+use xed_sys::{XED_ADDRESS_WIDTH_64b, xed_convert_to_encoder_request, xed_decode, xed_decoded_inst_dump, xed_decoded_inst_t, xed_decoded_inst_zero_set_mode, xed_disp, xed_encode, xed_encoder_instruction_t, xed_encoder_request_t, xed_encoder_request_zero_set_mode, xed_error_enum_t2str, XED_ERROR_NONE, XED_ICLASS_ADD, XED_ICLASS_JMP, XED_ICLASS_JMP_FAR, xed_inst1, xed_inst2, XED_MACHINE_MODE_LONG_64, XED_MAX_INSTRUCTION_BYTES, xed_mem_b, xed_mem_bd, xed_mem_gbisd, xed_reg, XED_REG_RBX, XED_REG_RCX, xed_state_init, xed_state_t, xed_state_zero, xed_tables_init};
 
-use wrapper_common::registers::Reg32WithRIP;
+use wrapper_common::memory_operand::{GeneralReg, X86Scale};
+use wrapper_common::registers::{Reg32WithRIP, Reg64WithRIP};
+use xed_wrapper::operands::MemoryOperands;
 
-use crate::{CMP, EncodeDecodeContext, X86Instruction};
+use crate::{CMP, EncodeDecodeContext, JMP, X86Instruction};
 
 pub struct EncodedInstr {
     bytes: [u8; 15],
@@ -81,6 +83,65 @@ pub fn encode() {
 
 
 #[test]
+pub fn test_mem() {
+    unsafe { xed_tables_init(); }
+    let mut encode_context = EncodeDecodeContext::new();
+    let mut encoder_request = X86Instruction::JMP(JMP::JMP_MEMV_64 {
+        operand_0: MemoryOperands::SIBAddressing {
+            segment: None,
+            scale: X86Scale::One,
+            index: None,
+            base: GeneralReg::Reg64(Reg64WithRIP::R15),
+            disp: 128,
+            disp_width: 8,
+        }
+    }).to_xed(&mut encode_context);
+    let mut array = [0u8; 16];
+    let mut len = 0u32;
+
+    let error = unsafe { xed_encode((&mut encoder_request) as *mut xed_encoder_request_t, array.as_mut_ptr(), 15, (&mut len) as *mut c_uint) };
+    if error != 0 {
+        panic!()
+    }
+}
+
+
+pub fn mem_to_xed() -> xed_encoder_request_t {
+    let encode_context =  EncodeDecodeContext::new();
+    let mut encoder_request: MaybeUninit<xed_encoder_request_t> = MaybeUninit::zeroed();
+    let mut encoder_inst: MaybeUninit<xed_encoder_instruction_t> = MaybeUninit::zeroed();
+    let mut xed_state: MaybeUninit<xed_state_t> = encode_context.xed_state.clone();
+
+    unsafe {
+        xed_encoder_request_zero_set_mode(
+            encoder_request.as_mut_ptr(),
+            xed_state.as_ptr(),
+        );
+        xed_inst1(
+            encoder_inst.as_mut_ptr(),
+            xed_state.assume_init_ref().clone(),
+            XED_ICLASS_JMP,
+            64u32,
+            xed_mem_bd(
+                GeneralReg::Reg64(Reg64WithRIP::R15).to_xed(),
+                xed_disp(0x20, 8), 80
+            )
+        );
+
+
+        let convert_ok = xed_convert_to_encoder_request(
+            encoder_request.as_mut_ptr(),
+            encoder_inst.as_mut_ptr(),
+        ) != 0;
+        if !convert_ok {
+            panic!()
+        }
+        encoder_request.assume_init()
+    }
+}
+
+
+#[test]
 pub fn round_trip() {
     let mut encode_context = EncodeDecodeContext::new();
     let mut xed: xed_encoder_request_t = CMP::CMP_GPRV_GPRV_3B_32 {
@@ -118,5 +179,5 @@ pub fn round_trip() {
 fn decoded_dump(decoded: *const xed_decoded_inst_t) {
     let mut chars = vec![0i8; 10000];
     unsafe { xed_decoded_inst_dump(decoded, chars.as_mut_ptr(), 10000); }
-     unsafe { dbg!(CStr::from_ptr(chars.as_ptr()).to_str().unwrap()); }
+    unsafe { dbg!(CStr::from_ptr(chars.as_ptr()).to_str().unwrap()); }
 }

@@ -1,5 +1,7 @@
-use wrapper_common::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8};
+use wrapper_common::memory_operand::GeneralReg;
+use wrapper_common::registers::{Reg16WithRIP, Reg32WithRIP, Reg64WithRIP, Reg8, RegXMM, RegYMM, RegZMM};
 use xed_wrapper::operands::{Imm16, Imm32, Imm8, MemoryOperands};
+use crate::semantics2;
 
 use crate::semantics2::builder::SemanticsBuilder;
 use crate::semantics2::expression::Expression;
@@ -16,13 +18,13 @@ pub trait Readable<'arena> {
 
 impl<'arena> Readable<'arena> for Reg8 {
     fn read(&self, semantics: &SemanticsBuilder<'arena>) -> &'arena Expression<'arena> {
-        todo!()
+        semantics.get_reg_8(self.clone())
     }
 }
 
 impl<'arena> Writeable<'arena> for Reg8 {
     fn write(&self, semantics: &mut SemanticsBuilder<'arena>, expr: &'arena Expression<'arena>) {
-        todo!()
+        semantics.set_reg_8(self.clone(), expr);
     }
 }
 
@@ -87,6 +89,42 @@ impl <'arena> Readable<'arena> for MemoryOperands{
 }
 
 impl <'arena> Writeable<'arena> for MemoryOperands {
+    fn write(&self, semantics: &mut SemanticsBuilder<'arena>, expr: &'arena Expression<'arena>) {
+        todo!()
+    }
+}
+
+impl <'arena> Readable<'arena> for RegXMM {
+    fn read(&self, semantics: &SemanticsBuilder<'arena>) -> &'arena Expression<'arena> {
+        todo!()
+    }
+}
+
+impl <'arena> Writeable<'arena> for RegXMM {
+    fn write(&self, semantics: &mut SemanticsBuilder<'arena>, expr: &'arena Expression<'arena>) {
+        todo!()
+    }
+}
+
+impl <'arena> Readable<'arena> for RegYMM {
+    fn read(&self, semantics: &SemanticsBuilder<'arena>) -> &'arena Expression<'arena> {
+        todo!()
+    }
+}
+
+impl <'arena> Writeable<'arena> for RegYMM {
+    fn write(&self, semantics: &mut SemanticsBuilder<'arena>, expr: &'arena Expression<'arena>) {
+        todo!()
+    }
+}
+
+impl <'arena> Readable<'arena> for RegZMM {
+    fn read(&self, semantics: &SemanticsBuilder<'arena>) -> &'arena Expression<'arena> {
+        todo!()
+    }
+}
+
+impl <'arena> Writeable<'arena> for RegZMM {
     fn write(&self, semantics: &mut SemanticsBuilder<'arena>, expr: &'arena Expression<'arena>) {
         todo!()
     }

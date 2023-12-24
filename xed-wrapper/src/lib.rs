@@ -178,6 +178,7 @@ impl Field {
 pub struct Variant {
     pub operands: HashMap<usize, Field>,
     pub iform: xed_iform_enum_t,
+    pub effective_operand_width: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -206,6 +207,8 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
             });
             for i in 0..XED_MAX_INST_TABLE_NODES {
                 let instruction_table_elem = xed_inst_table_base().add(i as usize);
+                let read  = instruction_table_elem.read();
+                let first_operand = xed_inst_operand(instruction_table_elem,0);
                 let iform_i = xed_inst_iform_enum(instruction_table_elem);
                 let variant_name = VariantName::new(
                     CStr::from_ptr(xed_iform_enum_t2str(iform_i))
@@ -233,6 +236,7 @@ pub fn xed_data() -> &'static HashMap<TopLevelInstructionName, TopLevelInstructi
                 variants.push(Variant {
                     operands: Default::default(),
                     iform: iform_i,
+                    effective_operand_width: 0,
                 });
                 let variant_fields: &mut HashMap<usize, Field> = &mut variants.last_mut().unwrap().operands;
                 let number_of_operands = xed_inst_noperands(instruction_table_elem);
@@ -425,10 +429,12 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                             Variant {
                                 operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width(width))).collect(),
                                 iform: variant.iform,
+                                effective_operand_width: width.to_xed_width_bits() as u32,
                             }
                         }
                         fn operands_to_width_many(variant: &Variant, width: Vec<OperandWidth>) -> Variant {
                             let mut width = width.into_iter();
+                            let width_clone = width.clone();
                             Variant {
                                 operands: variant.operands.iter().sorted_by_key(|(i, _)| **i).map(|(i, field)| {
                                     if let Some(width) = width.next() {
@@ -438,12 +444,14 @@ pub fn spread_multi_width_variants(before: HashMap<TopLevelInstructionName, TopL
                                     }
                                 }).collect(),
                                 iform: variant.iform,
+                                effective_operand_width: width.next().unwrap_or(OperandWidth::_64).to_xed_width_bits() as u32,
                             }
                         }
                         fn operands_to_width_imm(variant: &Variant, width: OperandWidth, imm_width: OperandWidth) -> Variant {
                             Variant {
                                 operands: variant.operands.iter().map(|(i, field)| (*i, field.field_as_width_with_imm(width, imm_width))).collect(),
                                 iform: variant.iform,
+                                effective_operand_width: imm_width.to_xed_width_bits() as u32,
                             }
                         }
 

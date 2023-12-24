@@ -792,7 +792,6 @@ impl OperandType {
                     RegXMM::XMM29 => "XMM29".to_string(),
                     RegXMM::XMM30 => "XMM30".to_string(),
                     RegXMM::XMM31 => "XMM31".to_string(),
-                    RegXMM::XMM32 => "XMM32".to_string(),
                 },
                 RegisterType::SingleSpecial(special) => match special {
                     RegSpecial::GDTR => "GDTR".to_string(),

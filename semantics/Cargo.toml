@@ -12,3 +12,8 @@ wrapper-common = { path = "../wrapper-common" }
 xed-wrapper = { path = "../xed-wrapper" }
 bumpalo = "3.12"
 bitvec = "1.0.1"
+libc = "0.2"
+rand = "0.8"
+
+[dev-dependencies]
+xed-sys = { git = "https://github.com/rust-xed/xed-sys.git" }

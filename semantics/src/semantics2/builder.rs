@@ -4,13 +4,13 @@ use wrapper_common::memory_operand::GeneralReg;
 use wrapper_common::registers::{Reg16WithRIP, Reg64WithRIP, Reg8};
 
 use crate::semantics2::arena::Arena;
-use crate::semantics2::expression::{BitWiseOp, ComparisonOp, Expression, Flag, Signedness};
+use crate::semantics2::expression::{ArithmeticOp, BitWiseOp, ComparisonOp, Expression, Flag, Signedness};
 use crate::semantics2::num_traits::IntegerWidth;
 use crate::semantics2::semantic_steps::{InstructionSemanticsStep, ZeroUpper};
 use crate::semantics2::value::Value;
 
 pub struct SemanticsBuilder<'arena> {
-    semantics: Vec<InstructionSemanticsStep<'arena>>,
+    pub(crate) semantics: Vec<InstructionSemanticsStep<'arena>>,
     arena: Arena<'arena>,
 }
 
@@ -95,7 +95,10 @@ impl<'arena> SemanticsBuilder<'arena> {
 
 
     pub fn get_flag(&self, flag: Flag) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::GetFlag { flag })
+        self.arena.a(Expression::GetFlag {
+            flag,
+            at_index: self.semantics.len()
+        })
     }
 
     //reg 8s:
@@ -107,9 +110,17 @@ impl<'arena> SemanticsBuilder<'arena> {
         self.set_reg_8(Reg8::AL, value)
     }
 
+    pub fn ah(&self) -> &'arena Expression<'arena> {
+        self.get_reg_8(Reg8::AH)
+    }
+
+    pub fn set_ah(&mut self, value: &'arena Expression<'arena>) {
+        self.set_reg_8(Reg8::AH, value)
+    }
+
 
     pub fn get_reg_8(&self, reg: Reg8) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::GetReg { reg: GeneralReg::Reg8(reg) })
+        self.arena.a(Expression::GetReg { reg: GeneralReg::Reg8(reg), at_index: self.semantics.len() })
     }
 
     pub fn set_reg_8(&mut self, reg: Reg8, value: &'arena Expression<'arena>) {
@@ -130,7 +141,7 @@ impl<'arena> SemanticsBuilder<'arena> {
 
 
     pub fn get_reg_16(&self, reg: Reg16WithRIP) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::GetReg { reg: GeneralReg::Reg16(reg) })
+        self.arena.a(Expression::GetReg { reg: GeneralReg::Reg16(reg), at_index: self.semantics.len() })
     }
 
     pub fn set_reg_16(&mut self, reg: Reg16WithRIP, value: &'arena Expression<'arena>) {
@@ -149,8 +160,30 @@ impl<'arena> SemanticsBuilder<'arena> {
         })
     }
 
+    pub fn extract(&self, value: &'arena Expression<'arena>, low: usize, high: usize) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::Extract {
+            value,
+            low,
+            high,
+        })
+    }
+
+    pub fn lower_bits(&self, value: &'arena Expression<'arena>, width: usize) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::LowerBits {
+            value,
+            len: width,
+        })
+    }
+
+    pub fn upper_bits(&self, value: &'arena Expression<'arena>, width: usize) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::UpperBits {
+            value,
+            len: width,
+        })
+    }
+
     pub fn equal(&self, left: &'arena Expression<'arena>, right: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::Compare {
+        self.arena.a(Expression::IntCompare {
             op: ComparisonOp::Equal,
             signedness: Signedness::Signed,
             left,
@@ -158,7 +191,7 @@ impl<'arena> SemanticsBuilder<'arena> {
         })
     }
     pub fn less(&self, left: &'arena Expression<'arena>, right: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::Compare {
+        self.arena.a(Expression::IntCompare {
             op: ComparisonOp::Less,
             signedness: Signedness::Signed,
             left,
@@ -175,8 +208,16 @@ impl<'arena> SemanticsBuilder<'arena> {
     }
 
     pub fn add(&self, left: &'arena Expression<'arena>, right: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
-        self.arena.a(Expression::Add {
+        self.arena.a(Expression::IntArithmetic {
+            op: ArithmeticOp::Add,
             signedness: Signedness::Signed,
+            left,
+            right,
+        })
+    }
+
+    pub fn fadd(&self, left: &'arena Expression<'arena>, right: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::FAdd {
             left,
             right,
         })
@@ -205,6 +246,24 @@ impl<'arena> SemanticsBuilder<'arena> {
         })
     }
 
+    pub fn umul(&self, left: &'arena Expression<'arena>, right: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::IntArithmetic {
+            op: ArithmeticOp::Mul,
+            signedness: Signedness::Unsigned,
+            left,
+            right,
+        })
+    }
+
+    pub fn change(&self, value: &'arena Expression<'arena>, range_start_inclusive: usize, range_end_exclusive: usize, new_value: &'arena Expression<'arena>) -> &'arena Expression<'arena> {
+        self.arena.a(Expression::ChangeRange {
+            value,
+            range_start_inclusive,
+            range_end_exclusive,
+            new_value,
+        })
+    }
+
     pub fn emit_conditional(
         &mut self,
         condition: &'arena Expression<'arena>,
@@ -224,5 +283,15 @@ impl<'arena> SemanticsBuilder<'arena> {
 
     pub fn finalize(self) -> Vec<InstructionSemanticsStep<'arena>> {
         self.semantics
+    }
+
+    pub fn sync_uninterruptable(&mut self) {
+        self.semantics.push(InstructionSemanticsStep::InstructionSyncPoint {
+            interruptable: false,
+        })
+    }
+
+    pub fn a(&self, expr: Expression<'arena>) -> &'arena Expression<'arena> {
+        self.arena.a(expr)
     }
 }

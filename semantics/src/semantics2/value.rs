@@ -6,7 +6,7 @@ use bitvec::prelude::BitVec;
 pub struct Value<'arena> {
     inner: BitVec,
     //phantom is for when/if higher perf bitvec is needed
-    phantom: PhantomData<&'arena ()>,
+    // phantom: PhantomData<&'arena ()>,
 }
 
 
@@ -30,7 +30,7 @@ impl<'arena> Value<'arena> {
     }
 
     pub fn is_true(&self) -> bool {
-        assert!(self.width() == 1);
+        assert_eq!(self.width(), 1);
         self == &Self::one_one()
     }
 }

@@ -66,7 +66,7 @@ pub fn instruction_enums(_: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let mut variant_field_names = vec![];
         let mut variant_types = vec![];
         for (_iform, variants) in top_level_instruction.variants.iter().sorted_by_key(|(iform, _)| *iform) {
-            for (variant_name, Variant { operands, iform:_ }) in variants.iter().sorted_by_key(|(vn, _)| *vn) {
+            for (variant_name, Variant { operands, iform:_, effective_operand_width:_ }) in variants.iter().sorted_by_key(|(vn, _)| *vn) {
                 instruction_variant_names1.push(variant_name.proc_macro_safe_name());
                 variant_field_names.push(vec![]);
                 variant_types.push(vec![]);
@@ -130,7 +130,7 @@ pub fn enum_from_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 let iform_name = variant_name.proc_macro_safe_name();
                 let mut variant_field_names = vec![];
                 let mut fields = vec![];
-                let Variant { operands, iform: _ } = variant_in;
+                let Variant { operands, iform: _, effective_operand_width:_ } = variant_in;
                 let mut second_immediate = false;
                 let mut mem_idx = 0u32;
                 for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| *i) {
@@ -247,12 +247,12 @@ pub fn enum_to_xed(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let mut variant_constructors = vec![];
         let iclass = top_level_instruction.iclass;
         for (_iform, variants) in top_level_instruction.variants.iter() {
-            for (variant_name, Variant { operands, iform: _ }) in variants.iter() {
+            for (variant_name, Variant { operands, iform: _, effective_operand_width }) in variants.iter() {
                 iform_names.push(variant_name.proc_macro_safe_name());
                 variant_field_names.push(vec![]);
                 let mut variant_field_constructors = vec![];
                 let mut second_immediate = false;
-                let effective_operand_width = 32u32;
+                let effective_operand_width = effective_operand_width;
                 for (operand_i, operand) in operands.iter().sorted_by_key(|(i, _)| **i) {
                     let variant_ident = format_ident!("operand_{}", operand_i);
                     variant_field_names

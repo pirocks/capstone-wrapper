@@ -7,6 +7,12 @@ pub struct Arena<'arena> {
 }
 
 impl<'arena> Arena<'arena> {
+    pub fn new(bump: &'arena Bump) -> Self {
+        Self {
+            bump,
+        }
+    }
+
     pub fn a<T>(&self, expr: T) -> &'arena T {
         self.bump.alloc(expr)
     }
